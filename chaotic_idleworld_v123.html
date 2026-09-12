@@ -631,6 +631,16 @@ body.mobile-ui #gc-panel { bottom: 184px; max-height: 150px; }
 #gc-list .gm b { color: #7cd7fd; }
 #gc-list .gm.sys { color: #ffd54f; font-style: italic; }
 body.gc-closed #gc-list, body.gc-closed #gc-tabs, body.gc-closed #gc-pm-row { display: none !important; }
+.scmsg-row { display: flex; align-items: center; gap: 6px; padding: 5px 4px; border-bottom: 1px solid rgba(51,65,92,.4); font-size: 12px; }
+.scmsg-row b { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scmsg-dot { width: 8px; height: 8px; border-radius: 50%; background: #556; flex: none; }
+.scmsg-dot.on { background: #3fe3ea; box-shadow: 0 0 6px #3fe3ea; }
+.scmsg-btn { background: #101828; border: 1px solid #33415c; color: #ffd54f; border-radius: 6px; padding: 3px 7px; font-size: 11px; cursor: pointer; }
+.scmsg-btn.del { color: #ff8f8f; }
+.scmsg-empty { font-size: 11px; color: #93a0bd; padding: 4px 6px; }
+#scmsg-log { max-height: 180px; overflow-y: auto; background: rgba(7,11,20,.5); border: 1px solid #33415c; border-radius: 8px; padding: 6px; margin-top: 6px; }
+#scmsg-log .gm { font-size: 11px; padding: 2px 0; }
+#gc-pm-row input { width: 100%; background: #101828; color: #e9eefc; border: 1px solid #33415c; border-radius: 8px; padding: 6px; font-size: 12px; }
 #gc-tabs { display: flex; border-bottom: 1px solid #33415c; background: rgba(7,11,20,.6); }
 .gtab { flex: 1; text-align: center; padding: 7px 2px; font-size: 10px; font-weight: 800; letter-spacing: .4px; color: #93a0bd; cursor: pointer; border-bottom: 2px solid transparent; user-select: none; }
 .gtab.on { color: #ffd54f; border-bottom-color: #ffd54f; }
@@ -801,7 +811,7 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
     <button class="btn-icon" id="btn-chat" title="Chat">💬</button>
     <button class="btn-icon" id="btn-scan" title="Scanner / Status (Q)">📡</button>
     <button class="btn-icon" id="btn-options" title="Opções">⚙️</button>
-    <button class="btn-icon" id="btn-portico" title="Voltar ao Portico">🏛️</button>
+    <button class="btn-icon" id="btn-portico" title="Voltar ao Pátio Central">🏠</button>
   </div>
   <div id="scanner-panel" class="panel">
     <h4>📡 Status do Caçador</h4>
@@ -842,7 +852,7 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
       <div class="scanner-lv-badge" id="scanner-real-lv">LV 1</div>
     </div>
     <div class="scanner-screen">
-      <div class="scanner-page-dots" id="scanner-page-dots"><span data-p="home" class="on"></span><span data-p="mapa"></span><span data-p="scanners"></span></div>
+      <div class="scanner-page-dots" id="scanner-page-dots"><span data-p="home" class="on"></span><span data-p="mapa"></span><span data-p="scanners"></span><span data-p="msg"></span></div>
       <!-- v1.9 — PÁGINA HOME (status do caçador) -->
       <div class="scanner-subpage active" id="sc-page-home">
         <div class="scanner-battery-display">
@@ -883,6 +893,7 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
         <div class="scanner-navrow">
           <button class="scanner-nav-btn" id="scanner-nav-mapa" title="Ver minimapa">◀ MAPA</button>
           <button class="scanner-nav-btn" id="scanner-nav-scanners" title="Ver Scan Cards">SCANNERS ▶</button>
+          <button class="scanner-nav-btn" id="scanner-nav-msg" title="Mensagens privadas e amigos">✉️ MSG ▶</button>
         </div>
       </div>
       <!-- v1.9 — PÁGINA MAPA (minimapa ao vivo do local) -->
@@ -893,6 +904,14 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
         </div>
         <div class="scanner-minimap-wrap"><canvas id="scanner-minimap" width="256" height="192"></canvas></div>
         <div class="scanner-minimap-legend" id="scanner-minimap-legend"></div>
+      </div>
+      <!-- v124 — PÁGINA MSG (privados + amigos) -->
+      <div class="scanner-subpage" id="sc-page-msg">
+        <div class="scanner-subhead">
+          <button class="scanner-back-btn" id="scanner-msg-back" title="Voltar">←</button>
+          <span class="scanner-subtitle">MENSAGENS</span>
+        </div>
+        <div id="scmsg-body" style="padding:6px"></div>
       </div>
       <!-- v1.9 — PÁGINA SCANNERS (acervo de Scan Cards) -->
       <div class="scanner-subpage" id="sc-page-scanners">
@@ -938,6 +957,15 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
     <button class="opt-mode-btn" id="opt-mode-mobile">📱 Celular</button>
   </div>
   <div class="opt-note" id="opt-mode-note"></div>
+  <div class="opt-label" style="margin-top:10px">🎁 Código de resgate</div>
+  <div style="display:flex;gap:6px">
+    <input id="opt-redeem-in" type="text" placeholder="ex.: scan10" autocomplete="off" style="flex:1;background:#0b1120;border:1px solid #33415c;border-radius:8px;color:#e9eefc;padding:7px 8px;font-size:12px">
+    <button class="opt-mode-btn" id="opt-redeem-go">Resgatar</button>
+  </div>
+  <div class="opt-note" id="opt-redeem-note"></div>
+  <div style="margin-top:10px;border-top:1px solid #33415c;padding-top:10px">
+    <button class="opt-mode-btn" id="opt-logout" style="width:100%;border-color:#a04040">🚪 Deslogar da conta</button>
+  </div>
 </div>
 
 <div id="auction-house">
@@ -970,7 +998,7 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
 <div id="chat-bar"><input id="chat-input" type="text" maxlength="90" placeholder="Digite e fale com Perim..." autocomplete="off"><button id="chat-send">📢 Falar</button></div>
 <div id="dromo-panel"></div>
 <div id="dromo-game-overlay"><button id="dromo-game-close" onclick="closeDromoGame()" title="Sair do Dromo">✕</button><iframe id="dromo-game-frame" allow="autoplay; fullscreen"></iframe></div>
-<div id="gc-panel"><div id="gc-head"><b>💬 CHAT</b><span style="font-size:9px;opacity:.55;font-weight:400">v123</span><span id="gc-badge">0</span><span id="gc-toggle">▼</span></div><div id="gc-tabs"><div class="gtab on" data-t="near">📍 PERTO</div><div class="gtab" data-t="global">🌐 GLOBAL</div><div class="gtab" data-t="pm">✉️ PRIVADO</div></div><div id="gc-list"></div><div id="gc-pm-row" style="display:none"><select id="gc-pm-to"></select></div></div>
+<div id="gc-panel"><div id="gc-head"><b>💬 CHAT</b><span style="font-size:9px;opacity:.55;font-weight:400">v123</span><span id="gc-badge">0</span><span id="gc-toggle">▼</span></div><div id="gc-tabs"><div class="gtab on" data-t="near">📍 PERTO</div><div class="gtab" data-t="global">🌐 GLOBAL</div><div class="gtab" data-t="pm">✉️ PRIVADO</div></div><div id="gc-list"></div><div id="gc-pm-row" style="display:none"><input id="gc-pm-to" list="gc-pm-list" placeholder="digite o nome do jogador..." autocomplete="off"><datalist id="gc-pm-list"></datalist></div></div>
 <div id="dromo-battle"></div>
 <div id="clerk-panel"></div>
 
@@ -7174,6 +7202,7 @@ function gcLine(parent, html, cls) {
 function gcBadgeUp() { gcUnread++; const bd = document.getElementById('gc-badge'); if (bd) { bd.textContent = gcUnread; bd.style.display = 'inline-block'; } }
 function gcAdd(m, tab) {
   const box = gcBox(tab); if (!box) return;
+  try { if (tab === 'pm' && m && m.from && typeof scmsgPush === 'function') scmsgPush(m.from, { from: m.from, x: m.x, ts: m.ts }); } catch (e) {}
   if (m.sys) gcLine(box, '⚡ ' + esc5(m.x), 'sys');
   else if (m.from) gcLine(box, '<b style="color:#ff9ff3">✉️ ' + esc5(m.from) + ' → você:</b> ' + esc5(m.x), 'pm');
   else if (m.to) gcLine(box, '<b style="color:#ffd54f">✉️ você → ' + esc5(m.to) + ':</b> ' + esc5(m.x), 'pm');
@@ -7196,57 +7225,89 @@ function gcSetTab(t) {
 }
 window.gcSetTab = gcSetTab;
 function gcRefreshPmTargets() {
-  const sel = document.getElementById('gc-pm-to'); if (!sel) return;
-  const cur = sel.value; sel.innerHTML = '';
-  const myMap = (typeof GameState !== 'undefined' && GameState.location) || 'portico';
+  const dl = document.getElementById('gc-pm-list'); if (!dl) return;
+  dl.innerHTML = '';
   for (const x of gcRoster) {
     if (x.me) continue;
     const o = document.createElement('option'); o.value = x.nick;
-    o.textContent = '✉️ ' + x.nick + (x.map === myMap ? ' (nesta sala)' : '');
-    sel.appendChild(o);
+    dl.appendChild(o);
   }
-  if (cur) sel.value = cur;
 }
 function gcApplyRoster(list) {
   gcRoster = list || [];
-  const myMap = (typeof GameState !== 'undefined' && GameState.location) || 'portico';
-  const nearCount = gcRoster.filter(function(x) { return x.map === myMap; }).length;
-  const key2 = gcRoster.map(function(x) { return x.nick; }).sort().join(',') + '|' + nearCount;
-  if (key2 !== gcRosterKey) {
-    gcRosterKey = key2;
-    gcLine(gcBox('near'), '👀 ' + nearCount + ' Scanner(s) nesta sala · ' + gcRoster.length + ' online', 'sys');
-    gcRefreshPmTargets();
-  }
-  gcDrawAvatars();
+  try { if (typeof scannerPage !== 'undefined' && scannerPage === 'msg') renderMsgPage(); } catch (e) {}
+  gcRefreshPmTargets();
+  gcSyncSprites();
 }
-function gcDrawAvatars() {
-  const layer = document.getElementById('ui-layer'); if (!layer) return;
-  const myMap = (typeof GameState !== 'undefined' && GameState.location) || 'portico';
-  const seen = {};
-  for (const x of gcRoster) {
-    if (x.me || x.map !== myMap) continue;
-    seen[x.nick] = 1;
-    let el = gcPlEls[x.nick];
-    if (!el) {
-      el = document.createElement('div'); el.className = 'near-pl';
-      el.innerHTML = '<div class="near-pl-dot"></div><div class="near-pl-nick"></div>';
-      layer.appendChild(el); gcPlEls[x.nick] = el;
+// texturas da skin feminina (jogadoras remotas)
+function gcBuildFemTextures() {
+  if (!window.CHAOS_FEM || !CHAOS_FEM.frames || window.__femTexDone) return;
+  const F = CHAOS_FEM;
+  for (const key in F.frames) {
+    if (game.textures.exists('heroF_' + key)) continue;
+    const cv = document.createElement('canvas'); cv.width = 48; cv.height = 72;
+    const ctx = cv.getContext('2d');
+    const data = F.frames[key]; let x = 0, y = 0;
+    const re = /(\d+)(\.|[a-z])/g; let m2;
+    while ((m2 = re.exec(data)) !== null) {
+      const n = parseInt(m2[1], 10); const c = m2[2];
+      if (c !== '.') { ctx.fillStyle = F.palette[c.charCodeAt(0) - 97] || '#ff00ff'; ctx.fillRect(x, y, n, 1); }
+      x += n; if (x >= 48) { y += Math.floor(x / 48); x = x % 48; }
     }
-    el.querySelector('.near-pl-nick').textContent = x.nick;
+    game.textures.addCanvas('heroF_' + key, cv);
   }
-  for (const k in gcPlEls) if (!seen[k]) { gcPlEls[k].remove(); delete gcPlEls[k]; }
+  window.__femTexDone = true;
+}
+let gcSpriteScene = null;
+function gcSyncSprites() {
+  const s = getActiveGameScene(); if (!s || !s.add || typeof GameState === 'undefined' || !GameState.player) return;
+  const myMap = GameState.location || 'portico';
+  const alive = {};
+  for (const r of gcRoster) {
+    if (r.me || r.map !== myMap) continue;
+    alive[r.nick] = 1;
+    let o = gcPlEls[r.nick];
+    if (!o || !o.sp || !o.sp.scene || gcSpriteScene !== s) {
+      if (o) { try { o.sp.destroy(); o.txt.destroy(); } catch (e) {} }
+      const fem = r.sex === 'f';
+      if (fem) gcBuildFemTextures();
+      const tex = fem ? 'heroF_s_0' : 'hero_s_0';
+      if (!game.textures.exists(tex)) continue;
+      const scale = (s.player && s.player.scaleX) || (HERO_SPRITE && HERO_SPRITE.scale) || 1;
+      const sp = s.add.sprite(r.x, r.y, tex).setDepth(7).setScale(scale);
+      const txt = s.add.text(r.x, r.y - 46 * scale, r.nick, { fontFamily: 'monospace', fontSize: '10px', color: '#7ef0ff', stroke: '#000000', strokeThickness: 3 }).setOrigin(0.5, 1).setDepth(9);
+      o = gcPlEls[r.nick] = { sp: sp, txt: txt, tx: r.x, ty: r.y, dir: 's', f: 0, ft: 0 };
+    }
+    o.tx = r.x; o.ty = r.y;
+  }
+  for (const k in gcPlEls) if (!alive[k]) { try { gcPlEls[k].sp.destroy(); gcPlEls[k].txt.destroy(); } catch (e) {} delete gcPlEls[k]; }
+  gcSpriteScene = s;
 }
 setInterval(function() {
-  const s = getActiveGameScene(); if (!s) return;
-  for (const k in gcPlEls) {
-    let px = null, py = null;
-    for (const r of gcRoster) if (r.nick === k) { px = r.x; py = r.y; break; }
-    if (px === null || !GameState.player) continue;
-    const pos = worldToScreen(s, px, py);
-    gcPlEls[k].style.left = Math.round(pos.x) + 'px';
-    gcPlEls[k].style.top = Math.round(pos.y - 20) + 'px';
+  const s = getActiveGameScene();
+  if (!s) return;
+  if (s !== gcSpriteScene) {
+    for (const k in gcPlEls) { try { gcPlEls[k].sp.destroy(); gcPlEls[k].txt.destroy(); } catch (e) {} }
+    gcPlEls = {}; gcSpriteScene = null;
+    gcSyncSprites();
+    return;
   }
-}, 900);
+  for (const k in gcPlEls) {
+    const o = gcPlEls[k];
+    if (!o.sp || !o.sp.scene) continue;
+    const dx = o.tx - o.sp.x, dy = o.ty - o.sp.y;
+    const moving = (Math.abs(dx) + Math.abs(dy)) > 3;
+    if (moving) {
+      o.sp.x += dx * 0.16; o.sp.y += dy * 0.16;
+      o.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'e' : 'w') : (dy > 0 ? 's' : 'n');
+      if ((o.ft = o.ft + 1) % 3 === 0) o.f = o.f ? 0 : 1;
+    } else { o.f = 0; }
+    const base = (o.sp.texture && o.sp.texture.key || '').indexOf('heroF_') === 0 ? 'heroF_' : 'hero_';
+    const want = base + o.dir + '_' + (o.f ? 1 : 0);
+    if (o.sp.texture.key !== want && game.textures.exists(want)) o.sp.setTexture(want);
+    o.txt.x = o.sp.x; o.txt.y = o.sp.y - 46;
+  }
+}, 110);
 async function gcPoll() {
   if (!gcOn) return;
   try {
@@ -7264,7 +7325,7 @@ async function gcPoll() {
 async function gcBeat() {
   if (!gcOn || !window.CHAOS_ONLINE || typeof GameState === 'undefined' || !GameState.player) return;
   try {
-    const r = await fetch('/api/presence', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ map: GameState.location || 'portico', x: Math.round(GameState.player.x || 0), y: Math.round(GameState.player.y || 0), nick: window.CHAOS_ONLINE.nick }) });
+    const r = await fetch('/api/presence', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ map: GameState.location || 'portico', x: Math.round(GameState.player.x || 0), y: Math.round(GameState.player.y || 0), nick: window.CHAOS_ONLINE.nick, sex: (window.CHAOS_ONLINE && CHAOS_ONLINE.sex) || 'm' }) });
     const j = await r.json().catch(function() { return {}; });
     if (j.roster) gcApplyRoster(j.roster);
   } catch (e) {}
@@ -7289,7 +7350,7 @@ async function gcSend(text) {
       if (j.i) gcNLast = Math.max(gcNLast, j.i);
       if (j.pi) gcPLast = Math.max(gcPLast, j.pi);
       const meName = (window.CHAOS_ONLINE && (CHAOS_ONLINE.user || CHAOS_ONLINE.nick)) || 'você';
-      if (scope === 'pm') gcLine(gcBox('pm'), '<b style="color:#ffd54f">✉️ você → ' + esc5(payload.to) + ':</b> ' + esc5(text), 'pm');
+      if (scope === 'pm') { gcLine(gcBox('pm'), '<b style="color:#ffd54f">✉️ você → ' + esc5(payload.to) + ':</b> ' + esc5(text), 'pm'); try { if (typeof scmsgPush === 'function') scmsgPush(payload.to, { to: payload.to, x: String(text), ts: Date.now() }); if (typeof openScannerMsg === 'function') openScannerMsg(payload.to); } catch (e) {} }
       else gcAdd({ n: meName, nick: (window.CHAOS_ONLINE && CHAOS_ONLINE.nick !== meName) ? CHAOS_ONLINE.nick : '', x: String(text) }, scope);
       if (j.away) showNotif('📬 ' + payload.to + ' está offline — lerá quando voltar.', 'warning');
     } else {
@@ -7309,7 +7370,156 @@ async function gcSend(text) {
   gcSetOpen(true); gcSetTab('near');
   gcPoll(); gcBeat();
   setInterval(gcPoll, 2500);
-  setInterval(gcBeat, 12000);
+  setInterval(gcBeat, 2000);
+})();
+
+/* ===== v124 — MSG privadas no Scanner + amigos + resgate + deslogar ===== */
+if (!GameState.player.friends) GameState.player.friends = [];
+if (!GameState.player.convs) GameState.player.convs = {};
+let scmsgCur = null;
+function scmsgSave() { try { saveGame(true); } catch (e) {} }
+function scmsgPush(nick, msg) {
+  const c = GameState.player.convs[nick] = GameState.player.convs[nick] || [];
+  if (msg.ts && c.some(function(m) { return m.ts === msg.ts && m.x === msg.x; })) return;
+  c.push(msg); while (c.length > 60) c.shift(); scmsgSave();
+  try { if (typeof scannerPage !== 'undefined' && scannerPage === 'msg') renderMsgPage(); } catch (e) {}
+}
+window.scmsgPush = scmsgPush;
+function scmsgOnline(nick) { return gcRoster.some(function(x) { return x.nick === nick; }); }
+function scmsgIsFriend(nk) { return (GameState.player.friends || []).indexOf(nk) >= 0; }
+function scmsgAddFriend(nk) {
+  if (!nk) return;
+  const fr = GameState.player.friends = GameState.player.friends || [];
+  if (fr.indexOf(nk) < 0) { fr.push(nk); scmsgSave(); showNotif('⭐ ' + nk + ' agora é seu amigo!', 'success'); }
+}
+function scmsgOpen(nk) { scmsgCur = nk; try { showScannerPage('msg'); } catch (e) {} }
+window.scmsgOpen = scmsgOpen;
+function openScannerMsg(nk) {
+  try {
+    const pan = document.getElementById('scanner-panel');
+    if (pan && pan.style.display !== 'block') togglePanel('scanner-panel', 'btn-scan');
+  } catch (e) {}
+  scmsgOpen(nk);
+}
+window.openScannerMsg = openScannerMsg;
+function renderMsgPage() {
+  const body = document.getElementById('scmsg-body'); if (!body) return;
+  if (scmsgCur) { renderScmsgConv(body); return; }
+  let h = '<div style="padding:2px 4px;font-size:10px;font-weight:800;color:#93a0bd">CONVERSAS</div>';
+  const nicks = Object.keys(GameState.player.convs || {});
+  if (!nicks.length) h += '<div class="scmsg-empty">Nenhuma conversa — use a aba ✉️ PRIVADO do chat ou adicione um amigo.</div>';
+  for (const nk of nicks) {
+    h += '<div class="scmsg-row"><span class="scmsg-dot' + (scmsgOnline(nk) ? ' on' : '') + '"></span><b>' + esc5(nk) + '</b>'
+      + '<button class="scmsg-btn" data-open="' + esc5(nk) + '">abrir</button>'
+      + '<button class="scmsg-btn del" data-delc="' + esc5(nk) + '">✕</button></div>';
+  }
+  h += '<div style="padding:8px 4px 2px;font-size:10px;font-weight:800;color:#93a0bd">AMIGOS</div>';
+  const fr = GameState.player.friends || [];
+  if (!fr.length) h += '<div class="scmsg-empty">Sem amigos ainda — toque em "+ Adicionar amigo online".</div>';
+  for (const nk of fr) {
+    h += '<div class="scmsg-row"><span class="scmsg-dot' + (scmsgOnline(nk) ? ' on' : '') + '"></span><b>⭐ ' + esc5(nk) + '</b>'
+      + '<button class="scmsg-btn" data-open="' + esc5(nk) + '">msg</button>'
+      + '<button class="scmsg-btn del" data-delf="' + esc5(nk) + '">remover</button></div>';
+  }
+  h += '<div style="padding:8px 4px"><button class="scmsg-btn" id="scmsg-add" style="width:100%;padding:7px">+ Adicionar amigo online</button></div>';
+  body.innerHTML = h;
+  body.onclick = function(ev) {
+    const t = ev.target;
+    const o = t.getAttribute && t.getAttribute('data-open');
+    const dc = t.getAttribute && t.getAttribute('data-delc');
+    const df = t.getAttribute && t.getAttribute('data-delf');
+    if (o) scmsgOpen(o);
+    else if (dc) { delete GameState.player.convs[dc]; scmsgSave(); renderMsgPage(); }
+    else if (df) { const fr2 = GameState.player.friends || []; const i = fr2.indexOf(df); if (i >= 0) { fr2.splice(i, 1); scmsgSave(); renderMsgPage(); } }
+    else if (t.id === 'scmsg-add') renderScmsgAdd(body);
+  };
+}
+window.renderMsgPage = renderMsgPage;
+function renderScmsgAdd(body) {
+  const online = gcRoster.filter(function(x) { return !x.me; }).map(function(x) { return x.nick; });
+  let h = '<div style="padding:4px"><button class="scmsg-btn" id="scmsg-back">←</button> <b>Amigos online</b></div>';
+  if (!online.length) h += '<div class="scmsg-empty">Ninguém online agora além de você.</div>';
+  for (const nk of online) {
+    h += '<div class="scmsg-row"><span class="scmsg-dot on"></span><b>' + esc5(nk) + '</b>'
+      + (scmsgIsFriend(nk) ? '<span style="font-size:10px;color:#93a0bd">já é amigo</span>' : '<button class="scmsg-btn" data-addf="' + esc5(nk) + '">+ adicionar</button>') + '</div>';
+  }
+  body.innerHTML = h;
+  document.getElementById('scmsg-back').onclick = function() { renderMsgPage(); };
+  body.onclick = function(ev) {
+    const af = ev.target.getAttribute && ev.target.getAttribute('data-addf');
+    if (af) { scmsgAddFriend(af); renderMsgPage(); }
+    else if (ev.target.id === 'scmsg-back') renderMsgPage();
+  };
+}
+function renderScmsgConv(body) {
+  const nk = scmsgCur;
+  const c = GameState.player.convs[nk] || [];
+  let h = '<div style="display:flex;align-items:center;gap:8px;padding:2px 4px 6px">'
+    + '<button class="scmsg-btn" id="scmsg-back">←</button><b>' + esc5(nk) + '</b>'
+    + '<span class="scmsg-dot' + (scmsgOnline(nk) ? ' on' : '') + '"></span>'
+    + '<span style="font-size:10px;color:#93a0bd">' + (scmsgOnline(nk) ? 'online' : 'offline') + '</span>'
+    + (scmsgIsFriend(nk) ? '' : '<button class="scmsg-btn" id="scmsg-addcur">+ amigo</button>') + '</div>';
+  h += '<div id="scmsg-log">';
+  for (const m of c) {
+    if (m.from) h += '<div class="gm"><b style="color:#ff9ff3">' + esc5(m.from) + ':</b> ' + esc5(m.x) + '</div>';
+    else h += '<div class="gm"><b style="color:#ffd54f">você:</b> ' + esc5(m.x) + '</div>';
+  }
+  if (!c.length) h += '<div class="scmsg-empty">Conversa vazia — envie a primeira mensagem!</div>';
+  h += '</div><div style="display:flex;gap:6px;margin-top:6px"><input id="scmsg-in" placeholder="mensagem privada..." style="flex:1;background:#0b1120;border:1px solid #33415c;border-radius:8px;color:#e9eefc;padding:7px 8px;font-size:12px" autocomplete="off"><button class="scmsg-btn" id="scmsg-send">enviar</button></div>';
+  body.innerHTML = h;
+  document.getElementById('scmsg-back').onclick = function() { scmsgCur = null; renderMsgPage(); };
+  const ac = document.getElementById('scmsg-addcur');
+  if (ac) ac.onclick = function() { scmsgAddFriend(nk); renderScmsgConv(body); };
+  const send = function() {
+    const inp = document.getElementById('scmsg-in');
+    const t = (inp && inp.value || '').trim(); if (!t) return;
+    if (inp) inp.value = '';
+    gcSetTab('pm');
+    const pi = document.getElementById('gc-pm-to'); if (pi) pi.value = nk;
+    gcLastSend = 0; gcSend(t);
+  };
+  document.getElementById('scmsg-send').onclick = send;
+  document.getElementById('scmsg-in').addEventListener('keydown', function(e) { if (e.key === 'Enter') send(); });
+}
+/* resgate + deslogar dentro do ⚙️ */
+(function() {
+  const hb = document.getElementById('btn-portico');
+  if (hb) { hb.textContent = '🏠'; hb.title = 'Voltar ao Pátio Central'; }
+  const btn = document.getElementById('opt-redeem-go');
+  if (btn) btn.addEventListener('click', async function() {
+    const inp = document.getElementById('opt-redeem-in');
+    const note = document.getElementById('opt-redeem-note');
+    const code = (inp && inp.value || '').trim();
+    if (!code) { if (note) note.textContent = 'Digite um código.'; return; }
+    try {
+      const j = await fetch('/api/redeem', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: code }) }).then(function(r) { return r.json(); });
+      if (j.ok && j.effect) {
+        const p = GameState.player;
+        if (j.effect.kind === 'bits') {
+          p.bits += j.effect.amount; updateTopBar(); saveGame(true);
+          if (note) note.textContent = '✅ +' + j.effect.amount + ' bits!';
+          showNotif('🎁 Código resgatado: +💠' + j.effect.amount + ' bits!', 'success');
+        } else if (j.effect.kind === 'scans') {
+          let added = 0;
+          for (let i = 0; i < j.effect.n && p.scannedCards.length < 100; i++) {
+            const t = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
+            p.scannedCards.push(generateRouletteCard(t)); added++;
+          }
+          saveGame(true);
+          if (note) note.textContent = '✅ +' + added + ' Scans!';
+          showNotif('🎁 ' + added + ' Scans aleatórios adicionados!', 'success');
+        }
+        if (inp) inp.value = '';
+      } else { if (note) note.textContent = '⚠️ ' + (j.err || 'não foi possível resgatar'); }
+    } catch (e) { if (note) note.textContent = '⚠️ servidor offline'; }
+  });
+  const out = document.getElementById('opt-logout');
+  if (out) out.addEventListener('click', function() {
+    try { saveGame(true); } catch (e) {}
+    try { fetch('/api/logout', { method: 'POST' }).catch(function() {}); } catch (e) {}
+    try { localStorage.removeItem('chaos_tok'); } catch (e) {}
+    setTimeout(function() { location.href = '/'; }, 250);
+  });
 })();
 (function() {
   const sendBtn = document.getElementById('chat-send');
@@ -7494,7 +7704,7 @@ function getHeroAvatarURL() {
 
 function showScannerPage(page) {
   scannerPage = page;
-  const pages = ['home', 'mapa', 'scanners'];
+  const pages = ['home', 'mapa', 'scanners', 'msg'];
   for (let i = 0; i < pages.length; i++) {
     const el = document.getElementById('sc-page-' + pages[i]);
     if (el) el.classList.toggle('active', pages[i] === page);
@@ -7503,6 +7713,7 @@ function showScannerPage(page) {
   for (let i = 0; i < dots.length; i++) dots[i].classList.toggle('on', dots[i].getAttribute('data-p') === page);
   if (page === 'mapa') { drawScannerMinimap(); startScannerMinimapLoop(); } else stopScannerMinimapLoop();
   if (page === 'scanners') renderScannerCardsUI();
+  if (page === 'msg') renderMsgPage();
 }
 function startScannerMinimapLoop() {
   stopScannerMinimapLoop();
@@ -7960,6 +8171,8 @@ function initScannerRealEvents() {
   bind('scanner-nav-scanners', function() { showScannerPage('scanners'); });
   bind('scanner-mapa-back', function() { showScannerPage('home'); });
   bind('scanner-cards-back', function() { showScannerPage('home'); });
+  bind('scanner-nav-msg', function() { showScannerPage('msg'); });
+  bind('scanner-msg-back', function() { showScannerPage('home'); });
   // v2.10 — categorias do Scanner: Criaturas / Equip. Batalha / Mugic
   const kindBtns = document.querySelectorAll('#scanner-kind-row .scanner-kind-btn');
   for (let i = 0; i < kindBtns.length; i++) {

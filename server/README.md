@@ -131,6 +131,25 @@ resultado nos dois, recompensas, save na nuvem), regressão PVE e smoke
 mobile 390×844 (toque no 💬, balão, aba acima do joystick).
 Shots: `shots/f4_*` (desktop) e `shots/f5_*` (mobile).
 
+## 🆕 v124 — presença real, ⚙️ resgate/deslogar, Scanner MSG
+
+- **Jogadores visíveis no mapa**: sprites REAIS (herói masc. `hero_*` /
+  jogadoras com skin feminina `heroF_*` + nick flutuante), interpolados via
+  heartbeat de 2s; direção/frames de caminhada remotos.
+- **Skin feminina corrigida**: `build_site2.py` extraía só direções n/s
+  (`[ns][ew]?`) — faltavam `e`/`w` (virava quadrado preto). Agora 8 direções.
+- **HUD**: botão 🏠 = Voltar ao Pátio Central (era 🏛️, confundido com ✕);
+  **Deslogar** foi pro ⚙️ Opções.
+- **⚙️ Opções**: campo de **código de resgate** — `scan10` (+10 Scans
+  aleatórios) e `goldfree` (+10.000 bits), 1 resgate por conta
+  (`/api/redeem`, persistido em `acc.redeemed`).
+- **Chat**: sem mensagens automáticas ("X Scanner(s) nesta sala" removido);
+  PRIVADO por **nome digitado** (com sugestões de quem está online).
+- **Scanner → aba ✉️ MSG**: conversas privadas (log por jogador), **lista de
+  amigos** (adicionar/remover online, persistido no save), enviar/ler PM sem
+  sair do Scanner; PM do chat abre a conversa automaticamente.
+- Testes: `test9_v124.js` 15/15 · `test8_tabs.js` 10/10 · `test4_chat_pvp.js` 24/24.
+
 ## 🔑 Sessão em iframe/preview (v123.1)
 
 Quando o site abre **embutido** (preview em iframe cruzado), o navegador

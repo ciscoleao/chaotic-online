@@ -412,11 +412,32 @@ async function route(req, res) {
     me.n = acc.user;
     me.nick = String(body.nick || me.nick || acc.user).replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) || acc.user;
     me.map = String(body.map || me.map || 'portico').slice(0, 16);
+    me.sex = body.sex === 'f' ? 'f' : 'm';
     me.x = Number(body.x) || 0; me.y = Number(body.y) || 0;
     me.ts = Date.now();
     const now = Date.now();
-    const roster = Object.values(presence).filter(x => now - x.ts < 45000).map(x => ({ n: x.n, nick: x.nick, map: x.map, x: Math.round(x.x), y: Math.round(x.y), me: x === me }));
+    const roster = Object.values(presence).filter(x => now - x.ts < 45000).map(x => ({ n: x.n, nick: x.nick, map: x.map, sex: x.sex || 'm', x: Math.round(x.x), y: Math.round(x.y), me: x === me }));
     return json(res, 200, { ok: true, roster });
+  }
+
+  /* ---- códigos de resgate ---- */
+  const REDEEM_CODES = {
+    scan10: { kind: 'scans', n: 10 },
+    goldfree: { kind: 'bits', amount: 10000 }
+  };
+  if (p === '/api/redeem' && req.method === 'POST') {
+    const acc = auth(req);
+    if (!acc) return json(res, 401, { err: 'sem sessão' });
+    const body = await readBody(req, 2000);
+    const code = String(body.code || '').trim().toLowerCase();
+    const def = REDEEM_CODES[code];
+    if (!def) return json(res, 404, { err: 'Código inválido ou inexistente.' });
+    acc.redeemed = acc.redeemed || {};
+    if (acc.redeemed[code]) return json(res, 409, { err: 'Você já resgatou o código "' + code + '" nesta conta.' });
+    acc.redeemed[code] = Date.now();
+    saveDB();
+    console.log('[redeem]', acc.email, '->', code);
+    return json(res, 200, { ok: true, effect: def });
   }
 
   /* ---- chat global ---- */
@@ -437,7 +458,7 @@ async function route(req, res) {
       out.pms = box.filter(m => m.i > psince).slice(-30);
       out.plast = box.length ? box[box.length - 1].i : 0;
       const now = Date.now();
-      out.roster = Object.values(presence).filter(x => now - x.ts < 45000).map(x => ({ n: x.n, nick: x.nick, map: x.map, x: Math.round(x.x), y: Math.round(x.y), me: x === me }));
+      out.roster = Object.values(presence).filter(x => now - x.ts < 45000).map(x => ({ n: x.n, nick: x.nick, map: x.map, sex: x.sex || 'm', x: Math.round(x.x), y: Math.round(x.y), me: x === me }));
     }
     return json(res, 200, out);
   }
