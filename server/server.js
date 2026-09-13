@@ -29,6 +29,63 @@ const CFG = {
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || ''
 };
+/* ---------------- Supabase (opcional): persistência que sobrevive a redeploys ----------------
+   Defina no ambiente: SUPABASE_URL (Project URL) e SUPABASE_KEY (service_role).
+   Tabela única `game_state` (veja publicar/README-SUPABASE.md). Sem essas vars,
+   o servidor funciona como antes (só disco local). */
+const CLOUD = (process.env.SUPABASE_URL && process.env.SUPABASE_KEY) ? {
+  url: String(process.env.SUPABASE_URL).replace(/\/+$/, ''),
+  key: String(process.env.SUPABASE_KEY),
+  table: process.env.SUPABASE_TABLE || 'game_state'
+} : null;
+let cloudDirty = false, cloudTimer = null, cloudSaving = false, cloudReady = false;
+async function cloudFetch(pathname, opts) {
+  return fetch(CLOUD.url + pathname, Object.assign({}, opts, {
+    headers: Object.assign({ apikey: CLOUD.key, Authorization: 'Bearer ' + CLOUD.key }, (opts && opts.headers) || {})
+  }));
+}
+async function cloudLoad() {
+  const r = await cloudFetch('/rest/v1/' + CLOUD.table + '?id=eq.1&select=data', {});
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json();
+  return (Array.isArray(j) && j[0] && j[0].data) ? j[0].data : null;
+}
+async function cloudSaveNow() {
+  const body = JSON.stringify([{ id: 1, data: db, updated_at: new Date().toISOString() }]);
+  const r = await cloudFetch('/rest/v1/' + CLOUD.table + '?on_conflict=id', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: body
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + String(r.statusText || ''));
+}
+function scheduleCloudSave(delay) {
+  if (!CLOUD) return;
+  cloudDirty = true;
+  if (cloudTimer || cloudSaving) return;
+  cloudTimer = setTimeout(cloudRun, delay || 4000);
+  if (cloudTimer.unref) cloudTimer.unref();
+  async function cloudRun() {
+    cloudTimer = null;
+    if (!cloudDirty || cloudSaving) return;
+    cloudSaving = true;
+    try {
+      await cloudSaveNow();
+      cloudDirty = false;
+      if (!cloudReady) { cloudReady = true; console.log('[nuvem] dados persistindo no Supabase ✓'); }
+    } catch (e) {
+      console.log('[nuvem] falha ao salvar (vou tentar de novo):', e.message);
+    } finally {
+      cloudSaving = false;
+      if (cloudDirty && !cloudTimer) scheduleCloudSave(1500);
+    }
+  }
+}
+function reseedChatSeq() {
+  db.chat = db.chat || [];
+  db.chat.forEach((m, i) => { m.id = i + 1; });
+  chatSeq = db.chat.length;
+}
 const ROOT = path.join(__dirname, '..');
 const GAME_FILE = fs.existsSync(path.join(ROOT, 'chaotic_idleworld_v123.html')) ? path.join(ROOT, 'chaotic_idleworld_v123.html') : path.join(ROOT, 'chaotic_idleworld_v122.html');
 const SITE_FILE = path.join(ROOT, 'site', 'index.html');
@@ -62,17 +119,15 @@ function chatSys(text) {
 try {
   const __disk = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
   db = Object.assign(db, __disk);
-  db.chat = db.chat || [];
-  // normaliza ids do histórico (restarts antigos geraram ids duplicados/fora de ordem)
-  db.chat.forEach((m, i) => { m.id = i + 1; });
-  chatSeq = db.chat.length;
-  console.log('[boot] chat histórico:', db.chat.length, 'msgs, seq =', chatSeq);
+  reseedChatSeq();
+  console.log('[boot] disco local:', Object.keys(db.accounts || {}).length, 'contas ·', (db.chat || []).length, 'msgs');
 } catch (e) {}
 function saveDB() {
   fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
   const t = DB_FILE + '.tmp';
   fs.writeFileSync(t, JSON.stringify(db));
   fs.renameSync(t, DB_FILE);
+  if (CLOUD) scheduleCloudSave();
 }
 setInterval(() => { // varredura de partidas PVP (W.O. por desconexão)
   const now = Date.now();
@@ -368,7 +423,7 @@ async function route(req, res) {
     saveDB();
     res.setHeader('Set-Cookie', cookieSet(sid));
     console.log('[login]', acc.email);
-    return json(res, 200, { ok: true, user: acc.user });
+    return json(res, 200, { ok: true, user: acc.user, token: sid });
   }
 
   /* ---- sessão ---- */
@@ -707,8 +762,49 @@ const server = http.createServer((req, res) => {
     try { json(res, 500, { err: 'erro interno' }); } catch (e2) {}
   });
 });
-server.listen(CFG.PORT, '0.0.0.0', () => {
-  console.log('CHAOTIC.IDLEWORLD servidor FASE 2 na porta ' + CFG.PORT);
-  console.log('Turnstile: ' + (CFG.SITEKEY.startsWith('1x0000') ? 'CHAVES DE TESTE (sempre passam)' : 'chaves reais') );
-  console.log('Google OAuth: ' + (CFG.GOOGLE_CLIENT_ID ? 'configurado' : 'não configurado (botão mostra instruções)'));
-});
+/* encerramento digno: salva tudo antes de sair (Render manda SIGTERM em redeploys) */
+let shuttingDown = false;
+async function flushAndExit(sig) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log('[fim] ' + sig + ' — salvando estado...');
+  try { saveDB(); } catch (e) {}
+  if (CLOUD) {
+    try { if (cloudTimer) { clearTimeout(cloudTimer); cloudTimer = null; } cloudDirty = true; await cloudSaveNow(); console.log('[nuvem] estado final salvo ✓'); }
+    catch (e) { console.log('[nuvem] falha no salvamento final:', e.message); }
+  }
+  process.exit(0);
+}
+process.on('SIGTERM', () => flushAndExit('SIGTERM'));
+process.on('SIGINT', () => flushAndExit('SIGINT'));
+
+(async () => {
+  if (CLOUD) {
+    try {
+      const c = await cloudLoad();
+      const localAccounts = Object.keys(db.accounts || {}).length;
+      const cloudAccounts = c && c.accounts ? Object.keys(c.accounts).length : 0;
+      if (cloudAccounts || (c && c.chat && c.chat.length)) {
+        db = Object.assign(db, c);
+        db.chat = db.chat || [];
+        db.accounts = db.accounts || {}; db.sessions = db.sessions || {}; db.nicks = db.nicks || {}; db.saves = db.saves || {}; db.blocks = db.blocks || {};
+        reseedChatSeq();
+        console.log('[nuvem] estado ADOTADO do Supabase:', Object.keys(db.accounts).length, 'contas ·', db.chat.length, 'msgs');
+      } else if (localAccounts || (db.chat && db.chat.length)) {
+        await cloudSaveNow();
+        cloudReady = true;
+        console.log('[nuvem] estado local enviado ao Supabase (primeira vez):', localAccounts, 'contas');
+      } else {
+        console.log('[nuvem] Supabase configurado — base vazia nos dois lados, começando do zero.');
+      }
+    } catch (e) {
+      console.log('[nuvem] AVISO: Supabase inacessível agora (' + e.message + '). Seguindo local; nova tentativa ao salvar.');
+    }
+  }
+  server.listen(CFG.PORT, '0.0.0.0', () => {
+    console.log('CHAOTIC.IDLEWORLD servidor FASE 2 na porta ' + CFG.PORT);
+    console.log('Turnstile: ' + (CFG.SITEKEY.startsWith('1x0000') ? 'CHAVES DE TESTE (sempre passam)' : 'chaves reais'));
+    console.log('Google OAuth: ' + (CFG.GOOGLE_CLIENT_ID ? 'configurado' : 'não configurado (botão mostra instruções)'));
+    console.log('Persistência: ' + (CLOUD ? 'SUPABASE (sobrevive a redeploys) ✓' : 'disco local (redeploys apagam)'));
+  });
+})();

@@ -131,6 +131,31 @@ resultado nos dois, recompensas, save na nuvem), regressão PVE e smoke
 mobile 390×844 (toque no 💬, balão, aba acima do joystick).
 Shots: `shots/f4_*` (desktop) e `shots/f5_*` (mobile).
 
+## 🧹 v125 — ajustes de chat/UX (feedback do playtest)
+
+- **Balões de fala do chat REMOVIDOS** (ficavam longe do personagem) — a fala
+  aparece só no painel de chat (aba ativa); nada mais usava balões.
+- **Botão ✕/🏠 do HUD removido**: o teleporte ao Pátio Central agora é um
+  botão dentro do **⚙️ Opções** (junto com resgate e deslogar).
+- **Ícone do Scanner**: antena 📡 → **scanner vermelho** (SVG, renderiza em
+  qualquer aparelho); ganha **bolinha vermelha** quando chega PM.
+- **Digitar não move mais o personagem**: campos de mensagem/código de
+  resgate desativam o teclado do jogo enquanto focados (WASD/I/Q ignorados);
+  ao sair do campo, volta ao normal.
+- **Aba MSG do Scanner**: nunca mais "fecha sozinha" ao digitar/listar
+  (re-render agora só quando seguro); **adicionar amigo é POR NOME**
+  (lista de todos os online removida — valida se a pessoa está online).
+
+## ☁️ Persistência Supabase (contas sobrevivem a redeploys)
+
+Defina `SUPABASE_URL` + `SUPABASE_KEY` (service_role) no ambiente e crie a
+tabela `game_state` (SQL em `publicar/README-SUPABASE.md`). O servidor então:
+- **adota** o estado da nuvem no boot (contas/saves/chat/blocos);
+- salva com **debounce** (~4s) a cada `saveDB()` e **no SIGTERM/SIGINT**
+  (o Render envia SIGTERM a cada redeploy — nada se perde);
+- sem as variáveis, opera só com disco local (comportamento antigo).
+Teste de ciclo completo (mock REST local): `test10_supabase.js` — 9/9.
+
 ## 🆕 v124 — presença real, ⚙️ resgate/deslogar, Scanner MSG
 
 - **Jogadores visíveis no mapa**: sprites REAIS (herói masc. `hero_*` /
