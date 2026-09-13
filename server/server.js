@@ -67,6 +67,22 @@ async function cloudSaveNow() {
     throw new Error('HTTP ' + r.status + (t ? ' · ' + t : ''));
   }
 }
+async function cloudRecoverMerge() {
+  try {
+    const c = await cloudLoad();
+    if (!c) return;
+    let added = 0;
+    for (const em in (c.accounts || {})) if (!db.accounts[em]) { db.accounts[em] = c.accounts[em]; added++; }
+    for (const em in (c.saves || {})) {
+      const cu = (c.saves[em] && c.saves[em].updatedAt) || 0;
+      const lo = (db.saves[em] && db.saves[em].updatedAt) || 0;
+      if (cu > lo) db.saves[em] = c.saves[em];
+    }
+    for (const em in (c.nicks || {})) if (!db.nicks[em]) db.nicks[em] = c.nicks[em];
+    if ((c.chat || []).length > (db.chat || []).length) { db.chat = c.chat; reseedChatSeq(); }
+    if (added) console.log('[nuvem] recuperação: ' + added + ' conta(s) que só existiam na nuvem foram preservadas');
+  } catch (e) {}
+}
 function scheduleCloudSave(delay) {
   if (!CLOUD) return;
   cloudDirty = true;
@@ -78,6 +94,7 @@ function scheduleCloudSave(delay) {
     if (!cloudDirty || cloudSaving) return;
     cloudSaving = true;
     try {
+      if (!cloudReady) await cloudRecoverMerge();
       await cloudSaveNow();
       cloudDirty = false;
       if (!cloudReady) { cloudReady = true; console.log('[nuvem] dados persistindo no Supabase ✓'); }
@@ -778,7 +795,7 @@ async function flushAndExit(sig) {
   console.log('[fim] ' + sig + ' — salvando estado...');
   try { saveDB(); } catch (e) {}
   if (CLOUD) {
-    try { if (cloudTimer) { clearTimeout(cloudTimer); cloudTimer = null; } cloudDirty = true; await cloudSaveNow(); console.log('[nuvem] estado final salvo ✓'); }
+    try { if (cloudTimer) { clearTimeout(cloudTimer); cloudTimer = null; } cloudDirty = true; if (!cloudReady) await cloudRecoverMerge(); await cloudSaveNow(); console.log('[nuvem] estado final salvo ✓'); }
     catch (e) { console.log('[nuvem] falha no salvamento final:', e.message); }
   }
   process.exit(0);
@@ -806,7 +823,9 @@ process.on('SIGINT', () => flushAndExit('SIGINT'));
         console.log('[nuvem] Supabase configurado — base vazia nos dois lados, começando do zero.');
       }
     } catch (e) {
-      console.log('[nuvem] AVISO: Supabase inacessível agora (' + e.message + '). Seguindo local; nova tentativa ao salvar.');
+      let hostInfo = '';
+      try { hostInfo = new URL(CLOUD.url).host; } catch (e2) { hostInfo = 'URL-INVALIDA(' + String(CLOUD.url).slice(0, 70) + ')'; }
+      console.log('[nuvem] AVISO: Supabase inacessível agora (' + e.message + '). Host: ' + hostInfo + '. Seguindo local; nova tentativa ao salvar.');
     }
   }
   server.listen(CFG.PORT, '0.0.0.0', () => {
