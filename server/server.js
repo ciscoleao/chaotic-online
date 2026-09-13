@@ -34,7 +34,7 @@ const CFG = {
    Tabela única `game_state` (veja publicar/README-SUPABASE.md). Sem essas vars,
    o servidor funciona como antes (só disco local). */
 const CLOUD = (process.env.SUPABASE_URL && process.env.SUPABASE_KEY) ? {
-  url: String(process.env.SUPABASE_URL).replace(/\/+$/, ''),
+  url: String(process.env.SUPABASE_URL).replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, ''),
   key: String(process.env.SUPABASE_KEY),
   table: process.env.SUPABASE_TABLE || 'game_state'
 } : null;
@@ -46,7 +46,11 @@ async function cloudFetch(pathname, opts) {
 }
 async function cloudLoad() {
   const r = await cloudFetch('/rest/v1/' + CLOUD.table + '?id=eq.1&select=data', {});
-  if (!r.ok) throw new Error('HTTP ' + r.status);
+  if (!r.ok) {
+    let t = '';
+    try { t = String(await r.text()).slice(0, 140); } catch (e) {}
+    throw new Error('HTTP ' + r.status + (t ? ' · ' + t : ''));
+  }
   const j = await r.json();
   return (Array.isArray(j) && j[0] && j[0].data) ? j[0].data : null;
 }
@@ -57,7 +61,11 @@ async function cloudSaveNow() {
     headers: { 'content-type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
     body: body
   });
-  if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + String(r.statusText || ''));
+  if (!r.ok) {
+    let t = '';
+    try { t = String(await r.text()).slice(0, 140); } catch (e) {}
+    throw new Error('HTTP ' + r.status + (t ? ' · ' + t : ''));
+  }
 }
 function scheduleCloudSave(delay) {
   if (!CLOUD) return;
