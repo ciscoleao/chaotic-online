@@ -115,6 +115,9 @@ const ROOT = path.join(__dirname, '..');
 const GAME_FILE = fs.existsSync(path.join(ROOT, 'chaotic_idleworld_v123.html')) ? path.join(ROOT, 'chaotic_idleworld_v123.html') : path.join(ROOT, 'chaotic_idleworld_v122.html');
 const SITE_FILE = path.join(ROOT, 'site', 'index.html');
 const FEM_FILE = path.join(__dirname, 'fem.json');
+let SKINS = [];
+try { SKINS = JSON.parse(fs.readFileSync(path.join(__dirname, 'skins.json'), 'utf8')); console.log('[boot] skins: ' + SKINS.length + ' carregadas (' + SKINS.map(x => x.id).join(', ') + ')'); }
+catch (e) { console.log('[boot] skins.json ausente/invalida — somente skin Classica'); }
 const DB_FILE = path.join(__dirname, 'data', 'db.json');
 
 /* ---------------- DB (JSON persistente, escrita atômica) ---------------- */
@@ -313,8 +316,16 @@ function buildGame(ch, acc, sessId) {
   html = html.replace('<head>', '<head>' + sess);
   const i = html.indexOf(ANCHOR_MONSTROS);
   if (i < 0) throw new Error('âncora MONSTROS não encontrada');
-  const femSwitch = '\nif (window.CHAOS_ONLINE && window.CHAOS_ONLINE.sex === "f" && window.CHAOS_FEM) { HERO_SPRITE.palette = window.CHAOS_FEM.palette; HERO_SPRITE.frames = window.CHAOS_FEM.frames; }\n';
-  html = html.slice(0, i) + femSwitch + html.slice(i);
+  const skinId = ch.skin || '';
+  const sk = SKINS.find(x => x.id === skinId);
+  let skinSwitch = '';
+  if (sk) {
+    const set = sk.sex === 'f' ? sk.fem : sk.masc;
+    skinSwitch = '\nif (window.CHAOS_SKIN === undefined) { window.CHAOS_SKIN = ' + JSON.stringify({ palette: set.palette, frames: set.frames }) + '; }\nif (window.CHAOS_SKIN) { HERO_SPRITE.palette = window.CHAOS_SKIN.palette; HERO_SPRITE.frames = window.CHAOS_SKIN.frames; }\n';
+  } else {
+    skinSwitch = '\nif (window.CHAOS_ONLINE && window.CHAOS_ONLINE.sex === "f" && window.CHAOS_FEM) { HERO_SPRITE.palette = window.CHAOS_FEM.palette; HERO_SPRITE.frames = window.CHAOS_FEM.frames; }\n';
+  }
+  html = html.slice(0, i) + skinSwitch + html.slice(i);
   const j = html.indexOf(ANCHOR_NICK);
   if (j < 0) throw new Error('âncora do nick não encontrada');
   const nickSet = '\nif (window.CHAOS_ONLINE) { GameState.player.name = window.CHAOS_ONLINE.nick; }';
@@ -376,6 +387,16 @@ async function route(req, res) {
   /* ---- config pública ---- */
   if (p === '/api/config' && req.method === 'GET') {
     return json(res, 200, { sitekey: CFG.SITEKEY, google: !!CFG.GOOGLE_CLIENT_ID });
+  }
+
+  /* ---- skins disponíveis (pública) ---- */
+  if (p === '/api/skins' && req.method === 'GET') {
+    const pack = SKINS.map(sk => ({
+      id: sk.id, label: sk.label, sex: sk.sex,
+      masc: { palette: sk.masc.palette, s0: sk.masc.frames.s_0, s1: sk.masc.frames.s_1 },
+      fem: { palette: sk.fem.palette, s0: sk.fem.frames.s_0, s1: sk.fem.frames.s_1 }
+    }));
+    return json(res, 200, pack);
   }
 
   /* ---- captcha ---- */
@@ -471,15 +492,18 @@ async function route(req, res) {
     const body = await readBody(req);
     const nick = String(body.nick || '').trim();
     const sex = body.sex === 'f' ? 'f' : 'm';
+    const skinWanted = String(body.skin || '');
+    const skinOk = SKINS.find(x => x.id === skinWanted && x.sex === sex);
+    const skin = skinOk ? skinOk.id : (SKINS.find(x => x.sex === sex) || { id: 'classico' }).id;
     if (!/^[A-Za-z0-9_]{3,14}$/.test(nick)) return json(res, 400, { err: 'Nick: 3–14 letras, números ou _ (sem espaços).' });
     if ((acc.chars || []).length >= 3) return json(res, 400, { err: 'Limite de 3 personagens por conta.' });
     const k = nick.toLowerCase();
     if (db.nicks[k] && db.nicks[k] !== acc.email) return json(res, 400, { err: 'Este nick já está em uso por outro jogador.' });
     if ((acc.chars || []).some(c => c.nick.toLowerCase() === k)) return json(res, 400, { err: 'Você já tem um personagem com esse nick.' });
     db.nicks[k] = acc.email;
-    (acc.chars = acc.chars || []).push({ nick, sex, createdAt: Date.now(), reg: String(1000 + crypto.randomInt(9000)) });
+    (acc.chars = acc.chars || []).push({ nick, sex, skin, createdAt: Date.now(), reg: String(1000 + crypto.randomInt(9000)) });
     saveDB();
-    console.log('[char]', acc.email, '->', nick, sex);
+    console.log('[char]', acc.email, '->', nick, sex, 'skin:', skin);
     return json(res, 200, { ok: true, chars: acc.chars });
   }
 

@@ -200,3 +200,29 @@ Testes: `test6_embedded.js` (11/11, reproduz o iframe sem cookie) +
   volta à partida em curso (por e-mail) mas não restaura o estado do duelo.
 - Para produção pública: rode atrás de HTTPS (proxy Cloudflare/nginx) —
   o Turnstile real exige domínio próprio registrado no dashboard.
+
+## v126 — engrenagem visível (correção)
+
+O botão ✕ "Voltar ao site" (do `site/index.html`) ficava **por cima** da
+engrenagem do HUD (z-index 40 > 30) e a tapava. Mudanças:
+
+- ✕ removido do site (sair do jogo = 🚪 Deslogar no menu ⚙️);
+- engrenagem do HUD agora é **SVG** (não depende de fonte de emoji do aparelho);
+- título do painel ⚙️ também em SVG.
+
+Arquivos alterados: `site/index.html`, `chaotic_idleworld_v123.html`.
+Testes: test4 24/24 · test9 18/18 · test8 10/10 · test5 mobile OK.
+
+## v127 — 6 skins (3 masculinas + 3 femininas)
+
+Na criação do personagem (Scanner), além de nick e sexo, o jogador escolhe a
+**SKIN** com preview animado no painel: Clássico · Noturno · Volts (♂) e
+Rosa · Aurora · Solar (♀). Variações de tom de pele (incl. pele negra),
+cabelo (afro, raspado, platinado, roxo, castanho) e roupas (barras, zíper,
+listras, cores de jaqueta e pulseira).
+
+- `server/skins.json` — as 6 skins completas (gerado por `build_skins.py`);
+- `GET /api/skins` — lista pública com previews (s_0/s_1 dos dois sexos);
+- `POST /api/character` aceita `skin` (valida por id+sexo; inválida → padrão do sexo);
+- `/game` injeta `CHAOS_SKIN` (paleta+frames completos) do personagem;
+- chars antigos sem skin continuam funcionando (Classica/fem.json).
