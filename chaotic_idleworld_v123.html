@@ -1301,7 +1301,7 @@ function renderCraftingUI() {
 function doScanRoulette() {
   const cards = GameState.player.scannedCards;
   if (!cards || cards.length < 10) {
-    notify('Você precisa de pelo menos 10 Scan Cards!', 'warning');
+    showNotif('Você precisa de pelo menos 10 Scan Cards!', 'warning');
     return;
   }
   // v0.9.9-fix — A roleta só sorteia entre os monstros das 10 cartas consumidas
@@ -1310,10 +1310,17 @@ function doScanRoulette() {
     const idx = Math.floor(Math.random() * cards.length);
     pool.push(cards.splice(idx, 1)[0]);
   }
-  showRouletteAnimation(pool);
+  // v128 — ANTI-BURLA: prêmio decidido e SALVO ANTES da animação. Fechar o jogo
+  // no meio do giro não re-roleta: as 10 cartas já foram e o prêmio já está salvo.
+  const winnerCard = pool[Math.floor(Math.random() * pool.length)];
+  const enemyType = ENEMY_TYPES.find(function(e) { return e.name === winnerCard.name; }) || ENEMY_TYPES[0];
+  const prize = generateRouletteCard(enemyType);
+  GameState.player.scannedCards.push(prize);
+  saveGame(true);
+  showRouletteAnimation(pool, prize);
 }
 
-function showRouletteAnimation(pool) {
+function showRouletteAnimation(pool, prize) { // v128 — recebe o prêmio já sorteado/salvo
   const overlay = document.createElement('div');
   overlay.className = 'scan-card-overlay';
   overlay.id = 'roulette-overlay';
@@ -1334,22 +1341,27 @@ function showRouletteAnimation(pool) {
     tick++;
     if (tick >= maxTicks) {
       clearInterval(interval);
-      setTimeout(function() { finishRoulette(overlay, pool); }, 400);
+      setTimeout(function() { try { finishRoulette(overlay, prize); } catch (e) { rouletteFailSafe(overlay, prize, e); } }, 400);
     }
   }, 100);
 }
 
-function finishRoulette(overlay, pool) {
-  // v0.9.9-fix — O prêmio vem apenas dos monstros das 10 cartas entregues (com peso pelas quantidades)
-  const winnerCard = pool[Math.floor(Math.random() * pool.length)];
-  const enemyType = ENEMY_TYPES.find(function(e) { return e.name === winnerCard.name; }) || ENEMY_TYPES[0];
-  const card = generateRouletteCard(enemyType);
-  GameState.player.scannedCards.push(card);
-  saveGame();
-  updateUI();
-  renderCraftingUI();
-  overlay.innerHTML = '<div class="scan-card" style="animation:cardReveal 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;"><div class="card-rarity-glow" style="color:' + card.rarityColor + ';"></div><div class="scan-card-header"><span class="scan-card-name">' + card.name + '</span><span class="scan-card-level">Lv.' + card.level + '</span></div><div class="scan-card-image">' + getCardSpriteHTML(card.name, 72) + '</div><div class="scan-card-stats"><div class="card-stat-box"><span class="card-stat-icon">❤️</span><span class="card-stat-val">' + card.hp + '</span></div><div class="card-stat-box"><span class="card-stat-icon">⚔️</span><span class="card-stat-val">' + card.atk + '</span></div><div class="card-stat-box"><span class="card-stat-icon">🛡️</span><span class="card-stat-val">' + card.def + '</span></div><div class="card-stat-box"><span class="card-stat-icon">⚡</span><span class="card-stat-val">' + card.spd + '</span></div></div><div class="card-elements">' + card.elements.map(function(e) { return '<span class="card-element">' + e + '</span>'; }).join('') + '</div><div class="card-code">' + card.code + '</div><div class="card-iv-bar"><div class="card-iv-fill" style="width:' + card.ivPercent + '%"></div></div></div><div style="text-align:center; margin-top:16px;"><div style="font-size:16px; font-weight:700; color:#ffd54f; margin-bottom:8px; text-shadow:0 2px 4px rgba(0,0,0,0.8);">🎉 Parabéns! Você ganhou um Scan Card!</div><button class="scanner-scan-btn" onclick="document.getElementById(\'roulette-overlay\').remove();" style="font-size:13px; padding:8px 20px;">FECHAR</button></div>';
-  notify('🎰 Roleta de Scan: você ganhou ' + card.name + ' (Lv.' + card.level + ')!', 'success');
+function finishRoulette(overlay, prize) {
+  // v128 — o prêmio já foi decidido e salvo no doScanRoulette; aqui só exibe o card
+  // e o botão de confirmação (a janela NUNCA mais fica presa no "Girando...").
+  const card = prize;
+  try { renderCraftingUI(); } catch (e) {}
+  overlay.innerHTML = '<div class="scan-card" style="animation:cardReveal 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;"><div class="card-rarity-glow" style="color:' + card.rarityColor + ';"></div><div class="scan-card-header"><span class="scan-card-name">' + card.name + '</span><span class="scan-card-level">Lv.' + card.level + '</span></div><div class="scan-card-image">' + getCardSpriteHTML(card.name, 72) + '</div><div class="scan-card-stats"><div class="card-stat-box"><span class="card-stat-icon">❤️</span><span class="card-stat-val">' + card.hp + '</span></div><div class="card-stat-box"><span class="card-stat-icon">⚔️</span><span class="card-stat-val">' + card.atk + '</span></div><div class="card-stat-box"><span class="card-stat-icon">🛡️</span><span class="card-stat-val">' + card.def + '</span></div><div class="card-stat-box"><span class="card-stat-icon">⚡</span><span class="card-stat-val">' + card.spd + '</span></div></div><div class="card-elements">' + card.elements.map(function(e) { return '<span class="card-element">' + e + '</span>'; }).join('') + '</div><div class="card-code">' + card.code + '</div><div class="card-iv-bar"><div class="card-iv-fill" style="width:' + card.ivPercent + '%"></div></div></div><div style="text-align:center; margin-top:16px;"><div style="font-size:16px; font-weight:700; color:#ffd54f; margin-bottom:8px; text-shadow:0 2px 4px rgba(0,0,0,0.8);">🎉 Parabéns! Você ganhou um Scan Card!</div><button class="scanner-scan-btn" id="roulette-confirm" onclick="document.getElementById(\'roulette-overlay\').remove();" style="font-size:14px; padding:10px 26px;">✔ CONFIRMAR E SAIR</button></div>';
+  showNotif('🎰 Roleta de Scan: você ganhou ' + card.name + ' (Lv.' + card.level + ')!', 'success');
+}
+
+function rouletteFailSafe(overlay, prize, e) {
+  // v128 — rede de segurança: mesmo se algo falhar aqui, a janela SEMPRE mostra o
+  // resultado e o botão de confirmação (nada de tela travada sem saída).
+  try { console.log('[roleta] erro inesperado:', e && e.message); } catch (x) {}
+  try {
+    overlay.innerHTML = '<div style="text-align:center;"><div style="font-size:44px; margin-bottom:10px;">🎰</div><div style="font-size:18px; font-weight:800; color:#ffd54f; margin-bottom:6px; text-shadow:0 2px 6px rgba(0,0,0,0.8);">' + (prize ? prize.name : 'Scan Card') + '</div><div style="font-size:12px; color:#8a9a70; margin-bottom:16px;">O prêmio já foi salvo no seu inventário.</div><button class="scanner-scan-btn" id="roulette-confirm" onclick="document.getElementById(\'roulette-overlay\').remove();" style="font-size:14px; padding:10px 26px;">✔ CONFIRMAR E SAIR</button></div>';
+  } catch (x) { try { overlay.remove(); } catch (y) {} }
 }
 
 function generateRouletteCard(enemyType) {
@@ -1364,7 +1376,7 @@ function generateRouletteCard(enemyType) {
   let rarity = 'common';
   if (ivAvg >= 28) rarity = 'legendary'; else if (ivAvg >= 23) rarity = 'epic'; else if (ivAvg >= 18) rarity = 'rare'; else if (ivAvg >= 12) rarity = 'uncommon';
   const rarityData = RARITIES[rarity];
-  const elements = getCardElements(enemyType.name);
+  const elements = getCardElements({ str: ivs.hp, dex: ivs.atk, vit: ivs.def, int: ivs.spd }); // v128 — ivs corretos (antes: string → NaN, sem estrelas/coroas)
   const code = generateCardCode();
   return { name: enemyType.name, sprite: getCardSprite(enemyType.name), level: level, hp: hp, atk: atk, def: def, spd: spd, ivs: ivs, ivAvg: ivAvg, ivPercent: ivPercent, rarity: rarity, rarityName: rarityData.name, rarityColor: rarityData.color, elements: elements, code: code, scannedAt: Date.now(), source: 'roleta' };
 }
@@ -1449,7 +1461,7 @@ const MISSION_TEMPLATES = [
 const HERO_SPRITE = {
   w: 48, h: 72,
   scale: 0.85, // v1.5 — heroi menor (proporcional ao mapa/arvores)
-  body: { w: 22, h: 26, ox: 13, oy: 44 },
+  body: { w: 22, h: 18, ox: 13, oy: 52 }, // v132 — corpo mais baixo: o herói não engasga em quinas diagonais (ex.: beira de água funda)
   palette: ["#0d0e13", "#261a21", "#171015", "#3f2b34", "#c22636", "#edb98a", "#c98f66", "#262934", "#1a1c25", "#353a48", "#3a3f4e", "#2b2e3a", "#ef3e52", "#b32433", "#7d1420", "#20232e", "#14161e", "#111318", "#1d2129", "#3fe3ea", "#f2f3f7", "#1d2d40", "#45262d", "rgba(0,0,0,0.24)", "rgba(63,227,234,0.22)", "rgba(239,62,82,0.19)"],
   frames: {
     's_0': '48.17.1a9.1a20.16.1a1c1a2.2a3.1a1c1a2.2a15.14.2a2b3a2b3a2b3a2b1a14.13.1a9b2d2e7b1a13.13.1a2b4d4b3e7b1a13.12.1a12b3e3d4b1a12.12.1a12b2e8b1a12.12.1a12b2e8b1a12.12.1a12b2e8b1a12.12.1a12b2e8b1a12.12.1a12b2e8b1a12.12.1a22b1a12.12.1a3b1f2b2f3b2f2b2f5b1a12.12.1a3b1f4w3b1f4w1f5b1a12.12.1a2b1a14f5b1a12.12.1a2b3f2u6f2u5f2b1a12.12.1a2b1g2f2v6f2v4f1g2c1a12.12.1a2c8f1g9f2c1a12.12.1a2c1a16f3a13.13.3a6f3g7f1a15.15.1a2f12g2f1a15.15.1a2f12g2f2a14.14.1a19l1a13.13.2a19k2a12.12.1a23k1a11.9.3a1i23k1h3a8.8.1a4h23l4h1a7.7.1a1i31h1i1a6.7.1a1i3h2j6h1n2h1i4h1n4h3i1j3h1i1a6.7.1a1i3h2j6h1n1t1h1i4h1n4h3i1j3h1i1a6.7.1a1i3h2j6h1n2m1i4h1m4h3i1j3h1i1a6.7.1a1i3h2j3h2n1h1n2m1i1h2n6h3i1j3h1i1a6.7.1a1i3h2j3h2n1h3m1i1h2n2h2o2h3i1j3h1i1a6.7.1a1i3h2j3h2n2h2m1i1h2n2h2o2h3i1j3h1i1a6.7.1a1i3h2j3h2n2h2m1i1h2n2h2o2h3i1j3h1i1a6.7.1a1i3h2j3h2n2h2m1i1h2n2h2o2h3i1j3h1i1a6.7.1a1i3h2j3h2n2h2m1i1h2n2h2o2h3i1j3h1i1a6.7.1a1i3h2j3h2n2h2m1i1h2n6h3i1j3h1i1a6.7.1a1i3h2j7h2m1i9h3i1j3h1i1a6.7.1a1i3h2j7h2m1i9h3i1j3h1i1a6.7.1a1i3h1a1j9h1i9h3i1s3t1s1a6.8.1a3h1a1j9h1i9h3i1s3t1s1a6.8.1a3h1a1j9h1i9h3i5s1a6.8.1a3k1a1j9h1i9h3i1a3k1a1y6.8.1a3k1a1j9h1i9h3i1a3k1a7.8.1a3f2a22i1a3f1a7.8.1a3f1a1.1a3n1o5n1o5n1o3n3a3f1a7.9.3a3.1a6p5q6p1a3.3a8.15.1a6p5q6p1a14.16.1a4p6q5p1a15.16.1a4p6q5p1a15.16.1a4p1q4a1q5p1a15.16.1a4p1q1a2.1a1q5p1a15.16.1a4p1q1a2.1a1q5p1a15.16.1a4p1q1a2.1a1q5p1a15.16.1a1p4q1a2.1a1q1p3q1p1a15.16.1a4p1q1a2.1a1q5p1a15.16.1a4p1q1a2.1a1q5p1a15.16.1a4p1q1a2.1a1q5p1a15.16.1a4p1q1a2.1a1q5p1a15.16.1a4p1q1a2.1a1q5p1a15.16.1a4p1q1a2.1a1q5p1a15.16.1a4p1q1a2.1a1q5p1a15.16.1a4p1q1a2.1a1q5p1a15.15.1a7r2a8r1a14.15.1a7r2a8r1a14.15.1a7r1a1x1a7r1a14.14.1x1a7n1a1x1a7n1a14.12.4x7a3x7a3x12.14.20x14.21.6x21.',
@@ -3483,8 +3495,755 @@ function drawSpider(ctx) {
   drawPixelRect(ctx, 4, 12, 2, 6, legColor); drawPixelRect(ctx, 26, 12, 2, 6, legColor);
   drawPixelRect(ctx, 6, 20, 4, 2, legColor); drawPixelRect(ctx, 22, 20, 4, 2, legColor);
 }
+// v129 — folha caindo, vento nas copas e agua por tile
+function drawLeaf(ctx) {
+  ctx.fillStyle = '#4fa862'; ctx.fillRect(2, 1, 8, 5);
+  ctx.fillStyle = '#63c176'; ctx.fillRect(3, 2, 5, 2);
+  ctx.fillStyle = '#3d8242'; ctx.fillRect(0, 3, 3, 2);
+}
+function spawnFallingLeaf(scene) {
+  if (!scene.leafTrees || !scene.leafTrees.length) return;
+  if (scene.leavesGroup && scene.leavesGroup.getChildren().length >= 14) return;
+  const tree = scene.leafTrees[Math.floor(Math.random() * scene.leafTrees.length)];
+  if (!tree || !tree.active) return;
+  const h = tree.displayHeight || 100;
+  const x = tree.x + (Math.random() * 56 - 28);
+  const y = tree.y - h * 0.55 + (Math.random() * 20 - 10);
+  const leaf = scene.add.image(x, y, 'leaf').setDepth(9.3).setScale(0.7 + Math.random() * 0.6).setAlpha(0.95);
+  if (scene.leavesGroup) scene.leavesGroup.add(leaf);
+  scene.tweens.add({ targets: leaf, y: y + 70 + Math.random() * 50, x: x + (Math.random() * 48 - 24), angle: Math.random() < 0.5 ? -160 : 160, alpha: 0, duration: 2600 + Math.random() * 1800, delay: Math.random() * 400, ease: 'Sine.In', onComplete: function() { try { if (scene.leavesGroup) scene.leavesGroup.remove(leaf); leaf.destroy(); } catch (e) {} } });
+}
+function drawGrassDecor(ctx, kind) { // v131 — pedras, flores e tufos (pixel art)
+  if (kind === 0) { // pedra grande com sombra
+    ctx.fillStyle = 'rgba(0,0,0,0.16)'; ctx.beginPath(); ctx.ellipse(17, 23, 8, 3.2, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#98a1aa'; ctx.beginPath(); ctx.arc(15, 18, 6, 0, 7); ctx.fill();
+    ctx.fillStyle = '#b6bec6'; ctx.beginPath(); ctx.arc(13.5, 16.5, 2.6, 0, 7); ctx.fill();
+    ctx.fillStyle = '#7d858e'; ctx.beginPath(); ctx.arc(17, 20, 3, 0, 7); ctx.fill();
+  } else if (kind === 1) { // pedrinhas
+    ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(10, 20, 4, 1.8, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(23, 13, 3.4, 1.6, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#a3abb3'; ctx.beginPath(); ctx.arc(9.5, 18.5, 2.6, 0, 7); ctx.fill();
+    ctx.fillStyle = '#c2c9d0'; ctx.beginPath(); ctx.arc(8.8, 17.8, 1.1, 0, 7); ctx.fill();
+    ctx.fillStyle = '#949ca4'; ctx.beginPath(); ctx.arc(22.5, 12.5, 2.1, 0, 7); ctx.fill();
+  } else if (kind >= 2 && kind <= 5) { // flores: branca, rosa, vermelha, azul
+    const cols = { 2: '#f7f7f7', 3: '#ff9ec4', 4: '#ef5f5f', 5: '#7fb2ff' };
+    const c = cols[kind];
+    const flor = function(fx, fy) {
+      ctx.fillStyle = '#3a7a30'; ctx.fillRect(fx, fy + 2, 1, 3);
+      ctx.fillStyle = c;
+      ctx.fillRect(fx - 1, fy - 1, 3, 1); ctx.fillRect(fx - 1, fy + 1, 3, 1); ctx.fillRect(fx - 1, fy, 1, 3); ctx.fillRect(fx + 1, fy, 1, 3);
+      ctx.fillStyle = '#ffd54f'; ctx.fillRect(fx, fy, 1, 1);
+    };
+    flor(9, 12); flor(21, 21);
+  } else if (kind === 7) { // v132 — arbusto pequeno
+    ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.ellipse(16, 24, 8, 2.6, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#2f6b34'; ctx.beginPath(); ctx.arc(16, 18, 7, 0, 7); ctx.fill();
+    ctx.fillStyle = '#3d8242'; ctx.beginPath(); ctx.arc(13.5, 15.5, 4.5, 0, 7); ctx.fill();
+    ctx.fillStyle = '#57a355'; ctx.fillRect(11, 12, 2, 2); ctx.fillRect(18, 16, 2, 2);
+  } else if (kind === 8) { // v132 — arbusto largo
+    ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.ellipse(16, 25, 12, 2.6, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#2f6b34'; ctx.beginPath(); ctx.arc(10, 19, 5.5, 0, 7); ctx.arc(22, 19, 5.5, 0, 7); ctx.fill();
+    ctx.fillStyle = '#3d8242'; ctx.beginPath(); ctx.arc(16, 16, 6, 0, 7); ctx.fill();
+    ctx.fillStyle = '#57a355'; ctx.fillRect(13, 12, 2, 2); ctx.fillRect(20, 14, 2, 2); ctx.fillRect(8, 16, 2, 2);
+    ctx.fillStyle = '#ff9ec4'; ctx.fillRect(15, 13, 2, 2);
+  } else if (kind === 9) { // v132 — capim alto com sementes
+    ctx.fillStyle = 'rgba(0,0,0,0.10)'; ctx.beginPath(); ctx.ellipse(16, 25, 9, 2.2, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#3a7a30';
+    ctx.fillRect(10, 14, 2, 11); ctx.fillRect(14, 10, 2, 15); ctx.fillRect(18, 13, 2, 12); ctx.fillRect(22, 16, 2, 9);
+    ctx.fillStyle = '#57a355';
+    ctx.fillRect(11, 15, 1, 5); ctx.fillRect(15, 11, 1, 6); ctx.fillRect(19, 14, 1, 5);
+    ctx.fillStyle = '#c9b86a'; ctx.fillRect(14, 8, 2, 3); ctx.fillRect(18, 11, 2, 3);
+  } else if (kind === 10) { // v134 — cogumelo vermelho
+    ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(16, 25, 6, 2, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#e8e0d0'; ctx.fillRect(14, 17, 4, 7);
+    ctx.fillStyle = '#d84a3a'; ctx.beginPath(); ctx.ellipse(16, 16, 7, 5, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#f7f0e4'; ctx.fillRect(12, 14, 2, 2); ctx.fillRect(18, 15, 2, 2); ctx.fillRect(15, 12, 2, 2);
+  } else if (kind === 11) { // v134 — cogumelo marrom
+    ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(16, 25, 6, 2, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#e8e0d0'; ctx.fillRect(12, 18, 4, 6); ctx.fillRect(19, 19, 3, 5);
+    ctx.fillStyle = '#8a6a4a'; ctx.beginPath(); ctx.ellipse(13.5, 17, 5, 3.6, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(20.5, 18, 4, 3, 0, 0, 7); ctx.fill();
+  } else { // tufo de grama escura
+    ctx.fillStyle = '#3a7a30';
+    ctx.fillRect(12, 20, 1, 3); ctx.fillRect(14, 18, 1, 5); ctx.fillRect(16, 21, 1, 3);
+    ctx.fillStyle = '#57a355'; ctx.fillRect(13, 19, 1, 2);
+  }
+}
+function pathMaskAt(mapData, tx, ty) { // v131 — vizinhos de caminho/ponte
+  const H1 = mapData.length, W1 = mapData[0].length;
+  const isP = function(x, y) { if (y < 0 || y >= H1 || x < 0 || x >= W1) return false; const t = mapData[y][x]; return t === 'path' || t === 'bridge'; };
+  let m = 0;
+  if (isP(tx, ty - 1)) m |= 1;
+  if (isP(tx + 1, ty)) m |= 2;
+  if (isP(tx, ty + 1)) m |= 4;
+  if (isP(tx - 1, ty)) m |= 8;
+  return m;
+}
+function pathTex(scene, mask, v) { // v131 — trilha clara com borda arredondada sobre a grama
+  const key = 'pt_' + mask + '_' + v;
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 32; cv.height = 32;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#cdb88e'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = 'rgba(168,146,100,0.18)'; // v139 — pontinhos quase imperceptíveis (sem grid visível)
+  ctx.fillRect((3 + (mask * 7 + v * 9) % 22), (5 + (mask * 13 + v * 11) % 25), 2, 1);
+  ctx.fillRect((18 + (mask * 5 + v * 3) % 24), (17 + (mask * 11 + v * 7) % 24), 2, 1);
+  const RIM = '#a89060', GRASS = '#4a8c3f';
+  const B = 2;
+  ctx.fillStyle = GRASS;
+  if (!(mask & 1)) { ctx.fillRect(0, 0, 32, B); ctx.fillStyle = RIM; ctx.fillRect(0, B, 32, 2); ctx.fillStyle = GRASS; }
+  if (!(mask & 4)) { ctx.fillRect(0, 32 - B, 32, B); ctx.fillStyle = RIM; ctx.fillRect(0, 32 - B - 2, 32, 2); ctx.fillStyle = GRASS; }
+  if (!(mask & 2)) { ctx.fillRect(32 - B, 0, B, 32); ctx.fillStyle = RIM; ctx.fillRect(32 - B - 2, 0, 2, 32); ctx.fillStyle = GRASS; }
+  if (!(mask & 8)) { ctx.fillRect(0, 0, B, 32); ctx.fillStyle = RIM; ctx.fillRect(B, 0, 2, 32); ctx.fillStyle = GRASS; }
+  const qc = function(cx0, cy0, a0, a1, on) {
+    if (!on) return;
+    ctx.fillStyle = GRASS;
+    ctx.beginPath(); ctx.moveTo(cx0, cy0); ctx.arc(cx0, cy0, 5, a0, a1); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = RIM; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx0, cy0, 6.5, a0, a1); ctx.stroke();
+  };
+  qc(0, 0, 0, Math.PI / 2, (mask & 1) && (mask & 8));
+  qc(32, 0, Math.PI / 2, Math.PI, (mask & 1) && (mask & 2));
+  qc(32, 32, Math.PI, Math.PI * 1.5, (mask & 2) && (mask & 4));
+  qc(0, 32, Math.PI * 1.5, Math.PI * 2, (mask & 4) && (mask & 8));
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function reedTex(scene) { // v132 — taboa (planta de margem)
+  const key = 'reed';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 20; cv.height = 30;
+  const c = cv.getContext('2d');
+  const stalk = function(x, h, lean) {
+    c.strokeStyle = '#4f8f3f'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(x, 30); c.quadraticCurveTo(x + lean, 30 - h * 0.6, x + lean * 1.6, 30 - h); c.stroke();
+    c.fillStyle = '#7a5a2a'; c.fillRect(x + lean * 1.6 - 1.5, 30 - h - 5, 3, 6);
+    c.fillStyle = '#5fbf7f'; c.fillRect(x + lean * 0.8 - 1, 30 - h * 0.55, 2, 4);
+  };
+  stalk(4, 16, 1); stalk(9, 22, -1); stalk(14, 14, 2);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function drawPlanter(ctx) { // v132 — canteiro/vaso de flores (Pórtico)
+  ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(20, 33, 12, 3, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#3a7a30'; ctx.fillRect(10, 16, 2, 8); ctx.fillRect(27, 14, 2, 9); ctx.fillRect(19, 12, 2, 10);
+  const fl = function(fx, fy, c) { ctx.fillStyle = c; ctx.fillRect(fx - 2, fy, 5, 2); ctx.fillRect(fx, fy - 2, 2, 5); ctx.fillStyle = '#ffd54f'; ctx.fillRect(fx, fy, 2, 2); };
+  fl(11, 14, '#ef5f5f'); fl(20, 10, '#ff9ec4'); fl(28, 12, '#f7f7f7');
+  ctx.fillStyle = '#b35a3a'; ctx.fillRect(8, 24, 24, 5);
+  ctx.fillStyle = '#c96a45'; ctx.fillRect(10, 29, 20, 4);
+  ctx.fillStyle = '#8a4530'; ctx.fillRect(8, 24, 24, 2);
+  ctx.fillStyle = '#a05540'; ctx.fillRect(7, 23, 26, 3);
+}
+function addDriftFog(scene, alpha) { // v132 — névoa leve que desliza (cenas externas)
+  if (!scene.textures.exists('fogsoft')) {
+    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512;
+    const c = cv.getContext('2d');
+    for (let i = 0; i < 24; i++) {
+      const x = Math.random() * 512, y = Math.random() * 512, r = 60 + Math.random() * 90;
+      const g = c.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, 'rgba(255,255,255,0.5)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+    }
+    scene.textures.addCanvas('fogsoft', cv);
+  }
+  const fog = scene.add.tileSprite(0, 0, scene.scale.width, scene.scale.height, 'fogsoft').setOrigin(0, 0).setScrollFactor(0).setDepth(9.5).setAlpha(alpha || 0.08);
+  scene.tweens.add({ targets: fog, tilePositionX: '+=512', duration: 100000, repeat: -1 });
+  scene.tweens.add({ targets: fog, tilePositionY: '-=256', duration: 140000, repeat: -1 });
+}
+function butterflyTex(scene) { // v133 — borboleta (asas rosas)
+  const key = 'butterfly';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 14; cv.height = 11;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#3b2f4e'; c.fillRect(6, 3, 2, 6);
+  c.fillStyle = '#ff9ec4'; c.beginPath(); c.ellipse(3.5, 4, 4, 3, 0, 0, 7); c.fill();
+  c.fillStyle = '#ffb7d5'; c.beginPath(); c.ellipse(10.5, 4, 4, 3, 0, 0, 7); c.fill();
+  c.fillStyle = '#ef6fa8'; c.beginPath(); c.ellipse(4, 8, 2.6, 2, 0, 0, 7); c.fill();
+  c.beginPath(); c.ellipse(10, 8, 2.6, 2, 0, 0, 7); c.fill();
+  c.fillStyle = '#5b4a75'; c.fillRect(5, 1, 1, 2); c.fillRect(8, 1, 1, 2);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function glowTex(scene, key, color) { // v133 — ponto brilhante radial (vagalume)
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 16; cv.height = 16;
+  const c = cv.getContext('2d');
+  const g = c.createRadialGradient(8, 8, 0, 8, 8, 8);
+  g.addColorStop(0, color); g.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = g; c.beginPath(); c.arc(8, 8, 8, 0, 7); c.fill();
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function sparkleTex(scene) { // v133 — brilho de 4 pontas que cintila na água
+  const key = 'sparkle';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 12; cv.height = 12;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(255,255,255,0.95)';
+  c.fillRect(5, 0, 2, 12); c.fillRect(0, 5, 12, 2);
+  c.fillStyle = 'rgba(255,255,255,0.55)'; c.fillRect(4, 4, 4, 4);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function lilyTex(scene) { // v133 — vitória-régia
+  const key = 'lily';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 22; cv.height = 20;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(0,0,0,0.12)'; c.beginPath(); c.ellipse(11, 13, 9, 4, 0, 0, 7); c.fill();
+  c.fillStyle = '#3f8f4a'; c.beginPath(); c.ellipse(11, 10, 9, 6.5, 0, 0, 7); c.fill();
+  c.fillStyle = '#57a355'; c.beginPath(); c.ellipse(11, 9, 7.5, 5, 0, 0, 7); c.fill();
+  c.fillStyle = '#3f8f4a'; c.beginPath(); c.moveTo(11, 9); c.lineTo(20, 6); c.lineTo(20, 12); c.closePath(); c.fill();
+  c.fillStyle = '#ff9ec4'; c.fillRect(9, 7, 3, 3);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function cloudShadowTex(scene) { // v133 — sombra de nuvem (blobs macios escuros)
+  const key = 'cloudsh';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 400; cv.height = 260;
+  const c = cv.getContext('2d');
+  for (let i = 0; i < 7; i++) {
+    const x = 80 + Math.random() * 240, y = 70 + Math.random() * 120, r = 50 + Math.random() * 55;
+    const g = c.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, 'rgba(10,20,40,0.55)'); g.addColorStop(1, 'rgba(10,20,40,0)');
+    c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+  }
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function flagTex(scene) { // v133 — bandeira de Dromo (mastro + flâmula)
+  const key = 'flag';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 26; cv.height = 52;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(0,0,0,0.16)'; c.beginPath(); c.ellipse(8, 49, 6, 2, 0, 0, 7); c.fill();
+  c.fillStyle = '#5a4632'; c.fillRect(6, 4, 3, 45);
+  c.fillStyle = '#ef3e52'; c.beginPath(); c.moveTo(9, 6); c.lineTo(24, 10); c.lineTo(9, 16); c.closePath(); c.fill();
+  c.fillStyle = '#3fe3ea'; c.fillRect(11, 9, 5, 3);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function lanternTex(scene) { // v133 — lanterna com halo quente
+  const key = 'lantern';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 48; cv.height = 64;
+  const c = cv.getContext('2d');
+  const g = c.createRadialGradient(24, 30, 2, 24, 30, 24);
+  g.addColorStop(0, 'rgba(255,200,110,0.5)'); g.addColorStop(1, 'rgba(255,200,110,0)');
+  c.fillStyle = g; c.beginPath(); c.arc(24, 30, 24, 0, 7); c.fill();
+  c.fillStyle = '#2b2e3a'; c.fillRect(21, 18, 6, 40);
+  c.fillStyle = '#45262d'; c.fillRect(16, 8, 16, 14);
+  c.fillStyle = '#ffd54f'; c.fillRect(19, 11, 10, 8);
+  c.fillStyle = '#2b2e3a'; c.fillRect(14, 5, 20, 3);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function birdTex(scene) { // v134 — pássaro (silhueta com asas)
+  const key = 'bird';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 14; cv.height = 8;
+  const c = cv.getContext('2d');
+  c.strokeStyle = '#3a3f4e'; c.lineWidth = 2; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(1, 3); c.quadraticCurveTo(6, 0.5, 7, 4); c.quadraticCurveTo(8, 0.5, 13, 3); c.stroke();
+  c.fillStyle = '#3a3f4e'; c.beginPath(); c.ellipse(7, 5.4, 3, 1.8, 0, 0, 7); c.fill();
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function smokeTex(scene) { // v134 — borrão de fumaça
+  const key = 'smokep';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 16; cv.height = 16;
+  const c = cv.getContext('2d');
+  const g = c.createRadialGradient(8, 8, 0, 8, 8, 8);
+  g.addColorStop(0, 'rgba(215,215,220,0.85)'); g.addColorStop(1, 'rgba(215,215,220,0)');
+  c.fillStyle = g; c.beginPath(); c.arc(8, 8, 8, 0, 7); c.fill();
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function bunnyTex(scene) { // v134 — coelho
+  const key = 'bunny';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 14; cv.height = 12;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(0,0,0,0.14)'; c.beginPath(); c.ellipse(7, 11, 5, 1.4, 0, 0, 7); c.fill();
+  c.fillStyle = '#a8896a'; c.fillRect(4, 1, 2, 4); c.fillRect(8, 1, 2, 4);
+  c.fillStyle = '#c4a684'; c.beginPath(); c.ellipse(7, 8, 5, 3.4, 0, 0, 7); c.fill();
+  c.fillStyle = '#f2ede4'; c.beginPath(); c.arc(2.4, 8.6, 1.6, 0, 7); c.fill();
+  c.fillStyle = '#2b2e3a'; c.fillRect(11, 7, 1, 1);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function fishTex(scene) { // v134 — peixe saltando (laranja)
+  const key = 'fishj';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 14; cv.height = 8;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#ef8a3a'; c.beginPath(); c.ellipse(7, 4, 5, 2.6, 0, 0, 7); c.fill();
+  c.fillStyle = '#d86a20'; c.beginPath(); c.moveTo(12, 4); c.lineTo(14, 1.5); c.lineTo(14, 6.5); c.closePath(); c.fill();
+  c.fillStyle = '#2b2e3a'; c.fillRect(3, 3, 1, 1);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function fishRingTex(scene) { // v134 — anel de splash
+  const key = 'fishring';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 24; cv.height = 12;
+  const c = cv.getContext('2d');
+  c.strokeStyle = 'rgba(255,255,255,0.85)'; c.lineWidth = 1.5;
+  c.beginPath(); c.ellipse(12, 6, 10, 4.4, 0, 0, 7); c.stroke();
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function addBirdFlocks(scene, w, h) { // v134 — bandos de pássaros cruzando o céu (com sombra no chão)
+  birdTex(scene);
+  const shKey = glowTex(scene, 'birdsh', 'rgba(0,0,0,0.45)');
+  const flock = function() {
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const y0 = 40 + Math.random() * Math.min(240, h * 0.32);
+    const dur = 9000 + Math.random() * 4000;
+    for (let i = 0; i < 3; i++) {
+      const sx = dir > 0 ? -40 - i * 36 : w + 40 + i * 36;
+      const bd = scene.add.image(sx, y0 + (i % 2) * 14, 'bird').setDepth(10.5).setScale(1 + Math.random() * 0.4);
+      if (dir < 0) bd.setFlipX(true);
+      scene.tweens.add({ targets: bd, scaleY: bd.scaleY * 0.4, duration: 170 + i * 15, yoyo: true, repeat: -1 });
+      scene.tweens.add({ targets: bd, x: dir > 0 ? w + 60 : -60, y: y0 + (Math.random() * 50 - 25), duration: dur, onComplete: function() { bd.destroy(); } });
+      const sy = Math.min(h - 30, y0 + 170 + i * 12);
+      const sh = scene.add.image(sx, sy, shKey).setDepth(0.9).setScale(0.9).setAlpha(0.13);
+      scene.tweens.add({ targets: sh, x: dir > 0 ? w + 60 : -60, duration: dur, onComplete: function() { sh.destroy(); } });
+    }
+  };
+  flock();
+  scene.time.addEvent({ delay: 7000, loop: true, callback: flock, callbackScope: scene });
+}
+function duckTex(scene) { // v135 — pato nadador
+  const key = 'duck';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 18; cv.height = 14;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(0,0,0,0.10)'; c.beginPath(); c.ellipse(9, 12, 7, 1.6, 0, 0, 7); c.fill();
+  c.fillStyle = '#7a5c3e'; c.beginPath(); c.ellipse(8, 8, 6, 3.4, 0, 0, 7); c.fill();
+  c.fillStyle = '#93744f'; c.beginPath(); c.ellipse(7, 7, 4, 2.2, 0, 0, 7); c.fill();
+  c.fillStyle = '#7a5c3e'; c.beginPath(); c.arc(13, 4.6, 2.2, 0, 7); c.fill();
+  c.fillStyle = '#e8912a'; c.fillRect(14.5, 4, 2.5, 1.6);
+  c.fillStyle = '#2b2e3a'; c.fillRect(13.4, 3.4, 1, 1);
+  c.fillStyle = '#5f4630'; c.beginPath(); c.ellipse(8, 8.4, 3.4, 1.6, 0, 0, 7); c.fill();
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function libTex(scene) { // v135 — libélula azul
+  const key = 'dragonfly';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 16; cv.height = 12;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(210,240,255,0.75)';
+  c.beginPath(); c.ellipse(5.5, 3.5, 4, 1.6, -0.5, 0, 7); c.fill();
+  c.beginPath(); c.ellipse(5.5, 8.5, 4, 1.6, 0.5, 0, 7); c.fill();
+  c.fillStyle = '#2fa8c8'; c.fillRect(6, 5, 9, 1.6);
+  c.fillStyle = '#3fd0e8'; c.beginPath(); c.arc(4.5, 6, 2, 0, 7); c.fill();
+  c.fillStyle = '#2b2e3a'; c.fillRect(3.6, 5.2, 1, 1);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function frogTex(scene) { // v136 — sapo
+  const key = 'frog';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 16; cv.height = 12;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(0,0,0,0.14)'; c.beginPath(); c.ellipse(8, 11, 6, 1.4, 0, 0, 7); c.fill();
+  c.fillStyle = '#4f8f3f'; c.beginPath(); c.ellipse(8, 8, 5.5, 3.4, 0, 0, 7); c.fill();
+  c.fillStyle = '#63a84e'; c.beginPath(); c.ellipse(8, 7, 4.2, 2.4, 0, 0, 7); c.fill();
+  c.fillStyle = '#4f8f3f'; c.beginPath(); c.arc(4.6, 4.4, 1.9, 0, 7); c.arc(11.4, 4.4, 1.9, 0, 7); c.fill();
+  c.fillStyle = '#f2f3f7'; c.beginPath(); c.arc(4.6, 4.2, 1.1, 0, 7); c.arc(11.4, 4.2, 1.1, 0, 7); c.fill();
+  c.fillStyle = '#2b2e3a'; c.fillRect(4.2, 3.9, 1, 1); c.fillRect(11, 3.9, 1, 1);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function bubbleTex(scene) { // v136 — bolha de água
+  const key = 'bubble';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 8; cv.height = 8;
+  const c = cv.getContext('2d');
+  c.strokeStyle = 'rgba(230,248,255,0.9)'; c.lineWidth = 1.2;
+  c.beginPath(); c.arc(4, 4, 2.8, 0, 7); c.stroke();
+  c.fillStyle = 'rgba(255,255,255,0.85)'; c.fillRect(2.4, 2.2, 1.2, 1.2);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function crystalTex(scene) { // v136 — cristal brilhante (mineral de Chaotic)
+  const key = 'crystal';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 18; cv.height = 16;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(0,0,0,0.15)'; c.beginPath(); c.ellipse(9, 14.5, 7, 1.6, 0, 0, 7); c.fill();
+  c.fillStyle = '#4fc3d8'; c.beginPath(); c.moveTo(4, 14); c.lineTo(7, 3); c.lineTo(10, 14); c.closePath(); c.fill();
+  c.fillStyle = '#7fe3ea'; c.beginPath(); c.moveTo(8, 14); c.lineTo(11.5, 5); c.lineTo(15, 14); c.closePath(); c.fill();
+  c.fillStyle = '#d8fbff'; c.fillRect(7.4, 6, 1.2, 5); c.fillRect(11.2, 8, 1, 4);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function rayTex(scene) { // v136 — feixe de luz diagonal
+  const key = 'godray';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 140; cv.height = 520;
+  const c = cv.getContext('2d');
+  const g = c.createLinearGradient(0, 0, 0, 520);
+  g.addColorStop(0, 'rgba(255,244,200,0.55)'); g.addColorStop(1, 'rgba(255,244,200,0)');
+  c.fillStyle = g; c.fillRect(0, 0, 140, 520);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function dropTex(scene) { // v136 — gota de água (fonte)
+  const key = 'drop';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 6; cv.height = 9;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#9fd8f7'; c.beginPath(); c.arc(3, 5.5, 2.6, 0, 7); c.fill();
+  c.beginPath(); c.moveTo(1.2, 4.5); c.quadraticCurveTo(3, -1, 4.8, 4.5); c.closePath(); c.fill();
+  c.fillStyle = 'rgba(255,255,255,0.8)'; c.fillRect(1.8, 4.6, 1.2, 1.4);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function sunflowerTex(scene) { // v139 — girassol da margem (referência)
+  const key = 'sunflower';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 16; cv.height = 30;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(0,0,0,0.15)'; c.beginPath(); c.ellipse(8, 28, 5, 1.6, 0, 0, 7); c.fill();
+  c.fillStyle = '#3f8f3f'; c.fillRect(7, 12, 2, 16);
+  c.fillStyle = '#57a355'; c.beginPath(); c.ellipse(5, 19, 3, 1.4, -0.5, 0, 7); c.fill();
+  c.beginPath(); c.ellipse(11, 23, 3, 1.4, 0.5, 0, 7); c.fill();
+  c.fillStyle = '#f7c531'; c.beginPath(); c.arc(8, 8, 6, 0, 7); c.fill();
+  c.fillStyle = '#ffdd55'; c.beginPath(); c.arc(7, 7, 4.5, 0, 7); c.fill();
+  c.fillStyle = '#6b4a1e'; c.beginPath(); c.arc(8, 8, 2.6, 0, 7); c.fill();
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function boulderTex(scene) { // v141 — pedra grande da margem (referência)
+  const key = 'boulder';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 30; cv.height = 24;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(0,0,0,0.16)'; c.beginPath(); c.ellipse(15, 21, 12, 2.4, 0, 0, 7); c.fill();
+  c.fillStyle = '#7d8590'; c.beginPath(); c.arc(15, 13, 10, 0, 7); c.arc(8, 16, 6, 0, 7); c.arc(22, 16, 6, 0, 7); c.fill();
+  c.fillStyle = '#a8b0ba'; c.beginPath(); c.ellipse(12, 9, 5, 3.4, 0, 0, 7); c.fill();
+  c.fillStyle = '#c2c9d1'; c.fillRect(10, 7, 3, 2);
+  c.fillStyle = '#5a626c'; c.fillRect(15, 8, 1.4, 7);
+  c.fillStyle = '#5f8f4a'; c.beginPath(); c.ellipse(21, 17, 4, 2, 0, 0, 7); c.fill();
+  c.fillRect(20, 12, 2, 2);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function brailerTex(scene) { // v141 — guarda-corpo da ponte
+  const key = 'brailer';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 10; cv.height = 36;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#5a3a1a'; c.fillRect(1, 4, 3, 30); c.fillRect(6, 4, 3, 30);
+  c.fillStyle = '#7d5f40'; c.fillRect(0, 0, 10, 5);
+  c.fillStyle = '#937252'; c.fillRect(0, 0, 10, 1);
+  c.fillStyle = '#6a4a2a'; c.fillRect(0, 15, 10, 3);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function turtleTex(scene) { // v140 — tartaruga nadadora
+  const key = 'turtle';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 20; cv.height = 14;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(0,0,0,0.10)'; c.beginPath(); c.ellipse(10, 12, 8, 1.4, 0, 0, 7); c.fill();
+  c.fillStyle = '#2e7d4f'; c.beginPath(); c.ellipse(11, 7, 6.5, 4.2, 0, 0, 7); c.fill();
+  c.fillStyle = '#3f9a5f'; c.beginPath(); c.ellipse(10, 6, 5, 3, 0, 0, 7); c.fill();
+  c.fillStyle = '#2e7d4f'; c.fillRect(8, 4, 1.6, 4); c.fillRect(11, 5, 1.6, 4);
+  c.fillStyle = '#57a355'; c.fillRect(6, 3, 1.4, 1.4);
+  c.fillStyle = '#4f8f3f'; c.beginPath(); c.arc(3.5, 6.5, 2, 0, 7); c.fill();
+  c.fillStyle = '#2b2e3a'; c.fillRect(2.6, 5.8, 1, 1);
+  c.fillStyle = '#4f8f3f'; c.beginPath(); c.ellipse(8, 11, 2, 1.2, 0.6, 0, 7); c.fill();
+  c.beginPath(); c.ellipse(14, 10.5, 2, 1.2, -0.6, 0, 7); c.fill();
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function barrelTex(scene) { // v140 — barril de vila (referência)
+  const key = 'barrel';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 18; cv.height = 22;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(0,0,0,0.16)'; c.beginPath(); c.ellipse(9, 20, 7.5, 1.8, 0, 0, 7); c.fill();
+  c.fillStyle = '#8a5a2e'; c.fillRect(3, 3, 12, 17);
+  c.fillStyle = '#a06d38'; c.fillRect(4.5, 3, 4, 17);
+  c.fillStyle = '#6b421e'; c.fillRect(3, 3, 2, 17); c.fillRect(13, 3, 2, 17);
+  c.fillStyle = '#4a4a52'; c.fillRect(3, 6, 12, 2); c.fillRect(3, 15, 12, 2);
+  c.fillStyle = '#b5854e'; c.fillRect(5, 8, 2, 6);
+  c.fillStyle = '#5a3a1a'; c.beginPath(); c.ellipse(9, 3.4, 6, 1.6, 0, 0, 7); c.fill();
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function ducklingTex(scene) { // v137 — patinho (segue o pato)
+  const key = 'duckling';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 12; cv.height = 10;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#d9b566'; c.beginPath(); c.ellipse(6, 6, 4, 2.4, 0, 0, 7); c.fill();
+  c.fillStyle = '#e8c879'; c.beginPath(); c.arc(9, 3.4, 1.7, 0, 7); c.fill();
+  c.fillStyle = '#e8912a'; c.fillRect(10.2, 3, 1.8, 1.2);
+  c.fillStyle = '#2b2e3a'; c.fillRect(9.2, 2.6, 1, 1);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function birdsitTex(scene) { // v137 — pássaro pousado
+  const key = 'birdsit';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 12; cv.height = 10;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(0,0,0,0.14)'; c.beginPath(); c.ellipse(6, 9, 4, 1.2, 0, 0, 7); c.fill();
+  c.fillStyle = '#3a3f4e'; c.beginPath(); c.ellipse(6, 6, 4, 2.6, 0, 0, 7); c.fill();
+  c.beginPath(); c.arc(9, 3.6, 1.8, 0, 7); c.fill();
+  c.fillStyle = '#575f6e'; c.fillRect(1, 5.4, 3, 1.4);
+  c.fillStyle = '#e8912a'; c.fillRect(10.6, 3.4, 1.4, 1);
+  c.fillStyle = '#2b2e3a'; c.fillRect(9.2, 2.6, 1, 1);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function bakeOrganicWater(scene) { // v138 — água orgânica: margens onduladas, areia, espuma, pedrinhas e profundidade
+  const md = scene.mapData; if (!md || !md.length) return;
+  let temAgua = false;
+  for (let y = 0; y < md.length && !temAgua; y++) for (let x = 0; x < md[0].length; x++) if (md[y][x] === 'water' || md[y][x] === 'deep') { temAgua = true; break; }
+  if (!temAgua) return;
+  const TX = md[0].length, TY = md.length;
+  if (scene.textures.exists('waterorganic')) scene.textures.remove('waterorganic');
+  const cv = document.createElement('canvas'); cv.width = TX * 32; cv.height = TY * 32;
+  const c = cv.getContext('2d');
+  const isW = function(x, y) { return x >= 0 && x < TX && y >= 0 && y < TY && (md[y][x] === 'water' || md[y][x] === 'deep'); };
+  const hsh = function(x, y) { return (((x * 73856093) ^ (y * 19349663)) >>> 0) % 1000; };
+  // PASSO 1 — base em tons: rasinha clara junto da margem, média no meio, escura no fundo
+  for (let y = 0; y < TY; y++) for (let x = 0; x < TX; x++) {
+    if (!isW(x, y)) continue;
+    const deep = md[y][x] === 'deep';
+    const borda = !isW(x - 1, y) || !isW(x + 1, y) || !isW(x, y - 1) || !isW(x, y + 1);
+    c.fillStyle = deep ? '#2c55b4' : borda ? '#4b93dd' : '#3779cc';
+    c.fillRect(x * 32, y * 32, 32, 32);
+    if (hsh(x, y) % 7 < 2) { c.fillStyle = deep ? 'rgba(24,60,150,0.30)' : 'rgba(95,165,232,0.16)'; c.fillRect(x * 32, y * 32, 32, 32); }
+  }
+  // PASSO 2 — blobs macios de profundidade
+  for (let y = 1; y < TY - 1; y++) for (let x = 1; x < TX - 1; x++) {
+    if (md[y][x] !== 'deep' || hsh(x, y) % 3 !== 0) continue;
+    const g = c.createRadialGradient(x * 32 + 16, y * 32 + 16, 2, x * 32 + 16, y * 32 + 16, 20);
+    g.addColorStop(0, 'rgba(22,52,140,0.32)'); g.addColorStop(1, 'rgba(22,52,140,0)');
+    c.fillStyle = g; c.beginPath(); c.arc(x * 32 + 16, y * 32 + 16, 20, 0, 7); c.fill();
+  }
+  // PASSO 3 — margem orgânica contínua: areia ondulada + espuma pontilhada + sombra d'água
+  const wave = function(pos, seed) { return Math.sin(pos / 6 + seed) * 2.4 + Math.sin(pos / 13 + seed * 2.1) * 1.2; };
+  const shore = function(sx, sy, ax, ay, ix, iy, len, seed) {
+    const segs = 4;
+    const trace = function(base, width, color, dash, dashOff) {
+      c.strokeStyle = color; c.lineWidth = width; c.setLineDash(dash || []); c.lineDashOffset = dashOff || 0;
+      c.beginPath();
+      for (let i = 0; i <= segs; i++) {
+        const t = i / segs;
+        const along = sx * (1 - t) + (sx + ax * len) * t; // coordenada global ao longo da borda
+        const perp = sy * (1 - t) + (sy + ay * len) * t;
+        const w = base + wave(ax ? along : perp, seed);
+        const X = sx + ax * len * t + ix * w, Y = sy + ay * len * t + iy * w;
+        if (i === 0) c.moveTo(X, Y); else c.lineTo(X, Y);
+      }
+      c.stroke(); c.setLineDash([]);
+    };
+    trace(4.5, 7, '#e6d7a4', null, 0);                  // areia fina
+    trace(9.5, 2.2, 'rgba(247,243,226,0.92)', [5, 4], seed * 7); // espuma irregular
+    trace(14, 2.6, 'rgba(24,52,130,0.35)', null, 0);    // sombra entre terra e água
+    // v139 — franja de BARRO com contorno escuro no lado da terra (como na referência)
+    trace(-8.5, 3, '#3a6b2f', null, 0);                 // contorno escuro na grama
+    trace(-3.2, 6, '#b5793f', null, 0);                 // barro/laterita
+    trace(-5.8, 2, '#8a5428', null, 0);                 // sombra do barro
+  };
+  for (let y = 0; y < TY; y++) for (let x = 0; x < TX; x++) {
+    if (!isW(x, y)) continue;
+    const sd = y * 0.7;
+    const nbT = y > 0 ? md[y - 1][x] : 'x', nbB = y < TY - 1 ? md[y + 1][x] : 'x';
+    const nbL = x > 0 ? md[y][x - 1] : 'x', nbR = x < TX - 1 ? md[y][x + 1] : 'x';
+    const okB = function(n) { return n !== 'water' && n !== 'deep' && n !== 'bridge'; };
+    if (okB(nbT)) shore(x * 32, y * 32, 1, 0, 0, 1, 32, x * 0.16 + sd);
+    if (okB(nbB)) shore(x * 32, y * 32 + 32, 1, 0, 0, -1, 32, x * 0.16 + y * 3.1);
+    if (okB(nbL)) shore(x * 32, y * 32, 0, 1, 1, 0, 32, y * 0.16 + x * 5.3);
+    if (okB(nbR)) shore(x * 32 + 32, y * 32, 0, 1, -1, 0, 32, y * 0.16 + x * 2.9);
+    // pedrinhas na linha d'água (como na referência)
+    if (hsh(x, y) % 4 === 0) {
+      const which = [okB(nbT), okB(nbB), okB(nbL), okB(nbR)];
+      const wi = which[0] ? 0 : which[1] ? 1 : which[2] ? 2 : 3;
+      for (let p2 = 0; p2 < 3; p2++) {
+        const along = 6 + ((hsh(x + p2, y) % 20));
+        const wx2 = (wi === 0 || wi === 1) ? x * 32 + along : (wi === 2 ? x * 32 + 5 : x * 32 + 27);
+        const wy2 = (wi === 0) ? y * 32 + 5 : (wi === 1 ? y * 32 + 27 : y * 32 + along);
+        c.fillStyle = '#9aa3ad'; c.beginPath(); c.arc(wx2, wy2, 2.2 + p2 * 0.5, 0, 7); c.fill();
+        c.fillStyle = '#6f7883'; c.beginPath(); c.arc(wx2 + 0.8, wy2 + 0.9, 1.5 + p2 * 0.4, 0, 7); c.fill();
+        c.fillStyle = '#d7dce1'; c.fillRect(wx2 - 1.2, wy2 - 1.6, 1.2, 1.2);
+      }
+    }
+    // reflexos claros na superfície (streaks)
+    if (!okB(nbT) && !okB(nbB) && !okB(nbL) && !okB(nbR) && hsh(x, y) % 5 === 0) {
+      c.strokeStyle = 'rgba(255,255,255,0.22)'; c.lineWidth = 1.5;
+      c.beginPath(); c.moveTo(x * 32 + 8, y * 32 + 12); c.lineTo(x * 32 + 19, y * 32 + 11); c.stroke();
+      c.strokeStyle = 'rgba(150,210,250,0.4)';
+      c.beginPath(); c.moveTo(x * 32 + 14, y * 32 + 23); c.lineTo(x * 32 + 26, y * 32 + 22); c.stroke();
+    }
+  }
+  // PASSO 4 — cantos arredondados (diagonais terra/água)
+  for (let y = 0; y < TY; y++) for (let x = 0; x < TX; x++) {
+    if (!isW(x, y)) continue;
+    const diags = [[1, -1], [-1, -1], [1, 1], [-1, 1]];
+    for (let d4 = 0; d4 < 4; d4++) {
+      const dx4 = diags[d4][0], dy4 = diags[d4][1];
+      if (isW(x + dx4, y + dy4)) continue;
+      const cx4 = x * 32 + (dx4 > 0 ? 32 : 0), cy4 = y * 32 + (dy4 > 0 ? 32 : 0);
+      const qx = dx4 > 0 ? -1 : 1, qy = dy4 > 0 ? -1 : 1;
+      const a0 = Math.atan2(qy, qx);
+      c.fillStyle = '#e6d7a4'; c.beginPath(); c.moveTo(cx4, cy4); c.arc(cx4, cy4, 8, a0 - Math.PI / 4, a0 + Math.PI / 4); c.closePath(); c.fill();
+      const a0l = a0 + Math.PI; // v139 — barro + contorno no lado da terra do canto
+      c.fillStyle = '#3a6b2f'; c.beginPath(); c.moveTo(cx4, cy4); c.arc(cx4, cy4, 11.5, a0l - Math.PI / 4, a0l + Math.PI / 4); c.closePath(); c.fill();
+      c.fillStyle = '#b5793f'; c.beginPath(); c.moveTo(cx4, cy4); c.arc(cx4, cy4, 8, a0l - Math.PI / 4, a0l + Math.PI / 4); c.closePath(); c.fill();
+      c.fillStyle = '#8a5428'; c.beginPath(); c.moveTo(cx4, cy4); c.arc(cx4, cy4, 6.5, a0l - Math.PI / 4, a0l + Math.PI / 4); c.closePath(); c.fill();
+      c.strokeStyle = 'rgba(247,243,226,0.85)'; c.lineWidth = 1.6; c.setLineDash([4, 3]);
+      c.beginPath(); c.arc(cx4, cy4, 11, a0 - Math.PI / 4, a0 + Math.PI / 4); c.stroke(); c.setLineDash([]);
+    }
+  }
+  scene.textures.addCanvas('waterorganic', cv);
+  const img = scene.add.image(cv.width / 2, cv.height / 2, 'waterorganic').setDepth(0.45);
+  img.setName('waterorganic');
+  // reflexos cintilando na superfície (animação)
+  sparkleTex(scene);
+  scene.time.addEvent({ delay: 300, loop: true, callbackScope: scene, callback: function() {
+    for (let t18 = 0; t18 < 12; t18++) {
+      const gx18 = Math.floor(Math.random() * TX), gy18 = Math.floor(Math.random() * TY);
+      if (md[gy18][gx18] !== 'water') continue;
+      const gl = scene.add.image(gx18 * 32 + 8 + Math.random() * 16, gy18 * 32 + 8 + Math.random() * 16, 'sparkle').setDepth(0.46).setScale(0.4 + Math.random() * 0.3).setAlpha(0).setRotation(Math.random() * 0.4 - 0.2);
+      gl.name = 'waterglint';
+      scene.tweens.add({ targets: gl, alpha: 0.3, duration: 480 + Math.random() * 380, yoyo: true, onComplete: function() { gl.destroy(); } });
+      break;
+    }
+  } });
+}
+function auroraTex(scene) { // v137 — faixa de aurora (hub lunar)
+  const key = 'aurora';
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 420; cv.height = 130;
+  const c = cv.getContext('2d');
+  for (let i = 0; i < 5; i++) {
+    const x0 = 30 + i * 90 + Math.random() * 20;
+    const g = c.createLinearGradient(x0, 0, x0 + 40, 130);
+    const hue = 150 + Math.random() * 40;
+    g.addColorStop(0, 'hsla(' + hue + ',80%,60%,0)');
+    g.addColorStop(0.5, 'hsla(' + hue + ',80%,60%,0.5)');
+    g.addColorStop(1, 'hsla(' + hue + ',80%,60%,0)');
+    c.fillStyle = g; c.fillRect(x0 - 12, 0, 64, 130);
+  }
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function waterMaskAt(mapData, tx, ty) { // v130 — vizinhança de água (4 lados + 4 diagonais)
+  const H1 = mapData.length, W1 = mapData[0].length;
+  const isW = function(x, y) { if (y < 0 || y >= H1 || x < 0 || x >= W1) return false; const t = mapData[y][x]; return t === 'water' || t === 'deep'; };
+  let m = 0;
+  if (isW(tx, ty - 1)) m |= 1;
+  if (isW(tx + 1, ty)) m |= 2;
+  if (isW(tx, ty + 1)) m |= 4;
+  if (isW(tx - 1, ty)) m |= 8;
+  if (isW(tx - 1, ty - 1)) m |= 16;
+  if (isW(tx + 1, ty - 1)) m |= 32;
+  if (isW(tx + 1, ty + 1)) m |= 64;
+  if (isW(tx - 1, ty + 1)) m |= 128;
+  return m;
+}
+function bankMaskAt(mapData, tx, ty) { // v130 — lados com água p/ grama da margem
+  const H1 = mapData.length, W1 = mapData[0].length;
+  const isW = function(x, y) { if (y < 0 || y >= H1 || x < 0 || x >= W1) return false; const t = mapData[y][x]; return t === 'water' || t === 'deep'; };
+  let m = 0;
+  if (isW(tx, ty - 1)) m |= 1;
+  if (isW(tx + 1, ty)) m |= 2;
+  if (isW(tx, ty + 1)) m |= 4;
+  if (isW(tx - 1, ty)) m |= 8;
+  return m;
+}
+function drawShallowBase(ctx, frame) { // v130 — água rasa clara com ondinhas
+  const g = ctx.createLinearGradient(0, 0, 0, 32);
+  g.addColorStop(0, '#63b4e8'); g.addColorStop(1, '#4a90d8');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = 'rgba(255,255,255,0.20)';
+  const r1 = 6 + Math.round(Math.sin(frame * 1.6) * 3);
+  ctx.fillRect(0, r1, 32, 2); ctx.fillRect(0, (r1 + 14) % 30, 32, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.32)';
+  ctx.fillRect((4 + frame * 5) % 28, (10 + frame * 3) % 30, 2, 1);
+  ctx.fillStyle = 'rgba(255,255,255,0.05)'; // v131 — células suaves (hex da referência)
+  for (let cy = 0; cy < 4; cy++) for (let cx = 0; cx < 4; cx++) {
+    ctx.fillRect(cx * 8 + ((cy % 2) * 4) + 1, cy * 8 + 2, 5, 4);
+  }
+}
+function drawWaterShoreTile(ctx, frame, mask, v) { // v131 — raso limpo: areia fina contínua + espuma
+  drawShallowBase(ctx, frame);
+  const SAND = '#e6d7a4', SANDD = '#cdb980', FOAM = 'rgba(255,255,255,0.55)';
+  const B = 4;
+  ctx.fillStyle = SAND;
+  if (!(mask & 1)) { ctx.fillRect(0, 0, 32, B); ctx.fillStyle = SANDD; ctx.fillRect(0, B, 32, 2); ctx.fillStyle = FOAM; ctx.fillRect(0, B + 2, 32, 1); ctx.fillStyle = SAND; }
+  if (!(mask & 4)) { ctx.fillRect(0, 32 - B, 32, B); ctx.fillStyle = SANDD; ctx.fillRect(0, 32 - B - 2, 32, 2); ctx.fillStyle = FOAM; ctx.fillRect(0, 32 - B - 3, 32, 1); ctx.fillStyle = SAND; }
+  if (!(mask & 2)) { ctx.fillRect(32 - B, 0, B, 32); ctx.fillStyle = SANDD; ctx.fillRect(32 - B - 2, 0, 2, 32); ctx.fillStyle = FOAM; ctx.fillRect(32 - B - 3, 0, 1, 32); ctx.fillStyle = SAND; }
+  if (!(mask & 8)) { ctx.fillRect(0, 0, B, 32); ctx.fillStyle = SANDD; ctx.fillRect(B, 0, 2, 32); ctx.fillStyle = FOAM; ctx.fillRect(B + 2, 0, 1, 32); ctx.fillStyle = SAND; }
+  const qc = function(cx0, cy0, a0, a1, has) {
+    if (!has) return;
+    ctx.fillStyle = SAND;
+    ctx.beginPath(); ctx.moveTo(cx0, cy0); ctx.arc(cx0, cy0, 7, a0, a1); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = SANDD; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.arc(cx0, cy0, 8.2, a0, a1); ctx.stroke();
+    ctx.strokeStyle = FOAM; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx0, cy0, 9.6, a0, a1); ctx.stroke();
+  };
+  qc(0, 0, 0, Math.PI / 2, (mask & 16) && (mask & 1) && (mask & 8));
+  qc(32, 0, Math.PI / 2, Math.PI, (mask & 32) && (mask & 1) && (mask & 2));
+  qc(32, 32, Math.PI, Math.PI * 1.5, (mask & 64) && (mask & 2) && (mask & 4));
+  qc(0, 32, Math.PI * 1.5, Math.PI * 2, (mask & 128) && (mask & 4) && (mask & 8));
+}
+function drawWaterDeepTile(ctx, frame, v) { // v130 — água funda escura (intransponível)
+  const g = ctx.createLinearGradient(0, 0, 0, 32);
+  g.addColorStop(0, '#3a68c0'); g.addColorStop(1, '#253f85');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  const r1 = 8 + Math.round(Math.sin(frame * 1.6 + 1) * 4);
+  ctx.fillRect(0, r1, 32, 2); ctx.fillRect(0, (r1 + 15) % 30, 32, 2);
+  ctx.fillStyle = 'rgba(140,200,255,0.25)';
+  ctx.fillRect((6 + frame * 6) % 28, (12 + frame * 9) % 30, 3, 1);
+  if (v === 2) { ctx.fillStyle = 'rgba(15,30,70,0.35)'; ctx.fillRect(0, 28, 32, 4); }
+}
+function drawBankTile(ctx, mask, v) { // v131 — barranco escuro limpo na borda certa
+  drawGrassTile(ctx, (v + 1) % 3);
+  const LIP = '#2f5f33';
+  if (mask & 1) { ctx.fillStyle = LIP; ctx.fillRect(0, 29, 32, 3); ctx.fillRect(2, 27, 5, 1); ctx.fillRect(18, 27, 7, 1); }
+  if (mask & 4) { ctx.fillStyle = LIP; ctx.fillRect(0, 0, 32, 3); ctx.fillRect(3, 3, 5, 1); ctx.fillRect(20, 3, 6, 1); }
+  if (mask & 2) { ctx.fillStyle = LIP; ctx.fillRect(29, 0, 3, 32); ctx.fillRect(27, 2, 1, 6); ctx.fillRect(27, 20, 1, 7); }
+  if (mask & 8) { ctx.fillStyle = LIP; ctx.fillRect(0, 0, 3, 32); ctx.fillRect(4, 6, 1, 6); ctx.fillRect(4, 22, 1, 6); }
+}
+function waterTex(scene, deep, mask, v, frame) { // v130 — fábrica de texturas (cache por chave)
+  const key = (deep ? 'wd_' : 'ws_') + mask + '_' + v + '_' + frame;
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 32; cv.height = 32;
+  if (deep) drawWaterDeepTile(cv.getContext('2d'), frame, v);
+  else drawWaterShoreTile(cv.getContext('2d'), frame, mask, v);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function bankTex(scene, mask, v) {
+  const key = 'bk_' + mask + '_' + v;
+  if (scene.textures.exists(key)) return key;
+  const cv = document.createElement('canvas'); cv.width = 32; cv.height = 32;
+  drawBankTile(cv.getContext('2d'), mask, v);
+  scene.textures.addCanvas(key, cv);
+  return key;
+}
+function tileIsWaterAt(mapData, x, y) {
+  if (!mapData) return false;
+  const tx = Math.floor(x / 32), ty = Math.floor(y / 32);
+  if (ty < 0 || ty >= mapData.length || tx < 0 || tx >= mapData[ty].length) return false;
+  return mapData[ty][tx] === 'water';
+}
 function drawTree(ctx) {
   // v1.5 — ARVORE GRANDE 96x128 (proporcional ao heroi menor)
+  ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(48, 122, 30, 6, 0, 0, 7); ctx.fill(); // v131 — sombra suave
   const leaf = function(cx, cy, r, color) { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); };
   // tronco
   drawPixelRect(ctx, 40, 58, 16, 60, '#5a3a1a');
@@ -3499,12 +4258,14 @@ function drawTree(ctx) {
   drawPixelRect(ctx, 30, 116, 6, 5, '#4a2e14');
   drawPixelRect(ctx, 60, 116, 6, 5, '#4a2e14');
   drawPixelRect(ctx, 30, 118, 36, 4, '#3a2a14');
-  // copa em camadas
-  leaf(48, 50, 38, '#1e5a26');
-  leaf(30, 46, 24, '#2a7a2a'); leaf(62, 42, 26, '#2a7a2a'); leaf(48, 64, 22, '#2a7a2a');
-  leaf(34, 34, 15, '#3f9a3f'); leaf(58, 30, 14, '#3f9a3f'); leaf(46, 48, 12, '#3f9a3f');
-  leaf(32, 26, 6, '#6fc46f'); leaf(54, 22, 5, '#6fc46f'); leaf(42, 38, 4, '#6fc46f');
-  leaf(64, 62, 9, '#1e5a26'); leaf(34, 66, 8, '#1e5a26');  // sombra interna
+  // copa em camadas (v138 — 6 tons, mais volume orgânico)
+  leaf(48, 50, 38, '#17491f');
+  leaf(28, 48, 25, '#1e5a26'); leaf(64, 44, 27, '#1e5a26'); leaf(48, 66, 23, '#1e5a26'); leaf(44, 28, 20, '#1e5a26');
+  leaf(30, 44, 22, '#2a7a2a'); leaf(60, 40, 24, '#2a7a2a'); leaf(48, 60, 20, '#2a7a2a'); leaf(40, 32, 16, '#2a7a2a');
+  leaf(34, 34, 15, '#3f9a3f'); leaf(58, 30, 14, '#3f9a3f'); leaf(46, 48, 12, '#3f9a3f'); leaf(66, 52, 10, '#3f9a3f'); leaf(26, 54, 9, '#3f9a3f');
+  leaf(32, 26, 7, '#57b457'); leaf(54, 22, 6, '#57b457'); leaf(42, 38, 5, '#57b457'); leaf(62, 38, 5, '#57b457');
+  leaf(30, 22, 3.4, '#79cc79'); leaf(52, 18, 3, '#79cc79'); leaf(40, 32, 2.6, '#79cc79'); leaf(58, 26, 2.6, '#79cc79'); leaf(36, 42, 2.4, '#79cc79');
+  leaf(66, 62, 9, '#17491f'); leaf(34, 66, 8, '#17491f'); leaf(52, 70, 7, '#17491f');  // sombra interna
   // tufos de grama
   drawPixelRect(ctx, 24, 120, 4, 3, '#3f8f5f');
   drawPixelRect(ctx, 68, 120, 4, 3, '#3f8f5f');
@@ -3513,6 +4274,7 @@ function drawTree(ctx) {
 }
 function drawHouse(ctx) {
   // v1.5 — CASA GRANDE 160x128 (decorativa: area idle, sem entrada)
+  ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(80, 120, 66, 7, 0, 0, 7); ctx.fill(); // v131 — sombra suave
   // paredes
   drawPixelRect(ctx, 30, 66, 100, 52, '#c4a882');
   drawPixelRect(ctx, 30, 112, 100, 6, '#a8886a');
@@ -3568,6 +4330,7 @@ function drawFence(ctx) {
   drawPixelRect(ctx, 2, 20, 25, 2, '#8a6a4a');
 }
 function drawRock(ctx) {
+  ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(16, 25, 9, 2.6, 0, 0, Math.PI * 2); ctx.fill(); // v131 — sombra suave
   ctx.fillStyle = '#7a7a7a'; ctx.beginPath(); ctx.ellipse(16, 22, 8, 6, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#9a9a9a'; ctx.beginPath(); ctx.ellipse(14, 20, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
 }
@@ -3604,15 +4367,31 @@ function drawPathTile(ctx) {
   ctx.fillRect(8, 8, 2, 2); ctx.fillRect(20, 12, 2, 2); ctx.fillRect(14, 24, 2, 2); ctx.fillRect(28, 16, 2, 2);
 }
 function drawWaterTile(ctx, frame) {
-  ctx.fillStyle = '#3a6a9a'; ctx.fillRect(0, 0, 32, 32); ctx.fillStyle = '#4a7aaa';
-  const offset = frame * 4;
-  for (let x = -4; x < 36; x += 8) { ctx.fillRect(x + offset, 8, 6, 2); ctx.fillRect(x + offset - 4, 18, 6, 2); ctx.fillRect(x + offset, 28, 6, 2); }
-  ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(0, 0, 32, 2);
+  // v129 — agua viva: profundidade + ondas animadas (4 quadros) + brilhos de sol
+  const g = ctx.createLinearGradient(0, 0, 0, 32);
+  g.addColorStop(0, '#4a8fd8'); g.addColorStop(0.55, '#3a6fc0'); g.addColorStop(1, '#2f57a0');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 32, 32);
+  const ph = frame * 2.2;
+  ctx.fillStyle = 'rgba(255,255,255,0.16)';
+  const rowA = 7 + Math.round(Math.sin(ph) * 3);
+  const rowB = 18 + Math.round(Math.sin(ph + 2.1) * 3);
+  const rowC = 28 + Math.round(Math.sin(ph + 4.2) * 2);
+  ctx.fillRect(0, rowA, 32, 2); ctx.fillRect(0, rowB, 32, 2);
+  if (rowC < 31) ctx.fillRect(0, rowC, 32, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  const sx = (6 + frame * 5) % 30, sy = (11 + frame * 7) % 30;
+  ctx.fillRect(sx, sy, 2, 1); ctx.fillRect(((sx + 15) % 30) + 1, (sy + 13) % 30, 2, 1);
+  ctx.fillStyle = 'rgba(10,30,80,0.18)'; ctx.fillRect(0, 30, 32, 2);
 }
-function drawBridgeTile(ctx) {
-  ctx.fillStyle = '#6a4a2a'; ctx.fillRect(0, 0, 32, 32); ctx.fillStyle = '#8a6a4a';
-  for (let y = 2; y < 32; y += 6) { ctx.fillRect(2, y, 28, 4); }
-  ctx.fillStyle = '#5a3a1a'; ctx.fillRect(0, 0, 32, 2); ctx.fillRect(0, 30, 32, 2);
+function drawBridgeTile(ctx) { // v141 — ponte rústica: tábuas com tons alternados, frestas e pregos
+  ctx.fillStyle = '#4a3218'; ctx.fillRect(0, 0, 32, 32);
+  for (let y = 1; y < 31; y += 6) {
+    ctx.fillStyle = (y % 12 === 1) ? '#8a6a4a' : ((y % 18 === 1) ? '#7d5f40' : '#937252');
+    ctx.fillRect(1, y, 30, 4);
+    ctx.fillStyle = '#a5825e'; ctx.fillRect(1, y, 30, 1);
+    ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(1, y + 4, 30, 1);
+    ctx.fillStyle = '#4a3a22'; ctx.fillRect(4, y + 1, 1, 1); ctx.fillRect(27, y + 1, 1, 1);
+  }
 }
 function drawDromeFloor(ctx) {
   ctx.fillStyle = '#2a2a2a'; ctx.fillRect(0, 0, 32, 32);
@@ -3985,6 +4764,17 @@ class BootScene extends Phaser.Scene {
     createTextureFromCanvas(this, 'path', drawPathTile, 32, 32);
     createTextureFromCanvas(this, 'water_0', drawWaterTile, 32, 32, 0);
     createTextureFromCanvas(this, 'water_1', drawWaterTile, 32, 32, 1);
+    createTextureFromCanvas(this, 'water_2', drawWaterTile, 32, 32, 2); // v129
+    createTextureFromCanvas(this, 'water_3', drawWaterTile, 32, 32, 3); // v129
+    createTextureFromCanvas(this, 'leaf', drawLeaf, 12, 9); // v129
+    for (let gi = 0; gi < 12; gi++) { // v134 — grama decorada (+ cogumelos)
+      const cvd = document.createElement('canvas'); cvd.width = 32; cvd.height = 32;
+      const cdx = cvd.getContext('2d');
+      drawGrassTile(cdx, gi % 3);
+      drawGrassDecor(cdx, gi);
+      this.textures.addCanvas('gdec_' + gi, cvd);
+    }
+    createTextureFromCanvas(this, 'planter', drawPlanter, 40, 36); // v132 — canteiro do Pórtico
     createTextureFromCanvas(this, 'bridge', drawBridgeTile, 32, 32);
     createTextureFromCanvas(this, 'drome_floor', drawDromeFloor, 32, 32);
     createTextureFromCanvas(this, 'drome_wall', drawDromeWall, 32, 32);
@@ -4687,6 +5477,21 @@ class PorticoScene extends Phaser.Scene {
     }
     this.objects = this.add.group();
     this.interactables = []; // v1.8 — salas/quadro interativos ([E] ou clique)
+    { // v132 — canteiros de flores (vasos) decorando o Pórtico
+      const pots = [[210, 210], [CONFIG.WORLD_W - 210, 210], [210, CONFIG.WORLD_H - 210], [CONFIG.WORLD_W - 210, CONFIG.WORLD_H - 210], [CONFIG.WORLD_W / 2 - 300, 340], [CONFIG.WORLD_W / 2 + 300, 340], [CONFIG.WORLD_W / 2 - 300, CONFIG.WORLD_H - 340], [CONFIG.WORLD_W / 2 + 300, CONFIG.WORLD_H - 340]];
+      for (let pi = 0; pi < pots.length; pi++) {
+        const pot = this.add.image(pots[pi][0], pots[pi][1], 'planter').setDepth(4).setScale(1.2).setOrigin(0.5, 0.9);
+        this.tweens.add({ targets: pot, rotation: { from: -0.02, to: 0.02 }, duration: 2600 + pi * 170, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      }
+    }
+    { // v133 — lanternas pulsantes
+      lanternTex(this);
+      const lpos = [[150, 300], [CONFIG.WORLD_W - 150, 300], [150, CONFIG.WORLD_H - 300], [CONFIG.WORLD_W - 150, CONFIG.WORLD_H - 300], [CONFIG.WORLD_W / 2, 250], [CONFIG.WORLD_W / 2, CONFIG.WORLD_H - 250]];
+      for (let li2 = 0; li2 < lpos.length; li2++) {
+        const lt = this.add.image(lpos[li2][0], lpos[li2][1], 'lantern').setDepth(6);
+        this.tweens.add({ targets: lt, alpha: { from: 0.75, to: 1 }, duration: 1300 + li2 * 130, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      }
+    }
 
     const cx = CONFIG.WORLD_W / 2, cy = CONFIG.WORLD_H / 2;
 
@@ -4785,6 +5590,33 @@ class PorticoScene extends Phaser.Scene {
       const dy = Phaser.Math.Clamp(cy + Math.sin(ang) * rad * 0.7, 240, CONFIG.WORLD_H - 200);
       const spr = this.add.image(dx, dy, droneKinds[i]).setDepth(12).setScale(1.15).setAlpha(0.96);
       this.drones.push({ spr: spr, baseY: dy, vx: 30, vy: 14, t: 0, phase: Math.random() * 7 });
+    }
+    { // v135 — faíscas holográficas subindo dos drones
+      glowTex(this, 'holo', 'rgba(63,227,234,0.9)');
+      this.time.addEvent({ delay: 300, loop: true, callbackScope: this, callback: function() {
+        if (!this.drones.length) return;
+        const dr15 = this.drones[Math.floor(Math.random() * this.drones.length)].spr;
+        const hk = this.add.image(dr15.x + (Math.random() * 26 - 13), dr15.y + (Math.random() * 12 - 6), 'holo').setDepth(12.2).setScale(0.3 + Math.random() * 0.25).setAlpha(0.7);
+        this.tweens.add({ targets: hk, y: hk.y - 22 - Math.random() * 14, alpha: 0, duration: 800 + Math.random() * 500, onComplete: function() { hk.destroy(); } });
+      } });
+    }
+    { // v136 — poeira estelar caindo devagar (ambiente holográfico do hub)
+      this._dust = [];
+      this.time.addEvent({ delay: 420, loop: true, callbackScope: this, callback: function() {
+        this._dust = this._dust.filter(function(d16) { return d16.active; });
+        if (this._dust.length >= 18) return;
+        const du = this.add.image(60 + Math.random() * (CONFIG.WORLD_W - 120), -12, 'holo').setDepth(2.5).setScale(0.22 + Math.random() * 0.2).setAlpha(0.3);
+        du.name = 'stardust';
+        this._dust.push(du);
+        this.tweens.add({ targets: du, y: CONFIG.WORLD_H * 0.92, alpha: 0.05, duration: 8000 + Math.random() * 5000, onComplete: function() { du.destroy(); } });
+        this.tweens.add({ targets: du, x: du.x + 20 + Math.random() * 30, duration: 3600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      } });
+    }
+    { // v137 — aurora sutil no céu do hub lunar
+      auroraTex(this);
+      const au17 = this.add.image(CONFIG.WORLD_W / 2, 150, 'aurora').setDepth(1.6).setScale(3.4, 1).setAlpha(0.08).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: au17, x: au17.x - 80, duration: 26000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      this.tweens.add({ targets: au17, alpha: { from: 0.05, to: 0.1 }, duration: 5200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     }
 
     // ===== v2.10 — Dois balcões com robôs: CRAFT (esquerda) / UPGRADE (direita) =====
@@ -5284,8 +6116,41 @@ class PerimScene extends Phaser.Scene {
       if (dir === 0) py = Math.max(0, py - 1); else if (dir === 1) py = Math.min(tilesY - 1, py + 1);
       else if (dir === 2) px = Math.max(0, px - 1); else px = Math.min(tilesX - 1, px + 1);
     }
-    let rx = 0; let ry = Math.floor(tilesY / 2) + Math.floor(Math.random() * 4 - 2);
-    while (rx < tilesX) { this.mapData[ry][rx] = 'water'; if (Math.random() < 0.3) ry = Math.max(2, Math.min(tilesY - 3, ry + (Math.random() < 0.5 ? 1 : -1))); rx++; }
+    { // v130 — rio LARGO com curvas: caminho serpenteante + carimbo de elipses
+      let ry = Math.floor(tilesY / 2) + Math.floor(Math.random() * 4 - 2);
+      let vel = 0;
+      for (let rx = 0; rx < tilesX; rx++) {
+        vel += (Math.random() - 0.5) * 0.9;
+        vel = Phaser.Math.Clamp(vel + (Math.floor(tilesY / 2) - ry) * 0.02, -1.1, 1.1);
+        ry = Phaser.Math.Clamp(Math.round(ry + vel), 3, tilesY - 4);
+        const rad = 2.1 + Math.random() * 0.7; // v138 — carimbo CIRCULAR: margens arredondadas (sem colunas retas)
+        for (let dy = -3; dy <= 3; dy++) {
+          for (let dx = -3; dx <= 3; dx++) {
+            if (dx * dx + dy * dy * 1.25 <= rad * rad) {
+              this.mapData[Phaser.Math.Clamp(ry + dy, 0, tilesY - 1)][Phaser.Math.Clamp(rx + dx, 0, tilesX - 1)] = 'water';
+            }
+          }
+        }
+      }
+      // travessias garantidas (pontes de madeira cruzando o rio)
+      const cross = [0.22, 0.52, 0.8].map(function(f) { return Math.floor(tilesX * f); });
+      for (let ci = 0; ci < cross.length; ci++) {
+        const cx2 = cross[ci];
+        let yMin = -1, yMax = -1;
+        for (let y = 0; y < tilesY; y++) if (this.mapData[y][cx2] === 'water') { if (yMin < 0) yMin = y; yMax = y; }
+        if (yMin < 0) continue;
+        for (let y = Math.max(0, yMin - 1); y <= Math.min(tilesY - 1, yMax + 1); y++) {
+          for (let x = Math.max(0, cx2 - 1); x <= Math.min(tilesX - 1, cx2 + 1); x++) {
+            if (this.mapData[y][x] === 'water') this.mapData[y][x] = 'bridge';
+          }
+        }
+      }
+      // clareira do spawn (600,780 = tile 18,24 — praia de chegada)
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const yy = Phaser.Math.Clamp(24 + dy, 0, tilesY - 1), xx = Phaser.Math.Clamp(18 + dx, 0, tilesX - 1);
+        if (this.mapData[yy][xx] === 'water' || this.mapData[yy][xx] === 'deep') this.mapData[yy][xx] = 'path';
+      }
+    }
     for (let y = 0; y < tilesY; y++) {
       for (let x = 0; x < tilesX; x++) {
         if (this.mapData[y][x] === 'path') {
@@ -5298,25 +6163,483 @@ class PerimScene extends Phaser.Scene {
         }
       }
     }
+    { // v131 — LAGOS: único lugar com água funda (rio atravessa-se em qualquer ponto)
+      const bridgesX = [0.22, 0.52, 0.8].map(function(f) { return Math.floor(tilesX * f); });
+      const nLakes = 1 + (Math.random() < 0.5 ? 1 : 0);
+      let feitos = 0;
+      for (let tent = 0; tent < 40 && feitos < nLakes; tent++) { // v132: 40 tentativas (com o guard de rio, lagos sempre nascem)
+        const lx = 7 + Math.floor(Math.random() * (tilesX - 14));
+        const ly = 6 + Math.floor(Math.random() * (tilesY - 12));
+        if (Math.abs(lx - 18) < 9 && Math.abs(ly - 24) < 9) continue; // praia de chegada
+        let perto = false;
+        for (let bi = 0; bi < bridgesX.length; bi++) if (Math.abs(lx - bridgesX[bi]) < 6) perto = true;
+        if (perto) continue;
+        let tocaRio = false; // v132: lago não pode tocar o rio (rio 100% raso, atravessável em qualquer ponto)
+        for (let dy = -6; dy <= 6 && !tocaRio; dy++) for (let dx = -6; dx <= 6; dx++) { const yy2 = ly + dy, xx2 = lx + dx; if (yy2 >= 0 && yy2 < tilesY && xx2 >= 0 && xx2 < tilesX && this.mapData[yy2][xx2] === 'water') { tocaRio = true; break; } }
+        if (tocaRio) continue;
+        const R = 3.4 + Math.random() * 1.5;
+        for (let dy = -5; dy <= 5; dy++) for (let dx = -5; dx <= 5; dx++) {
+          const d = Math.sqrt(dx * dx * 1.15 + dy * dy * 1.4) + Math.sin((dx * 2.3 + ly) * 0.9) * 0.5;
+          const yy = Phaser.Math.Clamp(ly + dy, 0, tilesY - 1), xx = Phaser.Math.Clamp(lx + dx, 0, tilesX - 1);
+          if (this.mapData[yy][xx] === 'bridge' || this.mapData[yy][xx] === 'path') continue;
+          if (d <= R - 2.1) this.mapData[yy][xx] = 'deep';
+          else if (d <= R && this.mapData[yy][xx] === 'grass') this.mapData[yy][xx] = 'water';
+        }
+        feitos++;
+      }
+    }
+    this.events.once('shutdown', function() { // v130 — sem corpos fantasmas entre viagens (v142: blindado — o physics pode já estar desmontado ao cair na caverna)
+      try {
+        const bs = this.physics && this.physics.world ? this.physics.world.staticBodies : null;
+        if (bs) for (let i = bs.length - 1; i >= 0; i--) { try { bs[i].destroy(); } catch (e) {} }
+      } catch (e) {}
+    }, this);
+    this.waterTiles = []; this.deepGroup = this.physics.add.staticGroup(); // v130
     this.tileGroup = this.add.group();
     for (let y = 0; y < tilesY; y++) {
       for (let x = 0; x < tilesX; x++) {
         const type = this.mapData[y][x];
-        let key = type === 'grass' ? 'grass_' + Math.floor(Math.random() * 3) : type === 'water' ? 'water_' + Math.floor(Math.random() * 2) : type;
-        const tile = this.add.image(x * 32 + 16, y * 32 + 16, key); tile.setDepth(0); tile.setDisplaySize(33, 33); this.tileGroup.add(tile);
+        if (type === 'water' || type === 'deep') { // v130 — tileset de água por máscara
+          const mask = waterMaskAt(this.mapData, x, y);
+          const isDeep = type === 'deep';
+          const v = (x * 7 + y * 13) % 3;
+          const img = this.add.image(x * 32 + 16, y * 32 + 16, waterTex(this, isDeep, mask, v, 0));
+          img.setDepth(0); img.setDisplaySize(33, 33); this.tileGroup.add(img);
+          this.waterTiles.push({ img: img, mask: mask, v: v, deep: isDeep });
+          if (isDeep) { const z = this.add.zone(x * 32 + 16, y * 32 + 16, 32, 32); this.physics.add.existing(z, true); this.deepGroup.add(z); }
+          continue;
+        }
+        let key = type;
+        if (type === 'grass') { // v131 — margem, decoração assada (pedras/flores/tufos) ou grama pura
+          const bm = bankMaskAt(this.mapData, x, y);
+          const hsh = (x * 31 + y * 17) % 100;
+          if (bm) key = bankTex(this, bm, (x * 5 + y * 11) % 2);
+          else if (hsh < 25) key = 'gdec_' + (hsh % 12); // v134 — inclui cogumelos
+          else key = 'grass_' + Math.floor(Math.random() * 3);
+        } else if (type === 'path') {
+          key = pathTex(this, pathMaskAt(this.mapData, x, y), (x * 3 + y * 7) % 2); // v131 — bordas arredondadas
+        }
+        const tile = this.add.image(x * 32 + 16, y * 32 + 16, key); tile.setDepth(type === 'bridge' ? 0.5 : 0); tile.setDisplaySize(33, 33); this.tileGroup.add(tile); // v138 — pontes por cima da água orgânica
       }
     }
-    this.time.addEvent({
-      delay: 800, callback: function() {
-        const children = this.tileGroup.getChildren();
-        for (let i = 0; i < children.length; i++) {
-          const t = children[i];
-          if (t.texture.key.indexOf('water_') === 0) { t.setTexture(t.texture.key === 'water_0' ? 'water_1' : 'water_0'); }
+    bakeOrganicWater(this); // v138 — água orgânica pintada sobre os tiles
+    { // v138 — vegetação de margem: arbustos e capim alto no gramado junto à água
+      const bcv = document.createElement('canvas'); bcv.width = 26; bcv.height = 22;
+      const bc = bcv.getContext('2d');
+      bc.fillStyle = 'rgba(0,0,0,0.15)'; bc.beginPath(); bc.ellipse(13, 19, 10, 2.4, 0, 0, 7); bc.fill();
+      bc.fillStyle = '#2f6b34'; bc.beginPath(); bc.arc(8, 13, 6, 0, 7); bc.arc(18, 13, 6.5, 0, 7); bc.fill();
+      bc.fillStyle = '#3d8242'; bc.beginPath(); bc.arc(13, 9, 7, 0, 7); bc.fill();
+      bc.fillStyle = '#57a355'; bc.fillRect(10, 5, 2, 2); bc.fillRect(17, 8, 2, 2); bc.fillRect(6, 10, 2, 2);
+      bc.fillStyle = '#ff9ec4'; bc.fillRect(12, 7, 2, 2);
+      this.textures.addCanvas('bushimg', bcv);
+      let bus18 = 0, re18 = 0, sf18 = 0;
+      sunflowerTex(this);
+      for (let y18 = 1; y18 < tilesY - 1; y18++) for (let x18 = 1; x18 < tilesX - 1; x18++) {
+        if (this.mapData[y18][x18] !== 'grass') continue;
+        if (Math.abs(x18 - 18) < 4 && Math.abs(y18 - 24) < 4) continue; // praia de chegada limpa
+        const viz = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+        let vizAgua = false;
+        for (let v18 = 0; v18 < 4; v18++) { const t18 = this.mapData[y18 + viz[v18][1]] && this.mapData[y18 + viz[v18][1]][x18 + viz[v18][0]]; if (t18 === 'water' || t18 === 'deep') vizAgua = true; }
+        if (!vizAgua) continue;
+        const h18 = (x18 * 17 + y18 * 29) % 20;
+        if (h18 < 2 && bus18 < 14) {
+          const b18 = this.add.image(x18 * 32 + 16, y18 * 32 + 24, 'bushimg').setDepth(5.1).setScale(0.9 + Math.random() * 0.4).setOrigin(0.5, 1);
+          this.tweens.add({ targets: b18, rotation: { from: -0.02, to: 0.02 }, duration: 2400 + Math.random() * 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+          bus18++;
+        } else if (h18 >= 15 && re18 < 18) {
+          reedTex(this);
+          const r18 = this.add.image(x18 * 32 + 16 + (Math.random() * 8 - 4), y18 * 32 + 28, 'reed').setDepth(5.1).setOrigin(0.5, 1).setScale(0.9 + Math.random() * 0.4);
+          this.tweens.add({ targets: r18, rotation: { from: -0.05, to: 0.05 }, duration: 2000 + Math.random() * 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+          re18++;
+        } else if (h18 === 9 && sf18 < 6) { // v139 — girassóis na margem
+          const sfl = this.add.image(x18 * 32 + 16, y18 * 32 + 28, 'sunflower').setDepth(5.2).setOrigin(0.5, 1).setScale(0.9 + Math.random() * 0.35);
+          this.tweens.add({ targets: sfl, rotation: { from: -0.04, to: 0.04 }, duration: 2300 + Math.random() * 1100, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+          sf18++;
+        }
+      }
+    }
+    { // v132 — pedras grandes nos lagos + taboas balançando nas margens
+      let reeds = 0;
+      const isGr = (function(x3, y3) { const t3 = this.mapData[y3] && this.mapData[y3][x3]; return t3 === 'grass' || t3 === 'path' || t3 === 'bridge'; }).bind(this);
+      for (let y2 = 1; y2 < tilesY - 1; y2++) for (let x2 = 1; x2 < tilesX - 1; x2++) {
+        const t2 = this.mapData[y2][x2];
+        if (t2 === 'deep') {
+          if ((x2 * 13 + y2 * 29) % 7 === 0) { this.tileGroup.add(this.add.image(x2 * 32 + 16, y2 * 32 + 16, 'rock').setDepth(0.6).setScale(1.25 + Math.random() * 0.55)); this._lakeRocks = (this._lakeRocks || 0) + 1; }
+          continue;
+        }
+        if (t2 !== 'water' || reeds >= 46) continue;
+        if ((x2 * 7 + y2 * 3) % 5 !== 0) continue;
+        if (!(isGr(x2 - 1, y2) || isGr(x2 + 1, y2) || isGr(x2, y2 - 1) || isGr(x2, y2 + 1))) continue;
+        const rd = this.add.image(x2 * 32 + 16 + (Math.random() * 10 - 5), y2 * 32 + 20, reedTex(this)).setDepth(0.7).setScale(0.9 + Math.random() * 0.5).setOrigin(0.5, 1);
+        this.tweens.add({ targets: rd, rotation: { from: -0.05, to: 0.05 }, duration: 2000 + Math.random() * 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        this.tileGroup.add(rd);
+        reeds++;
+      }
+    }
+    { // v134 — todo mapa com lago tem ao menos 1 pedra na água funda (hash pode não sortear em lago pequeno)
+      if (!this._lakeRocks) {
+        for (let y3 = 1; y3 < tilesY - 1; y3++) { let feito14 = false; for (let x3 = 1; x3 < tilesX - 1; x3++) if (this.mapData[y3][x3] === 'deep') { this.tileGroup.add(this.add.image(x3 * 32 + 16, y3 * 32 + 16, 'rock').setDepth(0.6).setScale(1.25 + Math.random() * 0.55)); feito14 = true; break; } if (feito14) break; }
+      }
+    }
+    { // v133 — vida no Perim: borboletas esvoaçando + brilhos na água + vitórias-régias
+      const self13 = this;
+      butterflyTex(this); sparkleTex(this); lilyTex(this);
+      this.airGroup = [];
+      for (let bi = 0; bi < 10; bi++) {
+        const bf = this.add.image(100 + Math.random() * (this.worldW - 200), 100 + Math.random() * (this.worldH - 200), 'butterfly').setDepth(6.5).setScale(1 + Math.random() * 0.5);
+        this.tweens.add({ targets: bf, scaleX: -bf.scaleX, duration: 150 + Math.random() * 90, yoyo: true, repeat: -1 });
+        this.airGroup.push(bf);
+      }
+      this.time.addEvent({ delay: 1500, loop: true, callbackScope: this, callback: function() {
+        for (let bi2 = 0; bi2 < this.airGroup.length; bi2++) {
+          const bf2 = this.airGroup[bi2]; if (!bf2.active) continue;
+          this.tweens.add({ targets: bf2, x: Phaser.Math.Clamp(bf2.x + (Math.random() * 160 - 80), 40, this.worldW - 40), y: Phaser.Math.Clamp(bf2.y + (Math.random() * 120 - 60), 40, this.worldH - 40), duration: 1400 + Math.random() * 500, ease: 'Sine.inOut' });
+        }
+      } });
+      const addSparkle = function() {
+        for (let tent13 = 0; tent13 < 20; tent13++) {
+          const sx = Math.floor(Math.random() * self13.mapData[0].length), sy = Math.floor(Math.random() * self13.mapData.length);
+          if (self13.mapData[sy][sx] !== 'water') continue;
+          const sp = self13.add.image(sx * 32 + 6 + Math.random() * 20, sy * 32 + 6 + Math.random() * 20, 'sparkle').setDepth(0.85).setScale(0.5 + Math.random() * 0.5).setAlpha(0);
+          self13.tweens.add({ targets: sp, alpha: 0.9, duration: 500 + Math.random() * 400, yoyo: true, hold: 200 + Math.random() * 300, onComplete: function() { sp.destroy(); } });
+          return;
+        }
+      };
+      for (let si = 0; si < 14; si++) addSparkle();
+      this.time.addEvent({ delay: 420, loop: true, callback: addSparkle, callbackScope: this });
+      let lilies = 0;
+      for (let ly3 = 1; ly3 < tilesY - 1 && lilies < 10; ly3++) for (let lx3 = 1; lx3 < tilesX - 1 && lilies < 10; lx3++) {
+        if (this.mapData[ly3][lx3] !== 'water' || (lx3 * 5 + ly3 * 3) % 3 !== 0) continue;
+        let temDeep = false;
+        for (let dy3 = -1; dy3 <= 1 && !temDeep; dy3++) for (let dx3 = -1; dx3 <= 1; dx3++) if (this.mapData[ly3 + dy3][lx3 + dx3] === 'deep') { temDeep = true; break; }
+        if (!temDeep) continue;
+        const lp = this.add.image(lx3 * 32 + 16, ly3 * 32 + 16, 'lily').setDepth(0.75).setScale(0.9 + Math.random() * 0.4).setAlpha(0.96);
+        this.tweens.add({ targets: lp, y: lp.y - 1.2, duration: 1600 + Math.random() * 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        lilies++;
+      }
+    }
+    { // v134 — vida silvestre no Perim: pássaros, peixes pulando, coelhos e fumaça
+      const self14 = this;
+      addBirdFlocks(this, this.worldW, this.worldH);
+      fishTex(this); fishRingTex(this);
+      this.spawnFishJump = function() {
+        for (let t14 = 0; t14 < 30; t14++) {
+          const fx14 = Math.floor(Math.random() * self14.mapData[0].length), fy14 = Math.floor(Math.random() * self14.mapData.length);
+          if (self14.mapData[fy14][fx14] !== 'water') continue;
+          const px14 = fx14 * 32 + 16, py14 = fy14 * 32 + 16;
+          const ring = self14.add.image(px14, py14 + 8, 'fishring').setDepth(0.86).setScale(0.3).setAlpha(0);
+          const fish = self14.add.image(px14, py14 + 10, 'fishj').setDepth(0.87);
+          self14.tweens.add({ targets: ring, alpha: 0.7, scale: 1.4, duration: 700, onComplete: function() { ring.destroy(); } });
+          self14.tweens.add({ targets: fish, y: py14 - 14, duration: 260, yoyo: true, ease: 'Sine.inOut', onComplete: function() { fish.destroy(); } });
+          return;
+        }
+      };
+      this.spawnFishJump();
+      this.time.addEvent({ delay: 6500, loop: true, callback: function() { this.spawnFishJump(); }, callbackScope: this });
+      bunnyTex(this);
+      this.bunnies = [];
+      for (let bi14 = 0; bi14 < 4; bi14++) {
+        const bn = this.add.image(120 + Math.random() * (this.worldW - 240), 120 + Math.random() * (this.worldH - 240), 'bunny').setDepth(6.2).setScale(1 + Math.random() * 0.3);
+        this.bunnies.push(bn);
+      }
+      this.time.addEvent({ delay: 700, loop: true, callbackScope: this, callback: function() {
+        for (let bi14 = 0; bi14 < this.bunnies.length; bi14++) {
+          const bn2 = this.bunnies[bi14]; if (!bn2.active) continue;
+          const d14 = Phaser.Math.Distance.Between(bn2.x, bn2.y, this.player.x, this.player.y);
+          if (d14 < 150) {
+            const ang = Math.atan2(bn2.y - this.player.y, bn2.x - this.player.x);
+            bn2.x = Phaser.Math.Clamp(bn2.x + Math.cos(ang) * 90, 40, this.worldW - 40);
+            bn2.y = Phaser.Math.Clamp(bn2.y + Math.sin(ang) * 70, 40, this.worldH - 40);
+            bn2.setFlipX(Math.cos(ang) < 0);
+          } else if (Math.random() < 0.25) {
+            bn2.x = Phaser.Math.Clamp(bn2.x + (Math.random() * 60 - 30), 40, this.worldW - 40);
+            bn2.setFlipX(Math.random() < 0.5);
+          }
+          bn2.y += Math.sin(this.time.now / 160 + bi14 * 2) * 0.4; // quiquinho contínuo
+        }
+      } });
+      smokeTex(this);
+      this.time.addEvent({ delay: 480, loop: true, callbackScope: this, callback: function() {
+        const lms = GameState.landmarks || [];
+        if (!lms.length) return;
+        const hs = lms[Math.floor(Math.random() * lms.length)];
+        const sm = this.add.image(hs.x + 28, hs.y - hs.displayHeight * 0.97 + 6, 'smokep').setDepth(6.6).setScale(0.5 + Math.random() * 0.3).setAlpha(0.4);
+        this.tweens.add({ targets: sm, y: sm.y - 34 - Math.random() * 18, x: sm.x + 10 + Math.random() * 12, alpha: 0, scale: 1.1, duration: 2600 + Math.random() * 900, onComplete: function() { sm.destroy(); } });
+      } });
+    }
+    { // v135 — água viva: ripples do herói, patos, libélulas e folhas à deriva
+      fishRingTex(this); duckTex(this); libTex(this);
+      // ripples nos pés do herói enquanto ele estiver na água
+      this.time.addEvent({ delay: 240, loop: true, callbackScope: this, callback: function() {
+        if (tileIsWaterAt(this.mapData, this.player.x, this.player.y)) {
+          const rp = this.add.image(this.player.x, this.player.y + 8, 'fishring').setDepth(0.88).setScale(0.35).setAlpha(0.45);
+          rp.name = 'heroripple';
+          this.tweens.add({ targets: rp, scale: 1.1, alpha: 0, duration: 900, onComplete: function() { rp.destroy(); } });
+        }
+      } });
+      // patos nadando entre pontos do lago (com ondinha embaixo)
+      const pontosLago = [];
+      for (let y15 = 1; y15 < tilesY - 1; y15++) for (let x15 = 1; x15 < tilesX - 1; x15++) {
+        if (this.mapData[y15][x15] !== 'water') continue;
+        let temDeep15 = false;
+        for (let dy15 = -1; dy15 <= 1 && !temDeep15; dy15++) for (let dx15 = -1; dx15 <= 1; dx15++) if (this.mapData[y15 + dy15] && this.mapData[y15 + dy15][x15 + dx15] === 'deep') { temDeep15 = true; break; }
+        if (temDeep15) pontosLago.push([x15, y15]);
+      }
+      for (let di15 = 0; di15 < 2 && pontosLago.length > 1; di15++) {
+        const a15 = pontosLago.splice(Math.floor(Math.random() * pontosLago.length), 1)[0];
+        const b15 = pontosLago[Math.floor(Math.random() * pontosLago.length)];
+        const dux = this.add.image(a15[0] * 32 + 16, a15[1] * 32 + 16, 'duck').setDepth(0.9).setScale(1 + Math.random() * 0.25);
+        const rg = this.add.image(dux.x, dux.y + 5, 'fishring').setDepth(0.82).setScale(0.8).setAlpha(0.4);
+        const dur15 = 4200 + Math.random() * 2600;
+        this.tweens.add({ targets: dux, x: b15[0] * 32 + 16, y: b15[1] * 32 + 16, duration: dur15, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        this.tweens.add({ targets: rg, x: b15[0] * 32 + 16, y: b15[1] * 32 + 21, duration: dur15, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        ducklingTex(this);
+        for (let gi17 = 0; gi17 < 2; gi17++) { // v137 — patinhos em fila
+          const dlx = this.add.image(a15[0] * 32 + 16 - (gi17 + 1) * 20, a15[1] * 32 + 16, 'duckling').setDepth(0.9).setScale(0.8 + gi17 * 0.1);
+          this.tweens.add({ targets: dlx, x: b15[0] * 32 + 16 - (gi17 + 1) * 20, y: b15[1] * 32 + 16, duration: dur15, delay: 300 + gi17 * 260, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        }
+      }
+      // libélulas pairando nas margens
+      const margens = [];
+      for (let y15 = 1; y15 < tilesY - 1; y15++) for (let x15 = 1; x15 < tilesX - 1; x15++) {
+        if (this.mapData[y15][x15] !== 'water') continue;
+        if (this.mapData[y15][x15 - 1] === 'grass' || this.mapData[y15][x15 + 1] === 'grass' || this.mapData[y15 - 1][x15] === 'grass' || this.mapData[y15 + 1][x15] === 'grass') margens.push([x15, y15]);
+      }
+      this.dragonflies = [];
+      for (let li15 = 0; li15 < 5 && margens.length; li15++) {
+        const m15 = margens[Math.floor(Math.random() * margens.length)];
+        const df = this.add.image(m15[0] * 32 + 16, m15[1] * 32 - 10, 'dragonfly').setDepth(6.4).setScale(1 + Math.random() * 0.3);
+        this.tweens.add({ targets: df, scaleY: df.scaleY * 0.45, duration: 90, yoyo: true, repeat: -1 });
+        this.tweens.add({ targets: df, x: df.x + (Math.random() * 90 - 45), y: df.y + (Math.random() * 46 - 23), duration: 900 + Math.random() * 700, yoyo: true, repeat: -1, ease: 'Sine.inOut', delay: Math.random() * 600 });
+        this.dragonflies.push(df);
+      }
+      // folhas boiando à deriva na água
+      this._floatLeaves = [];
+      this.time.addEvent({ delay: 700, loop: true, callbackScope: this, callback: function() {
+        this._floatLeaves = this._floatLeaves.filter(function(l15) { return l15.active; });
+        if (this._floatLeaves.length >= 8) return;
+        for (let t15 = 0; t15 < 20; t15++) {
+          const fx15 = Math.floor(Math.random() * this.mapData[0].length), fy15 = Math.floor(Math.random() * this.mapData.length);
+          if (this.mapData[fy15][fx15] !== 'water') continue;
+          const lf15 = this.add.image(fx15 * 32 + 16, fy15 * 32 + 16, 'leaf').setDepth(0.84).setScale(0.45 + Math.random() * 0.25).setAlpha(0.85).setRotation(Math.random() * 6.28);
+          lf15.name = 'floatleaf';
+          this._floatLeaves.push(lf15);
+          const durL15 = 5200 + Math.random() * 2600;
+          this.tweens.add({ targets: lf15, x: lf15.x + 80 + Math.random() * 50, duration: durL15, onComplete: function() { lf15.destroy(); } });
+          this.tweens.add({ targets: lf15, y: lf15.y + (Math.random() * 24 - 12), rotation: lf15.rotation + (Math.random() * 2 - 1), duration: durL15 });
+          break;
+        }
+      } });
+    }
+    { // v136 — toques de encanto: sapos, bolhas e cristais no Perim
+      frogTex(this); bubbleTex(this); crystalTex(this);
+      // sapos: ficam na grama junto à água e pulam PRA ÁGUA quando o herói chega perto
+      this.frogs = [];
+      for (let fi16 = 0; fi16 < 4; fi16++) {
+        for (let t16 = 0; t16 < 80; t16++) {
+          const gx16 = Math.floor(Math.random() * tilesX), gy16 = Math.floor(Math.random() * tilesY);
+          if (this.mapData[gy16][gx16] !== 'grass') continue;
+          const dirs16 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+          let wd16 = null;
+          for (let d16 = 0; d16 < 4; d16++) if (this.mapData[gy16 + dirs16[d16][1]] && this.mapData[gy16 + dirs16[d16][1]][gx16 + dirs16[d16][0]] === 'water') { wd16 = dirs16[d16]; break; }
+          if (!wd16) continue;
+          this.frogs.push({ spr: this.add.image(gx16 * 32 + 16, gy16 * 32 + 16, 'frog').setDepth(6.3).setScale(1 + Math.random() * 0.3), wx: wd16[0], wy: wd16[1], last: -9999 });
+          break;
+        }
+      }
+      this.time.addEvent({ delay: 400, loop: true, callbackScope: this, callback: function() {
+        for (let fi16 = 0; fi16 < this.frogs.length; fi16++) {
+          const f16 = this.frogs[fi16]; if (!f16.spr.active) continue;
+          if (Phaser.Math.Distance.Between(f16.spr.x, f16.spr.y, this.player.x, this.player.y) < 90 && this.time.now - f16.last > 2200) {
+            f16.last = this.time.now;
+            this.tweens.add({ targets: f16.spr, x: f16.spr.x + f16.wx * 46, y: f16.spr.y + f16.wy * 46, duration: 340, ease: 'Sine.out' });
+            this.tweens.add({ targets: f16.spr, scaleY: f16.spr.scaleY * 0.6, duration: 170, yoyo: true });
+          }
+        }
+      } });
+      // bolhas subindo na água funda dos lagos
+      const deepTiles16 = [];
+      for (let y16 = 1; y16 < tilesY - 1; y16++) for (let x16 = 1; x16 < tilesX - 1; x16++) if (this.mapData[y16][x16] === 'deep') deepTiles16.push([x16, y16]);
+      this.time.addEvent({ delay: 550, loop: true, callbackScope: this, callback: function() {
+        if (!deepTiles16.length) return;
+        const b16 = deepTiles16[Math.floor(Math.random() * deepTiles16.length)];
+        const bb = this.add.image(b16[0] * 32 + 8 + Math.random() * 16, b16[1] * 32 + 20, 'bubble').setDepth(0.86).setScale(0.7 + Math.random() * 0.6).setAlpha(0.55);
+        this.tweens.add({ targets: bb, y: bb.y - 12 - Math.random() * 8, alpha: 0, duration: 1300 + Math.random() * 700, onComplete: function() { bb.destroy(); } });
+      } });
+      // cristais cintilantes espalhados na grama
+      let crs16 = 0;
+      for (let t16 = 0; t16 < 300 && crs16 < 8; t16++) {
+        const gx16 = Math.floor(Math.random() * tilesX), gy16 = Math.floor(Math.random() * tilesY);
+        if (this.mapData[gy16][gx16] !== 'grass') continue;
+        if (Math.abs(gx16 - 18) < 4 && Math.abs(gy16 - 24) < 4) continue;
+        const cr = this.add.image(gx16 * 32 + 16, gy16 * 32 + 16, 'crystal').setDepth(5.5).setScale(0.9 + Math.random() * 0.5);
+        this.tweens.add({ targets: cr, alpha: { from: 1, to: 0.55 }, duration: 1500 + Math.random() * 1200, yoyo: true, repeat: -1 });
+        crs16++;
+      }
+    }
+    { // v137 — dia de vento no Perim
+      const WW17 = this.worldW, WH17 = this.worldH;
+      cloudShadowTex(this);
+      for (let ci17 = 0; ci17 < 2; ci17++) {
+        const cs17 = this.add.image(-300 + Math.random() * (WW17 + 200), 100 + Math.random() * (WH17 - 200), 'cloudsh').setDepth(9.2).setScale(1.3 + Math.random() * 0.8).setAlpha(0.12);
+        this.tweens.add({ targets: cs17, x: WW17 + 300, duration: 62000 + ci17 * 15000, repeat: -1, delay: ci17 * 9000, onRepeat: function() { cs17.y = 100 + Math.random() * (WH17 - 200); } });
+      }
+      birdsitTex(this);
+      this.sitBirds = [];
+      for (let si17 = 0; si17 < 3; si17++) {
+        for (let t17 = 0; t17 < 200; t17++) {
+          const gx17 = Math.floor(Math.random() * tilesX), gy17 = Math.floor(Math.random() * tilesY);
+          if (this.mapData[gy17][gx17] !== 'grass') continue;
+          if (Math.abs(gx17 - 18) < 4 && Math.abs(gy17 - 24) < 4) continue;
+          this.sitBirds.push(this.add.image(gx17 * 32 + 16, gy17 * 32 + 20, 'birdsit').setDepth(6.25).setScale(1 + Math.random() * 0.3));
+          break;
+        }
+      }
+      this.time.addEvent({ delay: 450, loop: true, callbackScope: this, callback: function() {
+        for (let si17 = 0; si17 < this.sitBirds.length; si17++) {
+          const sb17 = this.sitBirds[si17];
+          if (!sb17.active || sb17.getData('voou')) continue;
+          if (Phaser.Math.Distance.Between(sb17.x, sb17.y, this.player.x, this.player.y) < 95) {
+            sb17.setData('voou', 1);
+            const dir17 = sb17.x < this.player.x ? 1 : -1;
+            sb17.setFlipX(dir17 < 0);
+            this.tweens.add({ targets: sb17, x: sb17.x + dir17 * 130, y: sb17.y - 150, alpha: 0, duration: 900, ease: 'Sine.out', onComplete: function() { sb17.destroy(); } });
+          }
+        }
+      } });
+      let lts17 = 0; // lanternas nas pontes
+      for (let y17 = 1; y17 < tilesY - 1 && lts17 < 6; y17++) for (let x17 = 1; x17 < tilesX - 1 && lts17 < 6; x17++) {
+        if (this.mapData[y17][x17] !== 'bridge' || (x17 * 3 + y17 * 7) % 9 !== 0) continue;
+        const bl17 = this.add.image(x17 * 32 + 16, y17 * 32 + 6, 'lantern').setDepth(5.2).setName('bridgelt').setScale(0.8);
+        this.tweens.add({ targets: bl17, alpha: { from: 0.7, to: 1 }, duration: 1400 + lts17 * 150, yoyo: true, repeat: -1 });
+        lts17++;
+      }
+      if (!lts17) { for (let y17 = 1; y17 < tilesY - 1 && !lts17; y17++) for (let x17 = 1; x17 < tilesX - 1; x17++) if (this.mapData[y17][x17] === 'bridge') { const bl17 = this.add.image(x17 * 32 + 16, y17 * 32 + 6, 'lantern').setDepth(5.2).setName('bridgelt').setScale(0.8); this.tweens.add({ targets: bl17, alpha: { from: 0.7, to: 1 }, duration: 1500, yoyo: true, repeat: -1 }); lts17 = 1; break; } }
+      this.tweens.timeScale = 1; // v137 — rajadas de vento: tudo balança mais rápido por ~1s + chuva de folhas
+      this._nextGust = this.time.now + 15000;
+      this._gustUntil = 0;
+      this.time.addEvent({ delay: 1000, loop: true, callbackScope: this, callback: function() {
+        if (this._gustUntil && this.time.now > this._gustUntil) { this.tweens.timeScale = 1; this._gustUntil = 0; }
+        if (this.time.now >= this._nextGust) {
+          this._nextGust = this.time.now + 18000 + Math.random() * 14000;
+          this._gustUntil = this.time.now + 1100;
+          this.tweens.timeScale = 2.4;
+          for (let gi17 = 0; gi17 < 8; gi17++) spawnFallingLeaf(this);
+        }
+      } });
+    }
+    { // v140 — tartarugas mergulhonas, barris de vila e caustics de luz na água
+      turtleTex(this); barrelTex(this); glowTex(this, 'caustic', 'rgba(190,230,255,0.55)');
+      this.turtles = [];
+      const agua140 = [];
+      for (let y20 = 2; y20 < tilesY - 2; y20++) for (let x20 = 2; x20 < tilesX - 2; x20++) if (this.mapData[y20][x20] === 'water' || this.mapData[y20][x20] === 'deep') agua140.push([x20, y20]);
+      for (let ti20 = 0; ti20 < 3 && agua140.length; ti20++) {
+        const a20 = agua140[Math.floor(Math.random() * agua140.length)];
+        const tt = this.add.image(a20[0] * 32 + 16, a20[1] * 32 + 16, 'turtle').setDepth(0.87).setScale(1 + Math.random() * 0.25);
+        this.turtles.push(tt);
+        this.tweens.add({ targets: tt, x: Phaser.Math.Clamp(tt.x + (Math.random() * 120 - 60), 64, this.worldW - 64), y: Phaser.Math.Clamp(tt.y + (Math.random() * 80 - 40), 64, this.worldH - 64), duration: 5000 + Math.random() * 3000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      }
+      this.time.addEvent({ delay: 350, loop: true, callbackScope: this, callback: function() {
+        for (let ti20 = 0; ti20 < this.turtles.length; ti20++) {
+          const tt2 = this.turtles[ti20]; if (!tt2.active) continue;
+          if (tt2.getData('sub')) continue;
+          if (Phaser.Math.Distance.Between(tt2.x, tt2.y, this.player.x, this.player.y) < 75) {
+            tt2.setData('sub', 1);
+            const rg20 = this.add.image(tt2.x, tt2.y + 4, 'fishring').setDepth(0.88).setScale(0.4).setAlpha(0.5);
+            this.tweens.add({ targets: rg20, scale: 1.3, alpha: 0, duration: 700, onComplete: function() { rg20.destroy(); } });
+            this.tweens.add({ targets: tt2, alpha: 0, duration: 350, onComplete: function() {
+              tt2.scene.time.delayedCall(2600 + Math.random() * 1600, function() { if (tt2.active) { tt2.scene.tweens.add({ targets: tt2, alpha: 1, duration: 400, onComplete: function() { tt2.setData('sub', 0); } }); } });
+            } });
+          }
+        }
+      } });
+      let brs20 = 0; // barris na margem (decoração de vila, como na referência)
+      for (let t20 = 0; t20 < 300 && brs20 < 4; t20++) {
+        const gx20 = Math.floor(Math.random() * tilesX), gy20 = Math.floor(Math.random() * tilesY);
+        if (this.mapData[gy20][gx20] !== 'grass') continue;
+        if (Math.abs(gx20 - 18) < 5 && Math.abs(gy20 - 24) < 5) continue;
+        const dirs20 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+        let vizW20 = false;
+        for (let d20 = 0; d20 < 4; d20++) { const t18b = this.mapData[gy20 + dirs20[d20][1]] && this.mapData[gy20 + dirs20[d20][1]][gx20 + dirs20[d20][0]]; if (t18b === 'water' || t18b === 'deep') vizW20 = true; }
+        if (!vizW20) continue;
+        this.add.image(gx20 * 32 + 16, gy20 * 32 + 26, 'barrel').setDepth(5.3).setOrigin(0.5, 1).setScale(0.95 + Math.random() * 0.25);
+        brs20++;
+      }
+      this._caustics = []; // luz dançando sobre a água
+      for (let ci20 = 0; ci20 < 6 && agua140.length; ci20++) {
+        const a20 = agua140[Math.floor(Math.random() * agua140.length)];
+        const ca = this.add.image(a20[0] * 32 + 16, a20[1] * 32 + 16, 'caustic').setDepth(0.468).setScale(1.6 + Math.random() * 1.4).setAlpha(0.05).setName('caustic');
+        this.tweens.add({ targets: ca, alpha: { from: 0.03, to: 0.08 }, duration: 2600 + Math.random() * 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        this.tweens.add({ targets: ca, x: ca.x + 40 + Math.random() * 30, y: ca.y + 16 + Math.random() * 20, duration: 7000 + Math.random() * 4000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        this._caustics.push(ca);
+      }
+    }
+    { // v141 — margem viva: pedras grandes, guarda-corpo nas pontes e pássaro se banhando
+      boulderTex(this); brailerTex(this);
+      let bld21 = 0;
+      for (let y21 = 1; y21 < tilesY - 1 && bld21 < 6; y21++) for (let x21 = 1; x21 < tilesX - 1 && bld21 < 6; x21++) {
+        if (this.mapData[y21][x21] !== 'grass') continue;
+        if ((x21 * 11 + y21 * 23) % 13 !== 5) continue;
+        if (Math.abs(x21 - 18) < 5 && Math.abs(y21 - 24) < 5) continue;
+        const dirs21 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+        let vw21 = false;
+        for (let d21 = 0; d21 < 4; d21++) { const t21b = this.mapData[y21 + dirs21[d21][1]] && this.mapData[y21 + dirs21[d21][1]][x21 + dirs21[d21][0]]; if (t21b === 'water' || t21b === 'deep') vw21 = true; }
+        if (!vw21) continue;
+        const bd21 = this.add.image(x21 * 32 + 16, y21 * 32 + 26, 'boulder').setDepth(5.45).setOrigin(0.5, 1).setScale(1 + Math.random() * 0.5);
+        if (Math.random() < 0.5) bd21.setFlipX(true);
+        bld21++;
+      }
+      for (let y21 = 1; y21 < tilesY - 1; y21++) for (let x21 = 1; x21 < tilesX - 1; x21++) { // guarda-corpo nas bordas laterais das pontes
+        if (this.mapData[y21][x21] !== 'bridge') continue;
+        if (this.mapData[y21][x21 - 1] && this.mapData[y21][x21 - 1] !== 'bridge') this.add.image(x21 * 32 + 4, y21 * 32 + 16, 'brailer').setDepth(5.6);
+        if (this.mapData[y21][x21 + 1] && this.mapData[y21][x21 + 1] !== 'bridge') this.add.image(x21 * 32 + 28, y21 * 32 + 16, 'brailer').setDepth(5.6);
+      }
+      this.bathSplash = 0;
+      const banhar21 = (function() { // pássaro se banhando na beira da água
+        const self141 = this;
+        for (let t21 = 0; t21 < 40; t21++) {
+          const bx21 = 2 + Math.floor(Math.random() * (tilesX - 4)), by21 = 2 + Math.floor(Math.random() * (tilesY - 4));
+          if (this.mapData[by21][bx21] !== 'water') continue;
+          const dirs21 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+          let gr21 = null;
+          for (let d21 = 0; d21 < 4; d21++) if (this.mapData[by21 + dirs21[d21][1]] && this.mapData[by21 + dirs21[d21][1]][bx21 + dirs21[d21][0]] === 'grass') gr21 = dirs21[d21];
+          if (!gr21) continue;
+          const bird21 = this.add.image(bx21 * 32 + 16 + gr21[0] * 10, by21 * 32 + 16 + gr21[1] * 10 - 60, 'birdsit').setDepth(6.3).setName('bathbird');
+          this.tweens.add({ targets: bird21, y: bird21.y + 60, duration: 420, ease: 'Sine.out' });
+          [650, 1300].forEach(function(atraso) {
+            self141.time.delayedCall(atraso, function() {
+              if (!bird21.active) return;
+              const rg21 = self141.add.image(bird21.x, bird21.y + 3, 'fishring').setDepth(0.88).setScale(0.35).setAlpha(0.6);
+              self141.tweens.add({ targets: rg21, scale: 1.2, alpha: 0, duration: 620, onComplete: function() { rg21.destroy(); } });
+              self141.bathSplash++;
+            });
+          });
+          self141.time.delayedCall(2100, function() {
+            if (!bird21.active) return;
+            self141.tweens.add({ targets: bird21, y: bird21.y - 160, alpha: 0, duration: 900, onComplete: function() { bird21.destroy(); } });
+          });
+          return;
+        }
+      }).bind(this);
+      this.spawnBathBird = banhar21;
+      banhar21();
+      this.time.addEvent({ delay: 15000, loop: true, callback: banhar21, callbackScope: this });
+    }
+    this.time.addEvent({ // v130 — anima raso/fundo por máscara
+      delay: 650, callback: function() {
+        this.waterFrame = ((this.waterFrame || 0) + 1) % 4;
+        const wl = this.waterTiles || [];
+        for (let i = 0; i < wl.length; i++) {
+          const w = wl[i];
+          w.img.setTexture(waterTex(this, w.deep, w.mask, w.v, this.waterFrame));
         }
       }, callbackScope: this, loop: true,
     });
     this.objects = this.add.group();
     this.bigScenery = [];   // v1.5 — arvores/casas grandes (ordenadas por profundidade no update)
+    this.leafTrees = []; this.leavesGroup = this.add.group(); // v129 — folhas caindo
+    this.time.addEvent({ delay: 750, loop: true, callback: function() { spawnFallingLeaf(this); }, callbackScope: this }); // v129
+    addDriftFog(this, 0.09); // v132 — névoa leve
 
     // ===== v1.5 — LANDMARKS PRIMEIRO (casas grandes decorativas, SEM nome) =====
     GameState.landmarks = [];
@@ -5355,6 +6678,9 @@ class PerimScene extends Phaser.Scene {
       tree.setOrigin(0.5, 0.94);                     // base do tronco no tile
       tree.setScale(1.3 + Math.random() * 0.35);
       tree.setDepth(5);
+      // v129 — vento: balanço suave nas copas (pivô na base do tronco)
+      this.tweens.add({ targets: tree, rotation: { from: -0.02, to: 0.02 }, duration: 2400 + Math.random() * 1800, delay: Math.random() * 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      (this.leafTrees = this.leafTrees || []).push(tree);
       this.objects.add(tree); this.bigScenery.push(tree);
       this.physics.add.existing(tree, true); tree.body.setSize(18, 14); tree.body.setOffset(39, 106);
     }
@@ -5399,10 +6725,12 @@ class PerimScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08); this.cameras.main.setZoom(1.3);
     this.cameras.main.setBounds(0, 0, this.worldW, this.worldH);
     this.physics.add.collider(this.player, this.objects, antiStickCallback, null, this);
+    this.physics.add.collider(this.player, this.deepGroup); // v130 — água funda bloqueia
     // v2.2 — CAVERNA SECRETA: 1 buraco escondido por região (pisar = cair)
     this.spawnSecretHole();
     // Enemies (spawn raro)
     this.enemies = this.physics.add.group(); GameState.enemies = [];
+    if (this.deepGroup) this.physics.add.collider(this.enemies, this.deepGroup); // v130 — monstros não nadam no fundo
     this.monsterSpawnTimer = 0;
     this.nextSpawnIn = 4000 + Math.random() * 6000; // primeiro spawn em 4-10s
     this.regionEnemies = [];
@@ -5757,6 +7085,7 @@ class PerimScene extends Phaser.Scene {
       }
     }
     if (this.autoState !== 'scan') {
+      if (tileIsWaterAt(this.mapData, p.x, p.y)) { vx *= 0.8; vy *= 0.8; } // v129 — água rasa: 20% mais lento
       p.setVelocity(vx, vy);
     }
     // v1.5 — ordenacao por profundidade: arvores/casas grandes cobrem o heroi quando estao na frente
@@ -5843,6 +7172,7 @@ class PerimScene extends Phaser.Scene {
       }
       // Se estiver sendo escaneado, move a 50% da velocidade (não para)
       if (isBeingScanned) { evx *= 0.5; evy *= 0.5; }
+      if (tileIsWaterAt(this.mapData, e.x, e.y)) { evx *= 0.8; evy *= 0.8; } // v129 — 20% lento na água
       e.setVelocity(evx, evy);
     }
   }
@@ -6086,6 +7416,7 @@ class CaveScene extends Phaser.Scene {
     this.regionEnemies = [];
     for (let i = 0; i < ENEMY_TYPES.length; i++) { if (ENEMY_TYPES[i].regions.indexOf(GameState.currentRegion) !== -1) this.regionEnemies.push(ENEMY_TYPES[i]); }
     this.enemies = this.physics.add.group(); GameState.enemies = [];
+    if (this.deepGroup) this.physics.add.collider(this.enemies, this.deepGroup); // v130 — monstros não nadam no fundo
     this.materials = this.physics.add.group();
     for (let i = 0; i < 2 + Math.floor(Math.random() * 2); i++) this.spawnCaveMaterial();
     if (Math.random() < 0.35 && this.regionEnemies.length) this.spawnCaveMonster();
@@ -6333,6 +7664,7 @@ class CaveScene extends Phaser.Scene {
         }
       }
       if (isBeingScanned) { evx *= 0.5; evy *= 0.5; }
+      if (tileIsWaterAt(this.mapData, e.x, e.y)) { evx *= 0.8; evy *= 0.8; } // v129 — 20% lento na água
       e.setVelocity(evx, evy);
     }
     // máquina autônoma: wander / chase / scan (SCAN 2x MAIS RÁPIDO na caverna)
@@ -6448,9 +7780,14 @@ function drawExtPath(ctx) {
   ctx.fillStyle = '#e4d3ad'; ctx.fillRect(8, 20, 5, 3); ctx.fillRect(24, 4, 4, 3);
 }
 function drawExtWater(ctx) {
-  ctx.fillStyle = '#3f8fd4'; ctx.fillRect(0, 0, 32, 32);
-  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(3, 8, 9, 2); ctx.fillRect(18, 20, 10, 2); ctx.fillRect(8, 27, 7, 2);
-  ctx.fillStyle = 'rgba(120,190,240,0.4)'; ctx.fillRect(0, 0, 32, 6);
+  // v129 — textura com ondulacao + espuma
+  const g = ctx.createLinearGradient(0, 0, 0, 32);
+  g.addColorStop(0, '#5fb0e8'); g.addColorStop(1, '#3f8fd4');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(0, 6, 32, 2); ctx.fillRect(0, 22, 32, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.30)'; ctx.fillRect(5, 13, 8, 2); ctx.fillRect(21, 27, 7, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.14)'; ctx.fillRect(0, 0, 32, 4);
+  ctx.fillStyle = 'rgba(20,60,120,0.15)'; ctx.fillRect(0, 30, 32, 2);
 }
 function drawExtHedge(ctx) {
   ctx.fillStyle = '#2f6b34';
@@ -6581,11 +7918,56 @@ class ExteriorScene extends Phaser.Scene {
     this.physics.world.setBounds(140, 140, W - 280, H - 280);
     this.walls = this.physics.add.staticGroup();
     this.add.tileSprite(cx, cy, W, H, 'ext_grass').setDepth(0);
-    // água nas bordas
-    this.add.tileSprite(cx, 70, W, 140, 'ext_water').setDepth(1);
-    this.add.tileSprite(cx, H - 70, W, 140, 'ext_water').setDepth(1);
-    this.add.tileSprite(70, cy, 140, H, 'ext_water').setDepth(1);
-    this.add.tileSprite(W - 70, cy, 140, H, 'ext_water').setDepth(1);
+    // água nas bordas (v129 — correnteza animada + folhas caindo)
+    const tsN = this.add.tileSprite(cx, 70, W, 140, 'ext_water').setDepth(1);
+    const tsS = this.add.tileSprite(cx, H - 70, W, 140, 'ext_water').setDepth(1);
+    const tsW = this.add.tileSprite(70, cy, 140, H, 'ext_water').setDepth(1);
+    const tsE = this.add.tileSprite(W - 70, cy, 140, H, 'ext_water').setDepth(1);
+    this.tweens.add({ targets: tsN, tilePositionX: '-=128', duration: 9000, repeat: -1 });
+    this.tweens.add({ targets: tsS, tilePositionX: '+=128', duration: 11000, repeat: -1 });
+    this.tweens.add({ targets: tsW, tilePositionY: '+=128', duration: 10000, repeat: -1 });
+    this.tweens.add({ targets: tsE, tilePositionY: '-=128', duration: 8500, repeat: -1 });
+    this.leafTrees = []; this.leavesGroup = this.add.group(); // v129
+    this.time.addEvent({ delay: 900, loop: true, callback: function() { spawnFallingLeaf(this); }, callbackScope: this }); // v129
+    { // v132 — flores espalhadas no gramado + névoa leve
+      const FLC = ['flower_red', 'flower_yellow', 'flower_purple'];
+      for (let fi = 0; fi < 80; fi++) {
+        const fx = 170 + Math.random() * (W - 340), fy = 170 + Math.random() * (H - 340);
+        if (Math.hypot(fx - cx, fy - cy) < 250) continue;
+        let perto = false;
+        const rr = Math.hypot(fx - cx, fy - cy);
+        const ang = Math.atan2(fy - cy, fx - cx);
+        for (let a2 = 0; a2 < 8; a2++) { let dd = Math.abs(ang - a2 * Math.PI / 4); dd = Math.min(dd, Math.PI * 2 - dd); if (dd * rr < 30) perto = true; }
+        if (this.dromos) for (let di = 0; di < this.dromos.length; di++) { if (Math.hypot(fx - this.dromos[di].x, fy - this.dromos[di].y) < 210) perto = true; }
+        if (perto) continue;
+        this.add.image(fx, fy, FLC[fi % 3]).setDepth(2).setScale(0.75 + Math.random() * 0.5).setAlpha(0.95);
+      }
+      addDriftFog(this, 0.08);
+    }
+    { // v133 — vida no Exterior: vagalumes pulsando + sombras de nuvens passando
+      glowTex(this, 'firefly', 'rgba(255,239,150,0.95)');
+      this.flies = [];
+      for (let fi2 = 0; fi2 < 16; fi2++) {
+        const ff = this.add.image(140 + Math.random() * (W - 280), 140 + Math.random() * (H - 280), 'firefly').setDepth(3.5).setScale(0.5 + Math.random() * 0.5);
+        this.tweens.add({ targets: ff, alpha: { from: 0.15, to: 1 }, duration: 700 + Math.random() * 900, yoyo: true, repeat: -1, ease: 'Sine.inOut', delay: Math.random() * 900 });
+        this.tweens.add({ targets: ff, x: Phaser.Math.Clamp(ff.x + (Math.random() * 220 - 110), 60, W - 60), y: Phaser.Math.Clamp(ff.y + (Math.random() * 160 - 80), 60, H - 60), duration: 2600 + Math.random() * 2200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        this.flies.push(ff);
+      }
+      cloudShadowTex(this);
+      for (let ci2 = 0; ci2 < 3; ci2++) {
+        const cs = this.add.image(-300 + Math.random() * (W + 200), 100 + Math.random() * (H - 200), 'cloudsh').setDepth(9.2).setScale(1.4 + Math.random() * 0.9).setAlpha(0.14);
+        this.tweens.add({ targets: cs, x: W + 300, duration: 55000 + ci2 * 18000, repeat: -1, delay: ci2 * 12000, onRepeat: function() { cs.y = 100 + Math.random() * (H - 200); } });
+      }
+    }
+    addBirdFlocks(this, W, H); // v134 — pássaros no Exterior
+    { // v135 — pólen dourado flutuando na luz
+      glowTex(this, 'pollen', 'rgba(255,232,150,0.85)');
+      for (let pi15 = 0; pi15 < 14; pi15++) {
+        const pol = this.add.image(120 + Math.random() * (W - 240), 120 + Math.random() * (H - 240), 'pollen').setDepth(3.4).setScale(0.35 + Math.random() * 0.3).setAlpha(0.4);
+        this.tweens.add({ targets: pol, y: pol.y - 60 - Math.random() * 50, alpha: { from: 0.15, to: 0.65 }, duration: 5000 + Math.random() * 4000, repeat: -1, onRepeat: function() { pol.x = 120 + Math.random() * (W - 240); pol.y = 140 + Math.random() * (H - 260); } });
+        this.tweens.add({ targets: pol, x: pol.x + 40 + Math.random() * 40, duration: 3400 + Math.random() * 2600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      }
+    }
     // caminhos radiais (8 direções)
     const RAD = 1180;
     for (let a = 0; a < 8; a++) {
@@ -6630,6 +8012,33 @@ class ExteriorScene extends Phaser.Scene {
       this.interactables.push({ x: dx, y: dy - 20, hint: hint, action: function() { openDromoPanel(m.id); } });
       this.dromos.push({ m: m, x: dx, y: dy });
     }
+    { // v133 — bandeiras nos Dromos
+      flagTex(this);
+      for (let di3 = 0; di3 < this.dromos.length; di3++) {
+        const fl2 = this.add.image(this.dromos[di3].x + 40, this.dromos[di3].y - 40, 'flag').setDepth(6).setOrigin(0.5, 1).setScale(1.15);
+        this.tweens.add({ targets: fl2, rotation: { from: -0.045, to: 0.045 }, duration: 1500 + Math.random() * 700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      }
+    }
+    { // v136 — fontes jorrando água + feixes de luz no Exterior
+      dropTex(this); rayTex(this);
+      const fonts16 = [[cx - 620, cy + 170], [cx + 620, cy + 170]];
+      this.time.addEvent({ delay: 170, loop: true, callbackScope: this, callback: function() {
+        for (let fi16 = 0; fi16 < fonts16.length; fi16++) {
+          const dp = this.add.image(fonts16[fi16][0] + (Math.random() * 14 - 7), fonts16[fi16][1] - 78, 'drop').setDepth(4.2).setScale(0.8 + Math.random() * 0.4);
+          const fxTop16 = fonts16[fi16][1] - 100 - Math.random() * 14;
+          this.tweens.add({ targets: dp, y: fxTop16, duration: 200, ease: 'Sine.out', onComplete: function() {
+            dp.tweens ? null : null;
+            dp.scene.tweens.add({ targets: dp, y: fonts16[fi16][1] - 28, duration: 260, ease: 'Sine.in', onComplete: function() { dp.destroy(); } });
+            dp.scene.tweens.add({ targets: dp, x: dp.x + 5 + Math.random() * 7, duration: 260 });
+          } });
+        }
+      } });
+      const rays16 = [[0.22, 0.08, 1.5], [0.5, 0.02, 2.1], [0.78, 0.16, 1.2]];
+      for (let ri16 = 0; ri16 < rays16.length; ri16++) {
+        const gr = this.add.image(W * rays16[ri16][0], H * rays16[ri16][1], 'godray').setDepth(9.3).setOrigin(0.5, 0).setScale(rays16[ri16][2], 1.1 + Math.random() * 0.4).setRotation(0.32).setAlpha(0.1);
+        this.tweens.add({ targets: gr, alpha: { from: 0.06, to: 0.14 }, duration: 3800 + ri16 * 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      }
+    }
     // cercas-vivas (labirintos decorativos) e árvores
     let placed = 0, guard = 0;
     while (placed < 90 && guard++ < 900) {
@@ -6655,6 +8064,9 @@ class ExteriorScene extends Phaser.Scene {
       for (let i = 0; i < this.dromos.length; i++) { if (Math.hypot(tx - this.dromos[i].x, ty - this.dromos[i].y) < 250) bad = true; }
       if (bad) continue;
       const tree = this.add.image(tx, ty, 'ext_tree').setDepth(5).setOrigin(0.5, 0.92).setScale(1.2 + Math.random() * 0.4);
+      // v129 — vento nas copas + folhas caindo
+      this.tweens.add({ targets: tree, rotation: { from: -0.018, to: 0.018 }, duration: 2200 + Math.random() * 1600, delay: Math.random() * 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      this.leafTrees.push(tree);
       this.physics.add.existing(tree, true); tree.body.setSize(20, 14); tree.body.setOffset(14, 78);
       this.walls.add(tree);
       placed++;
@@ -6783,7 +8195,7 @@ class DromeScene extends Phaser.Scene {
       for (let x = 0; x < tilesX; x++) {
         const isWall = x === 0 || x === tilesX - 1 || y === 0 || y === tilesY - 1 || (Math.random() < 0.03 && x > 5 && x < tilesX - 5 && y > 5 && y < tilesY - 5);
         const key = isWall ? 'drome_wall' : 'drome_floor';
-        const tile = this.add.image(x * 32 + 16, y * 32 + 16, key); tile.setDepth(0); tile.setDisplaySize(33, 33); this.tileGroup.add(tile);
+        const tile = this.add.image(x * 32 + 16, y * 32 + 16, key); tile.setDepth(type === 'bridge' ? 0.5 : 0); tile.setDisplaySize(33, 33); this.tileGroup.add(tile); // v138 — pontes por cima da água orgânica
         // TODAS as paredes (bordas + internas) recebem colisor
         if (isWall) {
           const wall = this.add.rectangle(x * 32 + 16, y * 32 + 16, 32, 32, 0x000000, 0);
@@ -7889,7 +9301,7 @@ function drawMinimapPerim(ctx, sc, t) {
       for (let x = 0; x < tw; x++) {
         if (!ex.has(x + ',' + y)) continue;
         const tile = md[y][x];
-        ctx.fillStyle = tile === 'water' ? '#3f6fd8' : tile === 'path' ? '#c9b48a' : tile === 'bridge' ? '#8a6a3a' : (((x + y) & 1) ? gA : gB);
+        ctx.fillStyle = tile === 'water' ? '#4a90d8' : tile === 'deep' ? '#2b4a9e' : tile === 'path' ? '#c9b48a' : tile === 'bridge' ? '#8a6a3a' : (((x + y) & 1) ? gA : gB);
         ctx.fillRect(t.ox + x * 32 * t.s, t.oy + y * 32 * t.s, cell, cell);
       }
     }
