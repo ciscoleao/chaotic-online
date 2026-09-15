@@ -445,3 +445,307 @@ ficava toda preta e o jogo travava (nenhuma cena ativa).
   ~13,5s → volta ao Perim. Screenshot mostra a caverna renderizada com
   contagem regressiva, corda e balões;
 - Regressão completa verde (14 arquivos de teste).
+
+## v143 — polimento final (feedback de gameplay)
+
+- **Patos a 10% da velocidade** (passeio tranquilo, patinhos com passo
+  calmo na fila);
+- **Anti-stuck em 450ms**: o herói não fica mais 1s inteiro deslizando
+  nas bordas — troca de direção bem antes;
+- **Casas NUNCA dentro do lago**: se a área cair na água, a casa é
+  empurrada pro terreno seco mais próximo;
+- **Y-sorting completo**: girassol, monstros e decoração de margem
+  respeitam a profundidade das árvores (quem está ao sul fica na frente,
+  ao norte fica atrás da copa) — fim dos vazios sobre a árvore;
+- **Grama 100% padronizada**: um único tom de verde base + detalhes a 5
+  tons (imperceptível que é um quadrado — como no piso da pedra);
+- **Névoa uniforme** (grade tremida, quase imperceptível), **sombras de
+  nuvem sem bordas retas** e **manchas d'água redondas** (fim dos
+  quadradinhos azuis no lago);
+- test26 novo: 7/7 (prova por pixels da cor única + velocidade do pato +
+  casas secas + y-sorting SUL/NORTE) e 16 arquivos de teste verdes.
+
+## v144 — desempenho (FPS no celular)
+
+- **Chão assado em 1 canvas**: todos os ~4.300 sprites de tile de grama/
+  areia/barro/trilha foram fundidos num único canvas (groundbake) desenhado
+  uma vez por mapa — a cena cai de **4.648 para ~430 objetos**;
+- **Água sem Image duplicada**: os tiles de água ficam só como dados
+  (máscara + profundidade); o visual continua sendo a água orgânica da
+  v138 (margens, areia, espuma, profundidade, glints, caustics);
+- **Modo lite em touch** (`ontouchstart`/`maxTouchPoints`): borboletas
+  10→6, vaga-lumes 16→8, pétalas 14→7, caustics 6→3 — mantendo tartarugas,
+  patos, peixes, coelhos, pássaros e todo o resto da vida;
+- **Reentrada blindada**: se a textura groundbake já existir (travelTo
+  recria a cena), ela é removida antes do addCanvas — chão nunca vira
+  "missing texture" na 2ª/3ª entrada (prova test14b: 3 entradas seguidas,
+  9/9 ×2);
+- **Números medidos (Chrome headless, CPU 4× via CDP)**: antes 4.648
+  filhos / 11 FPS → depois **431 filhos / 23 FPS @CPU4×** e **60 FPS sem
+  throttling**;
+- Pontes continuam como imagem (profundidade correta sobre a água);
+- Regressão completa verde: test4 (24), test5 mobile (OK), test8 (10),
+  test9 (18), test11 (22), test12 (10), test13 (13), test14 (12),
+  test14b (9), test15 (10), test16 (13), test17 (13), test18 (18),
+  test19 (17), test21 (10), test22 (6), test23 (7), test24 (8),
+  test25 (5), test26 (7).
+
+## v145 — desempenho II (foco no celular)
+
+- **Buffer do canvas a 80% em touch**: no celular o jogo renderiza em um
+  buffer 20% menor (com `Phaser.Scale.NONE` fixo) e o CSS estica o canvas
+  preenchendo a tela inteira com `image-rendering: pixelated` — fica
+  nítido, sem banda preta e corta ~36% dos pixels por frame (o maior
+  custo de CPU/GPU num celular);
+- **Desktop intocado**: buffer integral + Scale.RESIZE como antes;
+- **`powerPreference: 'high-performance'`**: pede a GPU mais rápida do
+  aparelho;
+- **Modo lite ainda mais leve em touch** (só decoração; nada de gameplay):
+  libélulas 5→3, ripples do herói 240→400ms, folhas à deriva 8→4, folhas
+  caindo 14→7, cristais 8→4, sombras de nuvem 3→1 (Perim) e 2→1
+  (Exterior), bolhas 550→900ms;
+- **Números (Chrome headless, CPU 4×)**: v143 = 11 FPS → v144 = 23 →
+  **v145 = 37 FPS em touch** (3,4×) com a tela inteira preenchida;
+  desktop 447 filhos / 22 FPS @CPU4× / 59 FPS sem throttle (mantido);
+- **Prova visual**: screenshot em viewport de celular (390×844) mostra o
+  jogo ocupando a tela toda, pixelado nítido, água orgânica e HUD intactos;
+- Regressão completa verde: test4 (24), test5 mobile (OK), test8 (10),
+  test9 (18), test11 (22), test12 (10), test13 (13), test14 (12),
+  test14b (9), test15 (10), test16 (13), test17 (13), test18 (18),
+  test19 (17), test21 (10), test22 (6), test23 (7), test24 (8),
+  test25 (5), test26 (7).
+
+## v146 — desempenho III (culling + auto-degradação)
+
+- **Culling de estáticos no touch**: 186 objetos parados (árvores, casas,
+  pedras, decor) que ficavam FORA da tela passam a ser escondidos — o
+  Phaser não faz culling automático, então tudo era desenhado à toa
+  (a tela só mostra ~13% do mapa). Só ficam visíveis os ~63 perto da
+  câmera; o conjunto troca sozinho conforme o herói anda (prova test27:
+  interseção de 3 em 63 após andar 700px — 3/3);
+  Seguros de fora: monstros, patos, tartarugas, borboletas (tweens),
+  pontes e tudo que tem colisão além de árvore/casa;
+- **Auto-degradação**: se depois de ~12s o aparelho rodar a menos de
+  22 FPS, o buffer cai sozinho para 65% (prova: CPU 16× → buffer
+  312→253 sem intervenção);
+- **Números (Chrome headless, CPU 4×, viewport celular)**: v143 = 11 →
+  v144 = 23 → v145 = 37 → **v146 = 49 FPS** (4,5×) com a tela inteira
+  preenchida; desktop segue intocado (sem culling);
+- **Visual idêntico**: screenshot ancorado na margem mostra água
+  orgânica, patos, taboas, girassol e sombras — nada desaparece
+  (v146_margem.png); regressão completa verde nos 20 arquivos.
+
+## v147 — Tribos de Perim (elementos + portal em abas + safe zones + progressão)
+
+### 1. Vantagens elementais (Dromos) — regra estrita ×1,15
+- Ciclo: ÁGUA > FOGO > TERRA > AR > ÁGUA (+15% de dano no ciclo);
+- Tudo fora do ciclo = 1.00 (sem resistências — regra do design);
+- `elementMultiplier(atk, def)` reescrita como dados declarativos
+  (`ELEMENT_CYCLE`) + aliases de legado (raio→Ar, planta→Terra,
+  sombra→Água) para não quebrar habilidades nem saves antigos;
+- Monstros remapeados: Voltrax=Ar, Sibilora=Terra, Noctumbra=Água;
+  `elementWeaknessText` mostra "fraco contra/forte contra" no novo ciclo.
+
+### 2. Portal em 4 abas de tribo
+- `TRIBES` (OverWorld 🌿, UnderWorld 🔥, Danian 🐝, Mipedian 🏜️) +
+  estado `PORTAL_UI.tab`; M'arrillian aparece desabilitada (futura);
+- Cards por mapa: badge 🛡 SAFE ZONE, "Mapa N da tribo", nível exigido,
+  barra + % de escaneamento e estado 🔒 com o motivo exato do bloqueio
+  (meta clara = retenção); clicar bloqueado explica e NÃO viaja.
+
+### 3. Safe Zones Nv 1 (mapa 1 de cada tribo)
+- ow_grove Bosque Verdejante (floresta harmoniosa), uw_ember Cavernas de
+  Brasas (lava estática laranja), dan_hive Túneis do Monte Pillar
+  (lago de néctar âmbar), mip_oasis Oásis Enfumaçado (areia + água azul
+  + névoa 2,4×);
+- `safe: true` → criaturas não perseguem NEM atacam (Perim e Caverna);
+  scans/trilhas/recompensas funcionam iguais;
+- Temas visuais por região (grama/água/areia/névoa) aplicados no bake
+  do chão v144 — 4 biomas fiéis ao universo de Chaotic;
+- 4 espécies por Safe Zone (100% de scan alcançável no idle).
+
+### 4. Progressão: scan 100% + nível
+- `checkMapUnlock(playerLevel, currentMapScanPercentage, targetMapLevel)`
+  (função pura): mapa N exige 100% do mapa N-1 + nível (N-1)×10
+  (mapa 2 = Lv10, mapa 3 = Lv20, mapa 4 = Lv30...);
+- `mapScan` por região persistido no save; cada espécie nova escaneada
+  sobe o % do mapa com feedback "📑 Mapa: N%" e marcos;
+- `mapUnlocked()` valida no travelTo E no portal; quem já visitava uma
+  região antes da v147 mantém o acesso (nada de progresso perdido);
+- Novos jogadores começam no Bosque Verdejante (Safe Zone do OverWorld).
+
+**Provas (test28, 36/36)**: ciclo elemental completo + legados, 5 abas,
+badge/bloqueio/notificação, temas pixel-provados nos 4 biomas (lava
+176,52,20 · âmbar 154,122,68 · areia 194,168,106), monstro sem atacar
+(HP estável), 0%→100% liberando Caverna de Lava em Lv10, persistência.
+Regressão completa verde (21 arquivos, incl. PVP online test4 24/24) e
+FPS mantido (touch 42 @CPU4×, desktop 23 @CPU4×/453 filhos).
+
+---
+
+## v2.15 — v148: Sobrevivência Idle (pools, aggro, fuga, auto-port, gadgets)
+
+### 1. Pool de criaturas por mapa (fonte única `MAP_POOLS`)
+- **Mapas 1 (Safe Zones)**: exatamente **4 espécies, 100% passivas** —
+  ow_grove, uw_ember, dan_hive e mip_oasis;
+- **Mapas 2 (Prado Verde, Cavernas de Lava, Pântano Sombrio, Ruínas do
+  Tempo)**: **6 espécies, 2 agressivas** (`isAggressive:true`);
+- `AGGRO_SPECIES` = lista canônica de agressivos (Lobo Cinzento, Aranha
+  Gigante, Cão/Salamandra de Magma, Crocodilo, Maré M'arrilliana,
+  Sentinela Eterna, Paradoxo, Dragão Jovem, Gárgula de Perim,
+  Abominação); floresta/montanha/beirada do vazio herdam 2 agressivos;
+- IIFE de fauna zera as regiões antigas e reconstrói tudo dos pools —
+  uma única fonte de verdade (sem divergência spawn × codex).
+
+### 2. Aggro Radius + perseguição + DPS de contato
+- `aggroRadiusOf(type)`: **0** para passivos e dentro de Safe Zones;
+  **150px** para agressivos (só relevante a partir dos mapas 2);
+- Agressivo persegue a v=55 dentro do raio e aplica **DPS de contato**
+  (`atk + (nível da criatura − nível do tipo)`) ao encostar;
+- `e.peaceful` agora é **por espécie** (`!type.isAggressive`) — antes
+  era só da meadow; label ☮️ segue a espécie certa.
+
+### 3. IA idle de fuga/kiting (o herói NUNCA luta)
+- Agressivo próximo (visão = detecção + 60px): o herói **foge na
+  direção oposta** até sair do raio + 30px de margem;
+- Scan idle **só na beirada** do limite de segurança (agressivo entre
+  o herói e a borda → "Alvo fugiu!" e o scan aborta; passivo → normal);
+- Caça passiva de cartas ignora agressivos e exige o mapa sem
+  penalidade — sobreviver em primeiro lugar, lucrar depois.
+
+### 4. Auto-Port —`emergencyPortOut()` (HP ≤ 20%)
+- Dispara **antes** do bloco de morte: invulnerável 6s
+  (`invulUntil`), HP restaurado, animação de TP (anel + feixe de luz +
+  12 partículas + flash) e volta ao **Pátio Central**;
+- **Scans do mapa preservados** (nada se perde) e **penalidade de
+  −10% na exploração** daquele mapa (`mapPenalty[regiao]`, persistida);
+- **Re-scan recupera**: escanear de novo uma espécie já conhecida num
+  mapa penalizado devolve −10% (penalidade zera a 0 e o mapa volta a
+  100%); sem carta duplicada no acervo;
+- Bateria crítica continua voltando ao Pátio pelo fluxo antigo.
+
+### 5. Gadgets do Scanner (equipáveis ANTES de explorar)
+- Novo painel "🧰 Gadgets do Scanner" + strip no portal de viagem;
+- **🥷 Manto de Furtividade**: raio de ameaça dos monstros −30%
+  (150 → 105px) — encosta mais perto sem virar alvo;
+- **👟 Botas de Agilidade**: velocidade do movimento idle +15%
+  (119 → 137) — fugas mais fáceis;
+- 1 gadget equipado por vez (`toggleGadget`); escolha persistida no
+  save e validada no load (`manto`/`botas`, senão null).
+
+**Provas (test29, 24/24)**: pools 4×4 e 6×6 com 2 agressivos por mapa 2,
+aggro=0 em Safe Zone, Lobo persegue v=55 (dot=1,0), DPS de contato,
+passivo nunca persegue, fuga 90→187px, Manto 150→105, Botas 119→137,
+strip+2 cards+equipar pela UI, auto-port (Pátio+invul+HP ok+penalidade
+10%+scans mantidos 6/6), re-scan 10→0 e mapa 100%.
+Regressão completa verde (test4–test29). Screenshots: v148_lobo_persegue,
+v148_autoport, v148_gadgets, v148_safezone.
+
+---
+
+## v2.16 — v149: Chefe de Mapa + Fone de Escuta + Botas de Nado
+
+### 1. CHEFE DE MAPA — o líder da tribo guarda o mapa dominado
+- Fechar **100% de escaneamento** num mapa de tribo desperta o CHEFE:
+  **Maxxor** (Guardião do OverWorld, Prado Verde), **Chaor** (Senhor do
+  UnderWorld, Cavernas de Lava), **Rainha Illexia** (Mãe do Enxame Danian,
+  Pântano Nebuloso) e **Príncipe Ire** (Estandarte Mipediano, Ruínas do
+  Tempo) — todos Lv.14;
+- O herói NÃO luta: o desafio é **escanear o Chefe à base de fuga e
+  stalk na beirada** — raio de ameaça **220px** e velocidade **62**
+  (agressivos comuns: 150px/55); sprite 1,7× maior com label
+  "👑 Nome Lv.14 — Título" dourada;
+- Recompensa: **carta lendária exclusiva** com fanfarra
+  ("👑 CARTA LENDÁRIA!"); `isBoss` → nunca duplica (spawn dedupado e
+  nasce `scanned` se a carta já está no acervo);
+- O **Manto de Furtividade não engana o Chefe** (raio segue 220) —
+  as Botas de Agilidade viram o gadget da moda;
+- **Guardião permanente**: revisitou o mapa dominado → o Chefe
+  re-desperta (delayedCall 2,5s no create), inclusive sem re-carta;
+- Safe Zones continuam absolutas: aggro 0 até para o Chefe.
+
+### 2. Fone de Escuta Code Master 🎧 (gadget 3)
+- **Seta-guia** orbitando o herói aponta o agressivo mais próximo em
+  até 420px — **dourada** quando o alvo é o Chefe, vermelha no comum;
+- Só informação: o herói idle usa a seta para escolher a rota de fuga
+  (depth 8.5, some sem gadget).
+
+### 3. Botas de Nado 🏊 (gadget 4)
+- **Água funda dos lagos vira rasa para o herói**: process-callback do
+  collider v130 retorna false com o gadget → atravesse qualquer lago
+  (monstros continuam contornando — vantagem tática de fuga);
+- Água rasa (rios) segue igual: atravessável desde a v131.
+
+### 4. FIX de produto — scanBar DOM (crash do game loop)
+- `createScanBar` chamava `.destroy()` em elementos **DOM**
+  (`scanBar`/`scanBarText` são `<div>` criados via createElement; o
+  correto é `.remove()`, como já fazia o `cancelScan`). Um novo scan
+  iniciado com barra remanescente **derrubava o game loop** —
+  alcançável desde o scan de agressivos na beirada (v148) e
+  **provocado no teste** (pageerror capturado). Corrigido para
+  `.remove()` + comentário.
+
+### 5. Correção silenciosa da v148 — janela de scan da beirada
+- A janela de scan de agressivos era `SCAN_RANGE+70` (166px) — MENOR
+  que a beirada de fuga (raio 150 + 30 = 180px): **sem Manto era
+  impossível escanear agressivos** (100% do mapa 2 inalcançável).
+  Agora a janela = **raio + 80** (230px, dentro da beirada) e o abort
+  de scan usa o MESMO critério — progressão 100% viável em qualquer
+  gadget.
+
+**Provas (test30, 22/22 ×4)**: 4 chefes nos 4 mapas de tribo, raio 220,
+Manto 220/105 (não engana o Chefe), perseguição v=62, fuga do herói,
+fone liga/desliga, janela de scan (Lobo a 200px entra em scan — janela
+morta da v148 curada), carta lendária (+1 scanned, Chefe consumido),
+nado bloqueia sem gadget e atravessa com gadget, 4 cards na UI, strip
+nomeando o gadget certo, safe zone inofensiva, guardião re-desperta sem
+re-carta. Regressão test4–test29 100% verde (test29 recalibrado: 24/24).
+Screenshots: v149_chefe, v149_fone, v149_nado, v149_gadgets.
+
+---
+
+## v2.17 — v150: Arena do Chefe + Invasão M'arrillian + Clã do Clima + Modo Foto
+
+### 1. 5ª TRIBO — Lagoa Negra M'arrillian (mapa Lv.40)
+- Nova tribo no portal (**5 abas reais**, teaser removido) e nova região:
+  **Lagoa Negra M'arrillian** — bioma de águas negras (grama #2e4a4a,
+  névoa 2,2×), marcos "Trono Afundado" e "Cicatriz das Marés";
+- Pool próprio: 6 espécies, **2 agressivos** (Maré M'arrilliana +
+  Sentinela Eterna); desbloqueio especial: **Lv.40** (a invasão É o
+  marco — motivo explicado no cadeado do portal);
+- 5º Chefe: **Lord Van Bloot**, Almirante das Águas Negras (Lv.24,
+  raio 220, art 'mare' gigante) — guarda a Lagoa como os demais
+  guardiões guardam seus mapas.
+
+### 2. ARENA DO CHEFE (Câmara do Drome)
+- Seção nova no painel de qualquer Mestre do Código: os **5 Guardiões
+  escaneados** viram oponentes da Sala de Batalha (mesmo jogo em tempo
+  real, modo Difícil) — Maxxor, Chaor, Illexia, Ire e Van Bloot com
+  times tribais próprios e dificuldade crescente (base 70→78);
+- Desafiável SÓ com a carta lendária do Chefe no acervo (🔒 caso
+  contrário, com dica do % do mapa); contador de vitórias por Chefe;
+- Recompensas: 1ª vitória +💠800 · +200 XP · **🧩 Fragmento garantido**;
+  revanches +💠300; derrota +💠60 (consolado);
+- Vitórias persistem no save (`bossArenaWins`).
+
+### 3. CLÃ DO CLIMA — missões diárias dos Chefes
+- 3 templates novos: 🥷 Sobrevivente (escape do Chefe ×2 — o abort de
+  scan com o 👑 na cola conta!), 👑 Caçador de Reis (escaneie um Chefe)
+  e ⚔️ Desafiante (vença na Arena);
+- **1 missão de Chefe GARANTIDA por dia** (último slot do quadro);
+- Handlers `escape_boss`/`scan_boss`/`arena_win` no motor de missões.
+
+### 4. MODO FOTO 📸 (painel ⚙️)
+- Esconde HUD/chat/joystick/labels dos monstros, congela o herói para
+  a pose e entra **moldura dourada com legenda da região** + botão de
+  saída; screenshots limpos de Perim no celular.
+
+**Provas (test31, 19/19 ×3)**: 5 tribos, Lagoa Negra Lv.40/pool
+6/2 agressivos/tema, Van Bloot Lv.24 raio 220, portal 5 abas sem
+teaser + card novo, Lv.30 bloqueado → Lv.40 libera, Arena (painel,
+bloqueio sem scan, abertura boss150:meadow, 1ª vitória 800+frag,
+revanche 300), Clã (garantida/dia, escape ×2, scan ×1), Modo Foto
+ON/OFF (HUD, moldura, pose, retorno). Regressão test4–test30 100%
+verde (test28/test30 atualizados p/ 5 abas/5 chefes; test10 ganhou
+cleanup do mock:8905 — mock órfão entre execuções mentia a 3c).
+Screenshots: v150_lagoa_negra, v150_foto, v150_arena.
