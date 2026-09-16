@@ -59,23 +59,41 @@ Antes de abrir para o público, troque as chaves **Turnstile** de teste pelas su
 ```
 chaotic-online/
 ├── package.json                  ← como o servidor inicia (npm start)
-├── chaotic_idleworld_v123.html   ← O JOGO (v2.19 — janelinha PiP + nomes de mapa corretos)
+├── chaotic_idleworld_v123.html   ← O JOGO (v2.20 — janelinha PiP, jogo fora da aba, nomes de mapa corretos)
 ├── server/
 │   ├── server.js                 ← servidor completo (Node puro)
 │   ├── fem.json · skins.json     ← assets das skins
 │   └── README.md                 ← documentação técnica detalhada
 ├── site/
-│   └── index.html                ← site (JOGUE AGORA / CRIAR CONTA)
+│   └── index.html                ← site: ▶ JOGAR abre o jogo em página própria (sem iframe)
+│                                    + botão 🪟 JANELA PRÓPRIA por personagem
 └── docs/
     ├── PASSO-A-PASSO.md          ← guia de hospedagem para leigos
     ├── SUPABASE.md               ← save na nuvem que sobrevive a redeploy
     ├── CORRECAO-NOMES-DE-MAPA.md ← o que mudou no HUD dos mapas (v2.18)
-    └── JANELINHA-PIP.md          ← janelinha flutuante + modo fora da aba (v2.19)
+    ├── JANELINHA-PIP.md          ← janelinha flutuante + fora da aba + correção do iframe (v2.20)
+    ├── patches/                  ← scripts que aplicam cada mudança (histórico reproduzível)
+    └── img/                      ← prints usados nestes documentos
 ```
 
 ---
 
 ## 🆕 Novidades
+
+**v2.20 — a janelinha funcionando de verdade quando você joga pelo site**
+O navegador **proíbe** abrir a janelinha flutuante a partir de uma página que está dentro de outra
+(*"Opening a PiP window is only allowed from a top-level browsing context"*) — era isso que fazia a
+janelinha falhar em quem entrava pelo site. Corrigido nos dois lados:
+**[1] no site**, o **▶ JOGAR** deixa de usar iframe e abre o jogo como **página própria** (e há um
+botão **🪟 JANELA PRÓPRIA** para quem quiser o jogo já numa janela separada);
+**[2] no jogo**, se ele se encontrar dentro de um iframe (site antigo, preview…) em vez de mostrar
+erro ele usa a janelinha de vídeo e oferece na engrenagem **🪟 Abrir o jogo em janela própria** e
+**🌙 Fora da aba**. A janela aberta com `?pip=1` já vem "armada": no primeiro clique ela abre a
+janelinha e avisa a aba antiga para parar de rodar/salvar (nunca mais dois saves brigando).
+→ detalhes em [`docs/JANELINHA-PIP.md`](docs/JANELINHA-PIP.md)
+
+> Publique **o jogo e o `site/index.html`** juntos — se só o jogo for trocado, o site antigo continua
+> abrindo o jogo dentro de iframe (aí o jogo cai no plano B: janelinha de vídeo + atalhos).
 
 **v2.19 — janelinha flutuante (PiP) + jogo fora da aba**
 Botão **⚙️ Opções → 📺 Janelinha flutuante**: o canvas vai para uma janela que fica **sempre na frente**
@@ -106,6 +124,7 @@ de entrada, título do minimapa e aviso de Fast Travel — tudo a partir de uma 
 | Modo Foto (HUD limpo) | ⚙️ Opções |
 | Trocar mapa (Fast Travel) | Portal / Pátio Central |
 | Janelinha flutuante | ⚙️ Opções |
+| Jogo em janela separada | site → **🪟 JANELA PRÓPRIA** (no card do personagem) |
 
 ---
 

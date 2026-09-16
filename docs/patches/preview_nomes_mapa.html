@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preview — Nomes de mapa (v151) · Chaotic.IdleWorld</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: radial-gradient(ellipse at 50% -10%, #17324a, #070c16 70%); color:#e8eefc;
+         font-family: 'Segoe UI', system-ui, sans-serif; padding: 18px 16px 40px; }
+  h1 { font-size: 17px; letter-spacing: 1px; margin: 0 0 4px; }
+  h1 span { color:#8be2ff; }
+  .lead { color:#93a4c7; font-size: 12.5px; line-height: 1.6; margin: 0 0 16px; max-width: 900px; }
+  .lead b { color:#ffd54f; }
+  .lead code, .ba code { background:#070c16; border:1px solid #24365c; border-radius:4px; padding:1px 4px; font-size:10.5px; color:#ffd54f; }
+  .wrap { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+  .left { flex: 1 1 520px; min-width: 320px; }
+  .right { flex: 0 1 430px; min-width: 300px; }
+  .lbl { font-size:10px; letter-spacing:2px; color:#8be2ff; text-transform:uppercase; margin: 0 0 6px 2px; font-weight:700; }
+  #stage { position:relative; height: 300px; border-radius: 12px; overflow:hidden; border:1px solid #24365c;
+           background:
+             radial-gradient(circle at 62% 30%, rgba(255,255,255,.045) 0 2px, transparent 3px) 0 0/26px 26px,
+             linear-gradient(180deg,#3f9a46,#378a3e); box-shadow: 0 10px 34px rgba(0,0,0,.5); }
+  #stage .water { position:absolute; left:-4%; top:62%; width:112%; height:70%; background:#3d86c9; border-radius:48% 52% 0 0/34% 30% 0 0;
+                  box-shadow: inset 0 6px 0 rgba(255,255,255,.22); }
+  #stage .house { position:absolute; left:8%; top:16%; width:74px; height:64px; }
+  #stage .house .roof { height:24px; background:#9c2f22; border:2px solid #6f1f16; border-radius:3px 3px 0 0; transform:skewX(-8deg); }
+  #stage .house .wall { height:34px; background:#e0cfa6; border:2px solid #a9946c; border-top:0; position:relative; }
+  #stage .house .door { position:absolute; right:13px; bottom:0; width:12px; height:20px; background:#7a4a1e; border:1px solid #4d2e10; }
+  #stage .tree { position:absolute; right:9%; top:12%; width:0; height:0; border-left:26px solid transparent; border-right:26px solid transparent; border-bottom:52px solid #2f7a37; }
+  #stage .pillar { position:absolute; right:26%; top:16%; width:52px; height:40px; background:#cfc7a6; border:3px solid #8e8768; border-radius:4px; }
+  .hud { position:absolute; left:6px; right:6px; top:6px; height:40px; display:flex; align-items:center; gap:8px; }
+  #hpw { display:flex; align-items:center; gap:6px; }
+  #hpbg { width:100px; height:10px; background:#2a1a1a; border:1px solid #5a2a2a; border-radius:5px; overflow:hidden; }
+  #hpf { height:100%; width:82%; background:linear-gradient(90deg,#c44,#ef5350); border-radius:5px; }
+  #hpt { font-size:11px; font-weight:700; color:#ef5350; font-family:monospace; }
+  #map-label { position:absolute; left:50%; top:0; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:1px; pointer-events:none; max-width:54%; }
+  #map-name { font-size:14px; font-weight:800; color:#d4cfa8; text-shadow:0 2px 4px rgba(0,0,0,.8); letter-spacing:1px; white-space:nowrap; }
+  #map-sub { font-size:9px; font-weight:700; color:#8be2ff; text-shadow:0 1px 3px rgba(0,0,0,.9); letter-spacing:1px; white-space:nowrap; }
+  .icons { margin-left:auto; display:flex; gap:6px; }
+  .bi { width:26px; height:26px; border-radius:7px; background:rgba(10,16,28,.75); border:1px solid #3a4a2f; display:flex; align-items:center; justify-content:center; font-size:13px; }
+  #banner { position:absolute; top:62px; left:50%; display:none; flex-direction:column; align-items:center; gap:2px; padding:8px 24px;
+            background:linear-gradient(180deg, rgba(6,12,24,.92), rgba(6,12,24,.62)); border:1px solid rgba(139,226,255,.42); border-radius:10px;
+            box-shadow:0 6px 22px rgba(0,0,0,.6); z-index:30; transform:translate(-50%,0); }
+  #banner.on { display:flex; animation: mb 2.6s ease forwards; }
+  #bname { font-size:19px; font-weight:800; color:#eaf3ff; letter-spacing:2px; text-shadow:0 2px 6px rgba(0,0,0,.9); white-space:nowrap; }
+  #bsub { font-size:10px; font-weight:700; color:#8be2ff; letter-spacing:1.4px; text-transform:uppercase; white-space:nowrap; }
+  @keyframes mb { 0%{opacity:0;transform:translate(-50%,-12px) scale(.96)} 12%{opacity:1;transform:translate(-50%,0) scale(1)}
+                  78%{opacity:1;transform:translate(-50%,0) scale(1)} 100%{opacity:0;transform:translate(-50%,-8px) scale(.99)} }
+  .note { font-size:11px; color:#93a4c7; margin-top:8px; line-height:1.55; }
+  .note b { color:#3ddc84; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(196px,1fr)); gap:8px; }
+  .mb { display:flex; align-items:center; gap:9px; text-align:left; padding:8px 10px; border-radius:9px; cursor:pointer;
+        background:#0f1728; border:1px solid #24365c; border-left:3px solid var(--c); color:#e8eefc; font-family:inherit; }
+  .mb:hover { background:#16223a; }
+  .mb.sel { box-shadow:0 0 0 1px var(--c) inset, 0 6px 18px rgba(0,0,0,.4); }
+  .mb-ic { font-size:16px; }
+  .mb-tx { display:flex; flex-direction:column; line-height:1.25; }
+  .mb-tx b { font-size:11.5px; }
+  .mb-tx i { font-size:9.5px; font-style:normal; color:var(--c); }
+  .panel { background:rgba(10,14,24,.85); border:1px solid #24365c; border-radius:10px; padding:10px 12px; }
+  .panel h4 { margin:0 0 8px; font-size:11px; letter-spacing:1px; color:#d4cfa8; }
+  .row { display:flex; justify-content:space-between; font-size:11px; padding:3px 0; border-bottom:1px solid rgba(58,74,47,.45); }
+  .row:last-child { border-bottom:0; }
+  .k { color:#93a4c7; } .v { color:#8be2ff; font-weight:700; }
+  .mono { font-family:ui-monospace, monospace; }
+  .beforeafter { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .ba { border-radius:10px; padding:10px 12px; border:1px solid #24365c; background:#0d1424; }
+  .ba h5 { margin:0 0 6px; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; }
+  .ba.bad h5 { color:#ff5470; } .ba.good h5 { color:#3ddc84; }
+  .ba p { margin:0; font-size:11px; color:#93a4c7; line-height:1.55; }
+  footer { margin-top:22px; font-size:11px; color:#5f7196; }
+</style>
+</head>
+<body>
+  <h1>🗺️ Nomes de mapa — <span>correção v151 / v2.18</span></h1>
+  <p class="lead">Simulação fiel do HUD do jogo. Clique em qualquer mapa para ver <b>o que o topo mostra agora</b> (antes aparecia sempre <code>Perim</code>).
+     Os nomes vêm direto da lista <code>REGIONS</code> do arquivo do jogo — renomear um mapa lá muda tudo aqui e no jogo.</p>
+
+  <div class="wrap">
+    <div class="left">
+      <p class="lbl">HUD do jogo (simulado)</p>
+      <div id="stage">
+        <div class="water"></div>
+        <div class="house"><div class="roof"></div><div class="wall"><div class="door"></div></div></div>
+        <div class="tree"></div>
+        <div class="pillar"></div>
+        <div class="hud">
+          <div id="hpw"><div id="hpbg"><div id="hpf"></div></div><span id="hpt">82/100</span></div>
+          <div id="map-label">
+            <div id="map-name">Bosque Verdejante</div>
+            <div id="map-sub">🌿 OverWorld · Mapa 1 da tribo · 🛡 SAFE ZONE</div>
+          </div>
+          <div class="icons"><div class="bi">🎒</div><div class="bi">💬</div><div class="bi">📡</div><div class="bi">⚙️</div></div>
+        </div>
+        <div id="banner"><div id="bsub">x</div><div id="bname">x</div></div>
+      </div>
+      <p class="note">O banner acima aparece por <b>2,6s</b> toda vez que você entra num mapa (bem no estilo “entrou na área”).</p>
+
+      <p class="lbl" style="margin-top:16px;">Ao abrir o Scanner (📡) e o minimapa</p>
+      <div class="panel">
+        <h4>📡 STATUS DO CAÇADOR</h4>
+        <div class="row"><span class="k">🎖️ Nível</span><span class="v">Lv.12</span></div>
+        <div class="row"><span class="k">🗺️ Local</span><span class="v" id="scan-loc">Bosque Verdejante</span></div>
+        <div class="row"><span class="k mono">MAPA — título</span><span class="v mono" id="mini-title">🌿 Bosque Verdejante · 40% explorado</span></div>
+      </div>
+
+      <div class="beforeafter">
+        <div class="ba bad"><h5>Antes (v123)</h5><p>Sempre <code>Perim</code> — o rótulo vinha de <code>GameState.location</code>, que vale <code>'perim'</code> para <b>todos</b> os 12 mapas do mundo.</p></div>
+        <div class="ba good"><h5>Agora (v151)</h5><p>O nome vem de <code>REGIONS[nomeDaRegião].name</code>, numa fonte única usada no topo, no Scanner, no minimapa, no Portal e no banner de entrada.</p></div>
+      </div>
+    </div>
+
+    <div class="right">
+      <p class="lbl">Escolha o mapa (clique)</p>
+      <div class="grid" id="grid">
+        <button class="mb" data-i="0" style="--c:#7ec850"><span class="mb-ic">🌿</span><span class="mb-tx"><b>Bosque Verdejante</b><i>OverWorld</i></span></button>
+        <button class="mb" data-i="1" style="--c:#ff6b3d"><span class="mb-ic">🔥</span><span class="mb-tx"><b>Cavernas de Brasas</b><i>UnderWorld</i></span></button>
+        <button class="mb" data-i="2" style="--c:#e0a030"><span class="mb-ic">🐝</span><span class="mb-tx"><b>Túneis do Monte Pillar</b><i>Danian</i></span></button>
+        <button class="mb" data-i="3" style="--c:#e8c860"><span class="mb-ic">🏜️</span><span class="mb-tx"><b>Oásis Enfumaçado</b><i>Mipedian</i></span></button>
+        <button class="mb" data-i="4" style="--c:#7ec850"><span class="mb-ic">🌿</span><span class="mb-tx"><b>Prado Verde</b><i>OverWorld</i></span></button>
+        <button class="mb" data-i="5" style="--c:#7ec850"><span class="mb-ic">🌿</span><span class="mb-tx"><b>Floresta Sombria</b><i>OverWorld</i></span></button>
+        <button class="mb" data-i="6" style="--c:#ff6b3d"><span class="mb-ic">🔥</span><span class="mb-tx"><b>Caverna de Lava</b><i>UnderWorld</i></span></button>
+        <button class="mb" data-i="7" style="--c:#ff6b3d"><span class="mb-ic">🔥</span><span class="mb-tx"><b>Picos de Cinza</b><i>UnderWorld</i></span></button>
+        <button class="mb" data-i="8" style="--c:#e0a030"><span class="mb-ic">🐝</span><span class="mb-tx"><b>Pantano Nebuloso</b><i>Danian</i></span></button>
+        <button class="mb" data-i="9" style="--c:#e0a030"><span class="mb-ic">🐝</span><span class="mb-tx"><b>Borda do Vazio</b><i>Danian</i></span></button>
+        <button class="mb" data-i="10" style="--c:#e8c860"><span class="mb-ic">🏜️</span><span class="mb-tx"><b>Ruinas do Tempo</b><i>Mipedian</i></span></button>
+        <button class="mb" data-i="11" style="--c:#4dc3ff"><span class="mb-ic">🌊</span><span class="mb-tx"><b>Lagoa Negra M’arrillian</b><i>M’arrillian</i></span></button>
+        <button class="mb" data-i="12" style="--c:#8be2ff"><span class="mb-ic">🌐</span><span class="mb-tx"><b>Pátio Central</b><i>fora do mundo</i></span></button>
+        <button class="mb" data-i="13" style="--c:#8be2ff"><span class="mb-ic">🏝️</span><span class="mb-tx"><b>Ilha dos Dromos</b><i>fora do mundo</i></span></button>
+        <button class="mb" data-i="14" style="--c:#e8c860"><span class="mb-ic">🕳️</span><span class="mb-tx"><b>Caverna Secreta</b><i>fora do mundo</i></span></button>
+        <button class="mb" data-i="15" style="--c:#ff8fa3"><span class="mb-ic">🌀</span><span class="mb-tx"><b>Drome</b><i>fora do mundo</i></span></button>
+      </div>
+      <p class="note" style="margin-top:12px;">Os mapas 2+ de cada tribo seguem a regra do design: 100% de escaneamento do mapa anterior + Lv.(N-1)×10 — por isso o Portal mostra 🔒 quando ainda não liberou.</p>
+    </div>
+  </div>
+  <footer>Arquivo do jogo: chaotic_idleworld_v123.html (só o nome de exibição mudou) · esta página é estática, sem Phaser/CDN.</footer>
+
+<script>
+  var PLACES = [{"id": "ow_grove", "name": "Bosque Verdejante", "sub": "🌿 OverWorld · Mapa 1 da tribo · 🛡 SAFE ZONE", "color": "#7ec850", "tribe": "OverWorld", "icon": "🌿"}, {"id": "uw_ember", "name": "Cavernas de Brasas", "sub": "🔥 UnderWorld · Mapa 1 da tribo · 🛡 SAFE ZONE", "color": "#ff6b3d", "tribe": "UnderWorld", "icon": "🔥"}, {"id": "dan_hive", "name": "Túneis do Monte Pillar", "sub": "🐝 Danian · Mapa 1 da tribo · 🛡 SAFE ZONE", "color": "#e0a030", "tribe": "Danian", "icon": "🐝"}, {"id": "mip_oasis", "name": "Oásis Enfumaçado", "sub": "🏜️ Mipedian · Mapa 1 da tribo · 🛡 SAFE ZONE", "color": "#e8c860", "tribe": "Mipedian", "icon": "🏜️"}, {"id": "meadow", "name": "Prado Verde", "sub": "🌿 OverWorld · Mapa 2 da tribo", "color": "#7ec850", "tribe": "OverWorld", "icon": "🌿"}, {"id": "forest", "name": "Floresta Sombria", "sub": "🌿 OverWorld · Mapa 3 da tribo", "color": "#7ec850", "tribe": "OverWorld", "icon": "🌿"}, {"id": "lava_cave", "name": "Caverna de Lava", "sub": "🔥 UnderWorld · Mapa 2 da tribo", "color": "#ff6b3d", "tribe": "UnderWorld", "icon": "🔥"}, {"id": "mountain", "name": "Picos de Cinza", "sub": "🔥 UnderWorld · Mapa 3 da tribo", "color": "#ff6b3d", "tribe": "UnderWorld", "icon": "🔥"}, {"id": "swamp", "name": "Pantano Nebuloso", "sub": "🐝 Danian · Mapa 2 da tribo", "color": "#e0a030", "tribe": "Danian", "icon": "🐝"}, {"id": "void_rim", "name": "Borda do Vazio", "sub": "🐝 Danian · Mapa 3 da tribo", "color": "#e0a030", "tribe": "Danian", "icon": "🐝"}, {"id": "time_ruins", "name": "Ruinas do Tempo", "sub": "🏜️ Mipedian · Mapa 2 da tribo", "color": "#e8c860", "tribe": "Mipedian", "icon": "🏜️"}, {"id": "lac_black", "name": "Lagoa Negra M’arrillian", "sub": "🌊 M’arrillian · Mapa 5 da tribo", "color": "#4dc3ff", "tribe": "M’arrillian", "icon": "🌊"}, {"id": "portico", "name": "Pátio Central", "sub": "🌐 HUB · zona segura", "color": "#8be2ff", "tribe": "—", "icon": "🌐"}, {"id": "exterior", "name": "Ilha dos Dromos", "sub": "🏝️ zona segura · 7 Mestres do Código", "color": "#8be2ff", "tribe": "—", "icon": "🏝️"}, {"id": "cave", "name": "Caverna Secreta", "sub": "🏜️ Mipedian · sob Oásis Enfumaçado · scan 2x", "color": "#e8c860", "tribe": "—", "icon": "🕳️"}, {"id": "drome", "name": "Drome", "sub": "🌀 arena de batalha", "color": "#ff8fa3", "tribe": "—", "icon": "🌀"}];
+  var grid = document.getElementById('grid');
+  var b = document.getElementById('banner');
+  var bname = document.getElementById('bname');
+  var bsub = document.getElementById('bsub');
+  var sub = document.getElementById('map-sub');
+  var hideT = null;
+  function show(i) {
+    var p = PLACES[i];
+    document.getElementById('map-name').textContent = p.name;
+    sub.textContent = p.sub; sub.style.color = p.color;
+    document.getElementById('scan-loc').textContent = p.name;
+    document.getElementById('mini-title').textContent = (p.tribe !== '—') ? (p.icon + ' ' + p.name + ' · 40% explorado') : p.name;
+    bname.textContent = p.name; bsub.textContent = p.sub;
+    b.style.borderColor = p.color;
+    b.classList.remove('on'); b.style.display = 'flex'; void b.offsetWidth; b.classList.add('on');
+    if (hideT) clearTimeout(hideT);
+    hideT = setTimeout(function() { b.style.display = 'none'; b.classList.remove('on'); }, 2600);
+    for (var k = 0; k < grid.children.length; k++) grid.children[k].classList.toggle('sel', k === i);
+  }
+  for (var i = 0; i < grid.children.length; i++) {
+    (function(el) { el.addEventListener('click', function() { show(parseInt(el.dataset.i, 10)); }); })(grid.children[i]);
+  }
+  show(0);
+</script>
+</body>
+</html>
