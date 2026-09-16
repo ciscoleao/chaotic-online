@@ -1,14 +1,12 @@
 {
   "name": "chaotic-online",
-  "version": "1.0.0",
+  "version": "2.19.0",
   "private": true,
+  "description": "Chaotic.IdleWorld — MMO idle de Perim (servidor Node puro: contas, chat, PVP, save na nuvem)",
   "scripts": {
     "start": "node server/server.js"
   },
   "engines": {
     "node": ">=18"
-  },
-  "dependencies": {
-    "puppeteer": "^22.15.0"
   }
 }

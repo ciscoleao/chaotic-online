@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chaotic.idleWorld v2.17 — Invasão M’arrillian</title>
+<title>Chaotic.idleWorld v2.19 — Janelinha (PiP) + jogo fora da aba</title>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js" onerror="document.write('<script src=https://unpkg.com/phaser@3.60.0/dist/phaser.min.js onerror=document.write(&quot;<script src=https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js><\/script>&quot;)><\/script>')"></script>
 <script>
 window.addEventListener('load', function() {
@@ -248,8 +248,20 @@ body { background: #1a1a1a; color: #e0e0e0; font-family: 'Segoe UI', system-ui, 
 #hp-bar-bg { width: 100px; height: 10px; background: #2a1a1a; border: 1px solid #5a2a2a; border-radius: 5px; overflow: hidden; }
 #hp-bar-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #c44, #ef5350); border-radius: 5px; transition: width 0.3s ease; }
 #hp-bar-text { font-size: 11px; font-weight: 700; color: #ef5350; font-family: monospace; }
-/* Nome do mapa centralizado */
-#map-name { position: absolute; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: 800; color: #d4cfa8; text-shadow: 0 2px 4px rgba(0,0,0,0.8); letter-spacing: 1px; pointer-events: none; }
+/* v151 — NOME DO MAPA ATUAL (topo): nome do mapa + linha fina com tribo/progresso */
+#map-label { position: absolute; left: 50%; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none; max-width: 54vw; }
+#map-name { font-size: 14px; font-weight: 800; color: #d4cfa8; text-shadow: 0 2px 4px rgba(0,0,0,0.8); letter-spacing: 1px; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 54vw; }
+#map-sub { font-size: 9px; font-weight: 700; color: #8be2ff; text-shadow: 0 1px 3px rgba(0,0,0,0.9); letter-spacing: 1px; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 54vw; }
+/* v151 — banner que anuncia o nome do mapa ao entrar nele */
+#map-banner-151 { position: absolute; top: 62px; left: 50%; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 24px; background: linear-gradient(180deg, rgba(6,12,24,0.92), rgba(6,12,24,0.62)); border: 1px solid rgba(139,226,255,0.42); border-radius: 10px; box-shadow: 0 6px 22px rgba(0,0,0,0.6); pointer-events: none; z-index: 30; animation: mb151in 2.6s ease forwards; }
+.mb151-name { font-size: 19px; font-weight: 800; color: #eaf3ff; letter-spacing: 2px; text-shadow: 0 2px 6px rgba(0,0,0,0.9); white-space: nowrap; }
+.mb151-sub { font-size: 10px; font-weight: 700; color: #8be2ff; letter-spacing: 1.4px; text-transform: uppercase; white-space: nowrap; }
+@keyframes mb151in {
+  0%   { opacity: 0; transform: translate(-50%, -12px) scale(0.96); }
+  12%  { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  78%  { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -8px) scale(0.99); }
+}
 
 /* Scanner Real v0.9.5 - Interface Digivice */
 #scanner-real {
@@ -821,8 +833,11 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
       <div id="hp-bar-bg"><div id="hp-bar-fill"></div></div>
       <span id="hp-bar-text">100/100</span>
     </div>
-    <!-- Nome do mapa centralizado -->
-    <div id="map-name">Pátio Central</div>
+    <!-- v151 — nome do MAPA ATUAL (antes ficava fixo em "Perim") + tribo/progresso -->
+    <div id="map-label">
+      <div id="map-name">Pátio Central</div>
+      <div id="map-sub"></div>
+    </div>
     <!-- Botões no canto direito -->
     <div style="flex:1"></div>
     <button class="btn-icon" id="btn-inv" title="Inventario (I)">🎒</button>
@@ -980,6 +995,10 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
     <button class="opt-mode-btn" id="opt-redeem-go">Resgatar</button>
   </div>
   <div class="opt-note" id="opt-redeem-note"></div>
+  <div class="opt-label" style="margin-top:10px">📺 Janela flutuante (Picture-in-Picture)</div>
+  <button class="opt-mode-btn" id="opt-pip152" style="width:100%">📺 Janelinha flutuante (PiP): DESLIGADA</button>
+  <button class="opt-mode-btn" id="opt-bg152" style="width:100%">🌙 Fora da aba: ligar modo segundo plano</button>
+  <div class="opt-note" id="opt-pip-nota152"></div>
   <div style="margin-top:10px;border-top:1px solid #33415c;padding-top:10px">
     <button class="opt-mode-btn" id="opt-teleport" style="width:100%">🏠 Teleportar ao Pátio Central</button>
     <button class="opt-mode-btn" id="opt-foto150" style="width:100%" onclick="togglePhotoMode150()">📸 Modo Foto (HUD limpo)</button>
@@ -1030,6 +1049,38 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
 </div>
 <script>
 
+// ============================================================
+// CHAOTIC.IDLEWORLD v2.19 — CHANGELOG
+// - JANELINHA FLUTUANTE (Picture-in-Picture) na engrenagem (⚙️ Opções):
+//   o canvas do jogo é espelhado numa janela que fica SEMPRE na frente das
+//   outras janelas/apps — no Chrome/Edge 116+ é janela própria (arrastável,
+//   redimensionável), com cabeçalho mostrando o mapa atual, o nível, a
+//   bateria e se o Auto-Move está farmando. Nos outros navegadores cai no
+//   PiP de vídeo padrão (canvas → captureStream → <video>).
+// - MODO FORA DA ABA: quando a aba perde o foco o navegador suspende o
+//   requestAnimationFrame e o jogo congelava. Agora um co-piloto assume o
+//   loop (game.step a ~20 fps, delta travado em 140ms) apenas enquanto não
+//   houver quadros reais — sem passo duplo ao voltar. Um áudio inaudível
+//   (gain ~0) evita o throttling agressivo de timers em aba oculta.
+//   Ligar a janelinha liga esse modo junto; ao voltar, o jogo avisa quanto
+//   tempo você ficou fora farmando. Fechar a janelinha desfaz o que ela
+//   mesma tinha ligado (o ajuste manual do jogador é preservado).
+// ============================================================
+// CHAOTIC.IDLEWORLD v2.18 — CHANGELOG
+// - NOME DO MAPA CORRIGIDO (v151): o rótulo do topo mostrava "Perim" em
+//   TODOS os mapas porque vinha de GameState.location ('perim' = qualquer
+//   mapa do mundo). Agora o nome é lido da região atual (REGIONS[].name)
+//   por uma fonte única (placeName151) e aparece:
+//     · no rótulo do topo (#map-name) + linha da tribo/mapa/Safe Zone;
+//     · no painel do Scanner (linha "Local");
+//     · no título do minimapa (MAPA — <nome do mapa>);
+//     · num banner de 2.6s ao entrar no mapa;
+//     · no aviso de Fast Travel do Portal.
+//   Para renomear um mapa: mude o campo name do REGIONS com o id dele.
+// - BÔNUS (v151-fix): a DROME não abria — DromeScene.create quebrava com
+//   "ReferenceError: type is not defined" na hora de posicionar os tiles
+//   (a variável `type` não existe nessa cena). Corrigido para profundidade
+//   fixa 0, já que na Drome não existem tiles de ponte.
 // ============================================================
 // CHAOTIC.IDLEWORLD v2.13 — CHANGELOG
 // - CHAT GLOBAL: aba no canto inferior esquerdo com as mensagens de todos
@@ -2018,6 +2069,73 @@ function getPlayerStats() {
   }
   return { atk: atk, def: def, spd: spd, maxHp: maxHp };
 }
+/* ==========================================================================
+ * v151 — NOME DO LOCAL/MAPA (fonte ÚNICA de verdade)
+ * BUG corrigido: updateTopBar() convertia GameState.location === 'perim'
+ * no texto fixo "Perim", então TODOS os mapas do mundo apareciam com o
+ * nome "Perim" no topo da tela, ignorando a região atual
+ * (GameState.currentRegion). Agora o nome sai SEMPRE de REGIONS[].name.
+ * --------------------------------------------------------------------------
+ * Como renomear um mapa: ache o REGIONS[] com o id desejado e mude o
+ * campo "name" — o topo, o Scanner, o minimapa, o Portal e o banner
+ * passam a mostrar o novo nome automaticamente.
+ * ========================================================================== */
+const TRIBE_COLORS151 = { overworld: '#7ec850', underworld: '#ff6b3d', danian: '#e0a030', mipedian: '#e8c860', marrillian: '#4dc3ff' };
+function regionObj151(id) {
+  const key = id || (GameState && GameState.currentRegion) || 'ow_grove';
+  for (let i = 0; i < REGIONS.length; i++) { if (REGIONS[i].id === key) return REGIONS[i]; }
+  return null;
+}
+function tribeObj151(tribeId) {
+  for (let i = 0; i < TRIBES.length; i++) { if (TRIBES[i].id === tribeId) return TRIBES[i]; }
+  return null;
+}
+/* Nome principal do lugar em que o jogador está (linha grande do topo) */
+function placeName151() {
+  const loc = GameState.location;
+  if (loc === 'portico') return 'Pátio Central';
+  if (loc === 'exterior') return 'Ilha dos Dromos';
+  if (loc === 'cave') return 'Caverna Secreta';
+  if (loc === 'drome') return 'Drome';
+  const r = regionObj151();          // perim = qualquer mapa do mundo
+  return r ? r.name : 'Perim';
+}
+/* Linha secundária: tribo · mapa N da tribo · Safe Zone (ou contexto da Drome) */
+function placeSub151() {
+  const loc = GameState.location;
+  if (loc === 'portico') return '\u{1F310} HUB · zona segura';
+  if (loc === 'exterior') return '\u{1F3DD}\uFE0F zona segura · 7 Mestres do Código';
+  if (loc === 'drome') return '\u{1F300} arena de batalha';
+  const r = regionObj151();
+  if (!r) return '';
+  const tb = tribeObj151(r.tribe);
+  const parts = [];
+  if (tb) parts.push(tb.icon + ' ' + tb.name);
+  if (loc === 'cave') {
+    parts.push('sob ' + r.name);
+    parts.push('scan 2x');
+  } else {
+    parts.push('Mapa ' + r.mapLevel + ' da tribo');
+    if (r.safe) parts.push('\u{1F6E1} SAFE ZONE');
+  }
+  return parts.join(' · ');
+}
+/* Banner temporário (2.6s) com o nome do mapa — aparece ao entrar no mapa */
+let mapBannerTimer151 = null;
+function showMapBanner151() {
+  const layer = document.getElementById('ui-layer');
+  if (!layer) return;
+  const old = document.getElementById('map-banner-151');
+  if (old) old.remove();
+  if (mapBannerTimer151) clearTimeout(mapBannerTimer151);
+  const el = document.createElement('div');
+  el.id = 'map-banner-151';
+  const n = document.createElement('div'); n.className = 'mb151-name'; n.textContent = placeName151();
+  const s = document.createElement('div'); s.className = 'mb151-sub'; s.textContent = placeSub151();
+  el.appendChild(n); el.appendChild(s);
+  layer.appendChild(el);
+  mapBannerTimer151 = setTimeout(function() { const x = document.getElementById('map-banner-151'); if (x) x.remove(); }, 2600);
+}
 const topBarCache = {};
 function setTopText(id, val) { if (topBarCache[id] !== val) { topBarCache[id] = val; document.getElementById(id).textContent = val; } }
 function updateTopBar() {
@@ -2025,7 +2143,7 @@ function updateTopBar() {
   const p = GameState.player;
   const bat = Math.floor(p.battery);
   const hpPct = stats.maxHp > 0 ? (p.hp / stats.maxHp) * 100 : 100;
-  const locText = GameState.location === 'portico' ? 'Pátio Central' : GameState.location === 'exterior' ? 'Ilha dos Dromos' : GameState.location === 'perim' ? 'Perim' : GameState.location === 'cave' ? 'Caverna Secreta' : 'Drome';
+  const locText = placeName151(); // v151 — nome REAL do mapa atual (antes: "Perim" fixo em toda região do mundo)
 
   // HP Bar visual no canto esquerdo
   const hpFill = document.getElementById('hp-bar-fill');
@@ -2033,9 +2151,16 @@ function updateTopBar() {
   if (hpFill) hpFill.style.width = hpPct + '%';
   if (hpText) hpText.textContent = Math.floor(p.hp) + '/' + stats.maxHp;
 
-  // Nome do mapa centralizado
+  // Nome do mapa centralizado (v151: nome do mapa + linha da tribo/progresso)
   const mapName = document.getElementById('map-name');
-  if (mapName) mapName.textContent = locText;
+  if (mapName && mapName.textContent !== locText) mapName.textContent = locText;
+  const mapSub = document.getElementById('map-sub');
+  if (mapSub) {
+    const subTxt = placeSub151();
+    if (mapSub.textContent !== subTxt) mapSub.textContent = subTxt;
+    const r151 = regionObj151();
+    mapSub.style.color = (r151 && TRIBE_COLORS151[r151.tribe]) || '#8be2ff';
+  }
 
   // Scanner Panel — Status completo
   const scanLvl = document.getElementById('scan-lvl');
@@ -3749,7 +3874,9 @@ function travelTo(regionId) {
   GameState.player.x = 800; GameState.player.y = 600;
   if (GameState.player.visitedRegions.indexOf(regionId) === -1) GameState.player.visitedRegions.push(regionId);
   updateMissionProgress('visit_region', { region: regionId }); updateMissionProgress('recharge_battery');
-  updateTopBar(); closeRoomPanel(); showNotif('Fast Travel: ' + region.name, 'info');
+  updateTopBar(); closeRoomPanel();
+  const tb151 = tribeObj151(region.tribe); // v151 — nome do mapa + tribo no aviso de viagem
+  showNotif('\u{1F5FA}\uFE0F Fast Travel \u2192 ' + region.name + (tb151 ? ' · ' + tb151.name : '') + (region.safe ? ' · Safe Zone' : ''), 'info');
   const active = game.scene.getScenes(true);
   if (active.length) { GameState.location = 'perim'; applyRegionTheme147(regionId); active[0].scene.start('PerimScene'); } // v147 — tema da tribo aplicado antes do bake
   saveGame();
@@ -7189,7 +7316,7 @@ class PerimScene extends Phaser.Scene {
     showNotif('🌍 ' + this.region.name + ' — Modo Autonomo ATIVO', 'info');
     showNotif('🤖 O personagem se move sozinho e escaneia monstros!', 'info');
     this.time.delayedCall(2500, function() { try { if (mapScanPct(GameState.currentRegion) >= 100) spawnMapBoss149(GameState.currentRegion); } catch (e149b) {} }); // v149 — Chefe guarda mapas dominados
-    updateTopBar(); checkDailyReset();
+    updateTopBar(); showMapBanner151(); checkDailyReset(); // v151 — banner com o nome CORRETO do mapa
   }
   // v2.2 — CAVERNA SECRETA: gera o único buraco da região, longe do spawn
   spawnSecretHole() {
@@ -7990,7 +8117,7 @@ class CaveScene extends Phaser.Scene {
     }).setOrigin(0.5, 0).setDepth(60); // v2.11-fix: ancorado no worldView (zoom-proof), abaixo do rótulo de local
     showNotif('🕳️ Caverna Secreta — scan 2x mais rápido aqui dentro!', 'info');
     showNotif('⚠️ Desmoronamento em 15s! Corra pra corda 🪢', 'info');
-    updateTopBar();
+    updateTopBar(); showMapBanner151(); // v151 — "Caverna Secreta · sob <nome do mapa>"
   }
   // Monstro raro: mesmo pool da região atual
   spawnCaveMonster() {
@@ -8459,6 +8586,7 @@ class ExteriorScene extends Phaser.Scene {
     }
   }
   create() {
+    GameState.location = 'exterior'; // v151 — garante que o HUD mostre "Ilha dos Dromos" mesmo se a cena for iniciada direto
     const self = this;
     this.interactables = [];
     const W = 3600, H = 2700;
@@ -8746,10 +8874,10 @@ class DromeScene extends Phaser.Scene {
       for (let x = 0; x < tilesX; x++) {
         const isWall = x === 0 || x === tilesX - 1 || y === 0 || y === tilesY - 1 || (Math.random() < 0.03 && x > 5 && x < tilesX - 5 && y > 5 && y < tilesY - 5);
         const key = isWall ? 'drome_wall' : 'drome_floor';
-        if (this._groundCtx && type !== 'bridge') { // v144 — assa o tile no canvas do chão
+        if (this._groundCtx) { // v144 — assa o tile no canvas do chão
           const src22 = this.textures.get(key) ? this.textures.get(key).getSourceImage() : null;
           if (src22) { this._groundCtx.drawImage(src22, 0, 0, src22.width, src22.height, x * 32, y * 32, 33, 33); this._groundCounts[key] = (this._groundCounts[key] || 0) + 1; }
-        } else { const tile = this.add.image(x * 32 + 16, y * 32 + 16, key); tile.setDepth(type === 'bridge' ? 0.5 : 0); tile.setDisplaySize(33, 33); this.tileGroup.add(tile); } // v138 — pontes por cima da água orgânica
+        } else { const tile = this.add.image(x * 32 + 16, y * 32 + 16, key); tile.setDepth(0); tile.setDisplaySize(33, 33); this.tileGroup.add(tile); } // v151-fix — aqui não existem pontes na Drome: a variável `type` não existe nesta cena e quebrava a Drome (ReferenceError)
         // TODAS as paredes (bordas + internas) recebem colisor
         if (isWall) {
           const wall = this.add.rectangle(x * 32 + 16, y * 32 + 16, 32, 32, 0x000000, 0);
@@ -9864,14 +9992,15 @@ function drawScannerMinimap() {
     return;
   }
   const t = mapTransform(sc, W, H);
-  let locName = 'Perim';
-  if (key === 'CaveScene') { drawMinimapCave(ctx, sc, t); locName = 'Caverna Secreta'; }
+  let locName = placeName151(); // v151 — usa o mapa atual (não mais o fallback fixo "Perim")
+  if (key === 'CaveScene') { drawMinimapCave(ctx, sc, t); locName = placeName151(); }
   else if (key === 'PorticoScene') { drawMinimapPortico(ctx, sc, t); locName = 'Pátio Central'; }
   else if (key === 'ExteriorScene') { drawMinimapExterior(ctx, sc, t); locName = 'Ilha dos Dromos'; }
   else if (key === 'DromeScene') { drawMinimapDrome(ctx, sc, t); locName = 'Drome' + (sc.wave ? ' · Wave ' + sc.wave + '/' + sc.maxWaves : ''); }
   else {
     const pct = drawMinimapPerim(ctx, sc, t);
-    if (sc.region && sc.region.name) locName = sc.region.name + ' · ' + pct + '% explorado';
+    const tbM151 = sc.region ? tribeObj151(sc.region.tribe) : null; // v151 — tribo no título do mapa
+    if (sc.region && sc.region.name) locName = ((tbM151 && sc.region.name.length <= 14) ? tbM151.icon + ' ' : '') + sc.region.name + ' · ' + pct + '% explorado'; // v151 — ícone só quando o nome curto cabe (evita corte no título)
   }
   if (title) title.textContent = 'MAPA — ' + locName;
 }
@@ -10479,6 +10608,244 @@ function initMobileMode() {
   applyUiMode(loadUiMode());
 }
 initMobileMode();
+
+/* ==========================================================================
+ * v152 — JANELA FLUTUANTE (PICTURE-IN-PICTURE) + JOGO RODANDO FORA DA ABA
+ * --------------------------------------------------------------------------
+ * POR QUE O JOGO "PARA" QUANDO VOCÊ SAI DA ABA:
+ *   o navegador suspende o requestAnimationFrame e o Phaser (que dirige o
+ *   mundo pelo rAF) simplesmente deixa de receber quadros. Aqui a gente
+ *   assume o volante: um setInterval empurra o loop do Phaser
+ *   (game.step) SÓ quando não há quadros reais — auto-regulado, sem passo
+ *   duplo quando a aba está visível.
+ *
+ * JANELINHA:
+ *   - Chrome/Edge 116+ → Document PiP: janela própria, sempre na frente,
+ *     arrastável/redimensionável, com cabeçalho mostrando o mapa atual.
+ *   - Demais navegadores  → PiP de vídeo: o canvas é espelhado via
+ *     captureStream() num <video> e mandado para o PiP do navegador.
+ * ========================================================================== */
+const PIP152_KEY = 'chaos_pip_v152', BG152_KEY = 'chaos_bg_v152';
+const PIP152 = { quer: false, modo: 'off', janela: null, stream: null, video: null, relogio: null, ctxAudio: null, osc: null, ganho: null, bgForcado: false }; // v152b
+const BG152 = { ligado: false, ticker: null, ultimoFrame: -1e9, ultimoPasso: 0, passos: 0, taxa: 50, forcando: false, escondidoEm: 0 };
+
+/* ---------- suporte do navegador ---------- */
+function pipCanvas152() { return (game && game.canvas) ? game.canvas : document.querySelector('#game-container canvas'); }
+function pipModoSuportado152() {
+  try {
+    const cv = pipCanvas152();
+    if (!cv || !cv.captureStream) return 'off';
+    if (window.documentPictureInPicture && documentPictureInPicture.requestWindow) return 'document';
+    if (HTMLVideoElement.prototype.requestPictureInPicture) return 'video';
+    if (HTMLVideoElement.prototype.webkitSetPresentationMode) return 'safari';
+  } catch (e) {}
+  return 'off';
+}
+/* ---------- textos da engrenagem ---------- */
+function pipNota152(txt) { const el = document.getElementById('opt-pip-nota152'); if (el) el.innerHTML = txt; }
+function pipRotulos152() {
+  const bp = document.getElementById('opt-pip152'), bb = document.getElementById('opt-bg152');
+  if (bp) bp.textContent = (PIP152.modo !== 'off') ? '📺 Janelinha flutuante: LIGADA (toque p/ fechar)' : (PIP152.quer ? '📺 Janelinha flutuante: reabrir' : '📺 Janelinha flutuante (PiP): DESLIGADA');
+  if (bb) bb.textContent = BG152.ligado ? '🌙 Fora da aba: SEMPRE RODANDO' : '🌙 Fora da aba: ligar modo segundo plano';
+}
+function pipAtualizarNota152(extra) {
+  const modo = pipModoSuportado152();
+  let s = '';
+  if (extra) s += '<b>' + extra + '</b><br>';
+  if (modo === 'document') s += '✅ Pronto: seu navegador abre a janelinha como uma <b>janela própria</b> — arraste, redimensione e deixe por cima de tudo.';
+  else if (modo === 'video' || modo === 'safari') s += '⚠️ Seu navegador usa a janelinha padrão de vídeo (o tamanho e o lugar são decididos por ele).';
+  else s += '❌ Este navegador não tem Picture-in-Picture para o canvas. Use <b>Chrome ou Edge 116+</b> no PC. O modo <b>Fora da aba</b> funciona de qualquer forma.';
+  s += '<br>💡 A janelinha mostra a tela do jogo ao vivo — deixe o <b>Auto-Move (tecla P)</b> ligado para o Caçador continuar andando e escaneando sozinho.';
+  pipNota152(s);
+}
+function pipSalvar152() { try { localStorage.setItem(PIP152_KEY, PIP152.quer ? '1' : '0'); } catch (e) {} }
+
+/* ---------- abrir / fechar ---------- */
+async function pipAbrirDocumento152() {
+  const cv0 = pipCanvas152(); // v152b — abre a janelinha já com a PROPORÇÃO da tela do jogo (sem barras pretas)
+  const largura = 480;
+  const proporcao = (cv0 && cv0.width) ? (cv0.height / cv0.width) : 0.5625;
+  const w = await documentPictureInPicture.requestWindow({ width: largura, height: Math.round(largura * proporcao) + 30 });
+  PIP152.janela = w;
+  const doc = w.document;
+  doc.title = 'Chaotic.idleWorld';
+  const st = doc.createElement('style');
+  st.textContent = 'html,body{margin:0;height:100%;background:#070c16;overflow:hidden;font-family:Segoe UI,system-ui,sans-serif}'
+    + '#pip152-video{width:100%;height:100%;display:block;object-fit:contain;image-rendering:pixelated;background:#070c16}'
+    + '.pip152-head{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:5px 8px;background:linear-gradient(180deg,rgba(4,8,16,.92),rgba(4,8,16,.45));color:#eaf3ff;font-size:11px;z-index:9}'
+    + '.pip152-head b{font-size:12px;color:#ffd54f;letter-spacing:.5px}'
+    + '.pip152-head span{color:#8be2ff;font-weight:700}'
+    + '.pip152-x{margin-left:auto;background:#2a1a1a;border:1px solid #6a3a3a;color:#ffb9b9;border-radius:6px;cursor:pointer;font-size:11px;padding:2px 7px;font-family:inherit}';
+  doc.head.appendChild(st);
+  const head = doc.createElement('div'); head.className = 'pip152-head';
+  const nome = doc.createElement('b'); nome.id = 'pip152-nome'; nome.textContent = placeName151();
+  const info = doc.createElement('span'); info.id = 'pip152-info';
+  const fechar = doc.createElement('button'); fechar.className = 'pip152-x'; fechar.textContent = '✕ fechar';
+  head.appendChild(nome); head.appendChild(info); head.appendChild(fechar);
+  const v = doc.createElement('video'); v.id = 'pip152-video';
+  v.autoplay = true; v.muted = true; v.playsInline = true; v.setAttribute('playsinline', '');
+  v.srcObject = PIP152.stream;
+  doc.body.appendChild(head); doc.body.appendChild(v);
+  fechar.addEventListener('click', function() { pipFechar152(); });
+  w.addEventListener('pagehide', function() { if (PIP152.janela === w) pipFechar152(true, 'Janelinha fechada.'); });
+  try { await v.play(); } catch (e) {}
+  PIP152.modo = 'document';
+  pipRelogio152();
+}
+async function pipAbrirVideo152() {
+  if (!PIP152.video) {
+    const v = document.createElement('video');
+    v.id = 'pip152-video-raiz'; v.muted = true; v.autoplay = true; v.playsInline = true;
+    v.style.cssText = 'position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:0.01;pointer-events:none;z-index:-1';
+    document.body.appendChild(v);
+    v.addEventListener('leavepictureinpicture', function() { if (PIP152.modo === 'video') pipFechar152(true, 'Janelinha fechada.'); });
+    v.addEventListener('webkitpresentationmodechanged', function() { if (v.webkitPresentationMode !== 'picture-in-picture' && PIP152.modo === 'safari') pipFechar152(true, 'Janelinha fechada.'); });
+    PIP152.video = v;
+  }
+  PIP152.video.srcObject = PIP152.stream;
+  try { await PIP152.video.play(); } catch (e) {}
+  if (typeof PIP152.video.requestPictureInPicture === 'function') await PIP152.video.requestPictureInPicture();
+  else if (typeof PIP152.video.webkitSetPresentationMode === 'function') PIP152.video.webkitSetPresentationMode('picture-in-picture');
+  else throw new Error('Picture-in-Picture indisponível neste navegador');
+  PIP152.modo = (typeof PIP152.video.webkitSetPresentationMode === 'function' && !PIP152.video.requestPictureInPicture) ? 'safari' : 'video';
+}
+async function pipAbrir152() {
+  if (PIP152.modo !== 'off') return true;
+  const cv = pipCanvas152();
+  if (!cv) { showNotif('⛔ Não encontrei o canvas do jogo.', 'warning'); return false; }
+  try { PIP152.stream = cv.captureStream(30); } catch (e) { PIP152.stream = null; }
+  if (!PIP152.stream) { showNotif('⛔ Este navegador não deixa espelhar o canvas.', 'warning'); return false; }
+  try {
+    if (pipModoSuportado152() === 'document') await pipAbrirDocumento152();
+    else await pipAbrirVideo152();
+  } catch (e) {
+    try { if (PIP152.stream) PIP152.stream.getTracks().forEach(function(t) { t.stop(); }); } catch (e2) {}
+    PIP152.stream = null; PIP152.modo = 'off';
+    showNotif('⚠️ Não consegui abrir a janelinha: ' + (e && e.message ? e.message : 'erro') + ' — o modo 🌙 Fora da aba continua funcionando.', 'warning');
+    return false;
+  }
+  return true;
+}
+function pipFechar152(silencioso, motivo) {
+  try { if (PIP152.relogio) { clearInterval(PIP152.relogio); PIP152.relogio = null; } } catch (e) {}
+  try { if (PIP152.modo === 'document' && PIP152.janela) PIP152.janela.close(); } catch (e) {}
+  try { if (document.pictureInPictureElement) document.exitPictureInPicture(); } catch (e) {}
+  try { if (PIP152.video) { PIP152.video.pause(); PIP152.video.srcObject = null; } } catch (e) {}
+  try { if (PIP152.stream) PIP152.stream.getTracks().forEach(function(t) { t.stop(); }); } catch (e) {}
+  PIP152.stream = null; PIP152.janela = null; PIP152.modo = 'off'; PIP152.quer = false;
+  const euLigueiBG = PIP152.bgForcado; PIP152.bgForcado = false; // v152b — desfaz só o que a janelinha tinha ligado
+  if (euLigueiBG) bgSet152(false, true);
+  pipSalvar152(); pipRotulos152();
+  if (!silencioso) { showNotif('📺 Janelinha fechada.', 'info'); pipAtualizarNota152('Janelinha fechada.'); }
+  else pipAtualizarNota152(motivo || 'Janelinha fechada.');
+}
+async function pipToggle152() {
+  if (PIP152.modo !== 'off') { pipFechar152(); return; }
+  const ok = await pipAbrir152();
+  if (!ok) { pipAtualizarNota152('Não deu para abrir a janelinha agora.'); return; }
+  PIP152.quer = true; pipSalvar152(); pipRotulos152();
+  PIP152.bgForcado = !BG152.ligado; // lembra se fui EU que liguei o segundo plano (para devolver depois)
+  bgSet152(true, true);             // a janelinha só faz sentido com o jogo rodando: liga o segundo plano junto
+  showNotif('📺 Janelinha ligada — ela fica por cima das outras janelas! Modo fora da aba LIGADO.', 'success');
+  if (!GameState.autoMove) showNotif('🤖 Dica: aperte P (Auto-Move) para o Caçador farmar sozinho enquanto você olha a janelinha.', 'info');
+  pipAtualizarNota152('Janelinha aberta. Pode trocar de janela/app: a tela continua rodando aqui dentro.');
+}
+/* cabeçalho da janelinha: mapa + status do Caçador (1x por segundo) */
+function pipRelogio152() {
+  if (PIP152.relogio) clearInterval(PIP152.relogio);
+  PIP152.relogio = setInterval(function() {
+    try {
+      if (PIP152.modo !== 'document' || !PIP152.janela) return;
+      const doc = PIP152.janela.document;
+      const nome = doc.getElementById('pip152-nome'), info = doc.getElementById('pip152-info');
+      if (nome) nome.textContent = placeName151();
+      if (info) info.textContent = 'Lv.' + GameState.player.lvl + ' · 🔋 ' + Math.floor(GameState.player.battery) + '% · ' + (GameState.autoMove ? '🤖 farmando' : '💤 auto-move off') + (BG152.ligado ? ' · 🌙 2º plano' : '');
+    } catch (e) {}
+  }, 1000);
+}
+
+/* ---------- MODO SEGUNDO PLANO ---------- */
+function bgSalvar152() { try { localStorage.setItem(BG152_KEY, BG152.ligado ? '1' : '0'); } catch (e) {} }
+function bgSet152(on, silencioso) {
+  BG152.ligado = !!on;
+  bgSalvar152();
+  if (BG152.ligado) { bgTickerStart152(); bgSomKeepAlive152(true); }
+  else { bgTickerStop152(); bgSomKeepAlive152(false); }
+  pipRotulos152();
+  if (!silencioso) {
+    showNotif(BG152.ligado ? '🌙 Segundo plano LIGADO — pode trocar de aba/app que o Caçador continua farmando.' : '🌙 Segundo plano desligado — o navegador volta a pausar o jogo fora da aba.', BG152.ligado ? 'success' : 'info');
+    pipAtualizarNota152(BG152.ligado ? 'Modo fora da aba LIGADO (~20 quadros/s).' : 'Modo fora da aba desligado.');
+  }
+}
+function bgTickerStart152() { if (BG152.ticker) return; BG152.ultimoPasso = performance.now(); BG152.ticker = setInterval(bgTick152, BG152.taxa); }
+function bgTickerStop152() { if (BG152.ticker) { clearInterval(BG152.ticker); BG152.ticker = null; } }
+/* Um passo de mundo SÓ quando os quadros reais pararam (aba escondida, janela
+ * coberta, rAF suspenso). O delta é travado em 140ms para nada teleportar. */
+function bgTick152() {
+  try {
+    if (!game || game.pendingDestroy) return;
+    const agora = performance.now();
+    if (agora - BG152.ultimoFrame < 120) return; // o rAF está rodando: não dar passo duplo
+    let dt = Math.round(agora - (BG152.ultimoPasso || (agora - BG152.taxa)));
+    if (!(dt > 0)) dt = BG152.taxa;
+    if (dt > 140) dt = 140;
+    BG152.ultimoPasso = agora; BG152.passos++;
+    BG152.forcando = true;
+    try { game.step(agora, dt); } catch (e) { bgTickerStop152(); }
+    BG152.forcando = false;
+  } catch (e) { try { bgTickerStop152(); } catch (e2) {} }
+}
+/* Áudio inaudível (gain ~0): navegadores NÃO aplicam throttling pesado em páginas
+ * "tocando áudio" — é o que impede o timer de cair para 1x por minuto. */
+function bgSomKeepAlive152(on) {
+  try {
+    if (!on) {
+      if (BG152.osc) { try { BG152.osc.stop(); } catch (e) {} BG152.osc = null; }
+      if (BG152.ctxAudio && BG152.ctxAudio.state === 'running') { try { BG152.ctxAudio.suspend(); } catch (e) {} }
+      return;
+    }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!BG152.ctxAudio) {
+      BG152.ctxAudio = new AC();
+      BG152.ganho = BG152.ctxAudio.createGain();
+      BG152.ganho.gain.value = 0.0002;
+      BG152.ganho.connect(BG152.ctxAudio.destination);
+    }
+    if (BG152.ctxAudio.state === 'suspended') { try { BG152.ctxAudio.resume(); } catch (e) {} }
+    if (!BG152.osc) {
+      BG152.osc = BG152.ctxAudio.createOscillator();
+      BG152.osc.type = 'sine'; BG152.osc.frequency.value = 40;
+      BG152.osc.connect(BG152.ganho); BG152.osc.start();
+    }
+  } catch (e) {}
+}
+/* ---------- inicialização ---------- */
+function initPip152() {
+  let pipQ = false, bgQ = false;
+  try { pipQ = localStorage.getItem(PIP152_KEY) === '1'; bgQ = localStorage.getItem(BG152_KEY) === '1'; } catch (e) {}
+  PIP152.quer = pipQ;
+  bindImmediateButton('opt-pip152', function() { pipToggle152(); });
+  bindImmediateButton('opt-bg152', function() { bgSet152(!BG152.ligado); });
+  if (bgQ) bgSet152(true, true); // preferência salva: religa o segundo plano (não precisa de toque)
+  pipRotulos152();
+  pipAtualizarNota152(pipQ ? '📺 A janelinha estava ligada da última vez — toque no botão para reabrir (o navegador exige um toque).' : '');
+  // marca os quadros REAIS do rAF (poststep do Phaser) para o ticker se auto-regular
+  try { game.events.on('poststep', function() { if (!BG152.forcando) BG152.ultimoFrame = performance.now(); }); } catch (e) {}
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) { BG152.escondidoEm = Date.now(); BG152.ultimoPasso = performance.now(); }
+    else {
+      BG152.ultimoPasso = performance.now();
+      if (BG152.ligado && BG152.escondidoEm) {
+        const min = Math.floor((Date.now() - BG152.escondidoEm) / 60000);
+        if (min >= 1) showNotif('🌙 Você ficou ~' + min + ' min fora — o Caçador continuou farmando sozinho' + (PIP152.modo !== 'off' ? ' (e a janelinha mostrou tudo).' : '.'), 'info');
+      }
+      BG152.escondidoEm = 0;
+    }
+  });
+}
+initPip152();
+
 ensureMarket();
 setInterval(tickMarket, 1000);
 
