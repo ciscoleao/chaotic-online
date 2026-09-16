@@ -24,6 +24,7 @@ captcha anti-bot, chat global/privado, PVP online em tempo real e progresso salv
 | 🧑‍🤝‍🧑 **Online** | chat global/privado, presença no mapa, PVP pareado pelo servidor |
 | 👑 **Progressão** | 5ª tribo (M'arrillian) no Lv.40, 100% de escaneamento libera o chefe de cada mapa |
 | 📺 **Janelinha (PiP)** | o jogo numa janela flutuante sempre na frente + modo "fora da aba" (o Caçador continua farmando com a aba escondida) |
+| 🗺️ **Mapas de verdade** | cada região é uma sala própria (online, chat PERTO e relevo separados) com criaturas exclusivas |
 
 ---
 
@@ -59,7 +60,8 @@ Antes de abrir para o público, troque as chaves **Turnstile** de teste pelas su
 ```
 chaotic-online/
 ├── package.json                  ← como o servidor inicia (npm start)
-├── chaotic_idleworld_v123.html   ← O JOGO (v2.20 — janelinha PiP, jogo fora da aba, nomes de mapa corretos)
+├── chaotic_idleworld_v123.html   ← O JOGO (v2.21 — mapas separados de verdade, scan consertado,
+│                                    janelinha PiP, jogo fora da aba, nomes de mapa corretos)
 ├── server/
 │   ├── server.js                 ← servidor completo (Node puro)
 │   ├── fem.json · skins.json     ← assets das skins
@@ -70,6 +72,7 @@ chaotic-online/
 └── docs/
     ├── PASSO-A-PASSO.md          ← guia de hospedagem para leigos
     ├── SUPABASE.md               ← save na nuvem que sobrevive a redeploy
+    ├── MAPAS-E-SCAN.md           ← cada mapa é um mapa (online/terreno/criaturas) + scan (v2.21)
     ├── CORRECAO-NOMES-DE-MAPA.md ← o que mudou no HUD dos mapas (v2.18)
     ├── JANELINHA-PIP.md          ← janelinha flutuante + fora da aba + correção do iframe (v2.20)
     ├── patches/                  ← scripts que aplicam cada mudança (histórico reproduzível)
@@ -79,6 +82,17 @@ chaotic-online/
 ---
 
 ## 🆕 Novidades
+
+**v2.21 — cada mapa é um mapa (e o scan voltou a funcionar)**
+Dois bugs sérios relatados por jogadores: **(1)** quem estava no Bosque Verdejante via — e conversava no
+chat **PERTO** — com quem estava nas Cavernas de Brasas; **(2)** as criaturas não davam para escanear
+(morriam em 20 s, o herói andava contra a borda do mapa e o alvo fugia no meio da barra). Agora:
+o online usa o **id da região** como sala (nada de `'perim'` valendo para todos os mapas), o chat PERTO
+separa por mapa, **6 a 22 criaturas por mapa** vivendo **45 s**, a criatura **para enquanto é escaneada**
+(alcance 130 px) e o **terreno é semeado pelo mapa** — cada região tem o seu relevo e é sempre igual a
+si mesma. → detalhes em [`docs/MAPAS-E-SCAN.md`](docs/MAPAS-E-SCAN.md)
+
+![Bosque](docs/img/mapa-bosque.png)
 
 **v2.20 — a janelinha funcionando de verdade quando você joga pelo site**
 O navegador **proíbe** abrir a janelinha flutuante a partir de uma página que está dentro de outra

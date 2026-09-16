@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chaotic.idleWorld v2.20 — Janelinha (PiP) + jogo fora da aba</title>
+<title>Chaotic.idleWorld v2.21 — Mapas separados de verdade + scan consertado</title>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js" onerror="document.write('<script src=https://unpkg.com/phaser@3.60.0/dist/phaser.min.js onerror=document.write(&quot;<script src=https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js><\/script>&quot;)><\/script>')"></script>
 <script>
 window.addEventListener('load', function() {
@@ -1054,6 +1054,26 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
 <script>
 
 // ============================================================
+// CHAOTIC.IDLEWORLD v2.21 — CHANGELOG (patch v154)
+// - MAPAS SEPARADOS DE VERDADE: jogadores em regiões diferentes não se viam
+//   mais (e o chat PERTO misturava os mapas). O online passou a identificar a
+//   sala pelo id da região (mapaAtual154): 'ow_grove', 'uw_ember', etc. —
+//   antes tudo era 'perim'. Ao trocar de mapa os sprites de quem ficou no
+//   mapa antigo são removidos na hora.
+// - CRIATURAS POR MAPA: densidade calculada pela área (mínimo 6, máximo 22),
+//   vida de 45s (era 20s) e percepção de 200px (era 160px). Antes o mapa 1
+//   ficava com 2 criaturas que sumiam antes de você chegar perto.
+// - SCAN CONSERTADO: a criatura-alvo PARA enquanto é escaneada (antes andava a
+//   50% da velocidade e escapava do alcance de 96px em menos de 1 segundo, e o
+//   scan era cancelado com "Alvo fugiu!"). Alcance do scan: 130px. O herói do
+//   Auto-Move também voltou a caçar: as metas de caminhada eram sorteadas com
+//   o tamanho do Pórtico (3200×2400) e, em mapas menores, ele andava contra a
+//   borda sem nunca encontrar criatura.
+// - TERRENO PRÓPRIO DE CADA MAPA: a geração do relevo usa uma semente derivada
+//   do id da região. Cada mapa tem o seu formato (e é sempre igual quando você
+//   volta) — antes o terreno era sorteado do zero a cada viagem e dois mapas
+//   diferentes pareciam o mesmo lugar com outra cor.
+// ============================================================
 // CHAOTIC.IDLEWORLD v2.20 — CHANGELOG
 // - JANELINHA DENTRO DO SITE: o jogo aberto no iframe do site estourava
 //   "Opening a PiP window is only allowed from a top-level browsing context"
@@ -1321,17 +1341,26 @@ const CONFIG = {
   BATTERY_DRAIN_PERIM_IDLE: 0.00267, BATTERY_RECHARGE_HUB: 5, MAX_BATTERY: 100,
   SAVE_KEY: 'chaotic_idleworld_v098_rpg',
   DAILY_RESET_HOUR: 0, FRAGMENTS_PER_KEY: 5, MISSIONS_PER_DAY: 3,
-  SCAN_RANGE: 96, SCAN_COOLDOWN: 2000, SCAN_CHARGE_TIME: 3000, AUTO_MOVE_INTERVAL: 2000,
+  SCAN_RANGE: 130, SCAN_COOLDOWN: 2000, SCAN_CHARGE_TIME: 3000, AUTO_MOVE_INTERVAL: 2000, // v154 — 130px
   // v2.2 — Caverna Secreta
   CAVE_W: 480, CAVE_H: 384, CAVE_MONSTER_MAX: 2, CAVE_MATERIAL_MAX: 3,
   CAVE_SCAN_MULT: 0.5, CAVE_MONSTER_CHANCE: 0.3, CAVE_HOLE_COOLDOWN: 5000,
-  MONSTER_SPAWN_INTERVAL: 10000, MONSTER_MAX_COUNT: 4, MONSTER_LIFETIME: 20000,
-  MONSTER_DETECT_RANGE: 160, MONSTER_WANDER_SPEED: 155,
+  MONSTER_SPAWN_INTERVAL: 10000, MONSTER_MAX_COUNT: 4, MONSTER_LIFETIME: 45000, // v154 — 45s de vida
+  MONSTER_DETECT_RANGE: 200, MONSTER_WANDER_SPEED: 155, // v154 — 200px: o herói percebe a criatura antes
   // v0.9.2 — Pilhas = recarga de bateria (1 pilha = 100% = 5 min). Scan é GRATUITO.
   PILHA_PRICE: 8, START_PILHAS: 12,
   // v0.9.0 — Materiais coletáveis no Perim
   MATERIAL_SPAWN_INTERVAL: 8000, MATERIAL_MAX_COUNT: 60,
 };
+
+/* v154 — QUANTAS CRIATURAS CABEM NO MAPA: densidade por área com piso e teto.
+ * Antes o mapa 1 (2000×1500) ficava com 2 criaturas (e cada uma vivia 20 s),
+ * então quase nunca havia o que escanear. */
+function monsterMax154(regionId) {
+  const d = getRegionDimensions(regionId);
+  const base = Math.round((d.w * d.h) / 300000); // ~1 criatura a cada 300 mil px²
+  return Math.max(6, Math.min(22, base));
+}
 
 // v0.9.8 — Helper para obter dimensões da região atual
 function getRegionDimensions(regionId) {
@@ -1563,6 +1592,29 @@ function portalLockedNotif(regionId) {
   const r = REGIONS.find(function(x) { return x.id === regionId; });
   if (r) showNotif('🔒 ' + r.name + ': ' + portalLockReason(r), 'warning');
 }
+/* v154 — TERRENO PRÓPRIO E SEMPRE IGUAL: gerador determinístico semeado pelo
+ * id da região. Usado só na construção do mapa (PerimScene.create), então:
+ *   · o Bosque Verdejante é sempre o MESMO bosque (você reconhece o lugar);
+ *   · Cavernas de Brasas tem outro relevo (não é "o mesmo lugar com outra cor");
+ *   · rio, lagos, pedras e árvores saem da mesma semente a cada viagem. */
+function seedDoMapa154(id) {
+  let h = 2166136261;
+  const s = 'chaos:' + String(id || 'perim');
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+let __rng154 = Math.random;
+function rngSetup154(id) {
+  let a = seedDoMapa154(id);
+  __rng154 = function() {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function rng154() { return __rng154(); }
+
 /* v147 — aplica o TEMA VISUAL da região: redesenha as texturas de grama
  * com a paleta da tribo ANTES da cena nascer, para o bake do chão (v144)
  * sair com lava, âmbar de colmeia, areia de oásis etc. */
@@ -6595,6 +6647,8 @@ class PorticoScene extends Phaser.Scene {
 class PerimScene extends Phaser.Scene {
   constructor() { super('PerimScene'); }
   create() {
+    // v154 — semente do mapa: o terreno desta região é sempre o mesmo (e só dela)
+    rngSetup154(GameState.currentRegion);
     GameState.location = 'perim';
     GameState.scanTarget = null; GameState.scanCharge = 0;
     // Reset de flags de instância (a instância da cena persiste entre start/stop)
@@ -6614,18 +6668,18 @@ class PerimScene extends Phaser.Scene {
     let px = Math.floor(tilesX / 2), py = Math.floor(tilesY / 2);
     for (let i = 0; i < 200; i++) {
       this.mapData[py][px] = 'path';
-      const dir = Math.floor(Math.random() * 4);
+      const dir = Math.floor(rng154() * 4);
       if (dir === 0) py = Math.max(0, py - 1); else if (dir === 1) py = Math.min(tilesY - 1, py + 1);
       else if (dir === 2) px = Math.max(0, px - 1); else px = Math.min(tilesX - 1, px + 1);
     }
     { // v130 — rio LARGO com curvas: caminho serpenteante + carimbo de elipses
-      let ry = Math.floor(tilesY / 2) + Math.floor(Math.random() * 4 - 2);
+      let ry = Math.floor(tilesY / 2) + Math.floor(rng154() * 4 - 2);
       let vel = 0;
       for (let rx = 0; rx < tilesX; rx++) {
-        vel += (Math.random() - 0.5) * 0.9;
+        vel += (rng154() - 0.5) * 0.9;
         vel = Phaser.Math.Clamp(vel + (Math.floor(tilesY / 2) - ry) * 0.02, -1.1, 1.1);
         ry = Phaser.Math.Clamp(Math.round(ry + vel), 3, tilesY - 4);
-        const rad = 2.1 + Math.random() * 0.7; // v138 — carimbo CIRCULAR: margens arredondadas (sem colunas retas)
+        const rad = 2.1 + rng154() * 0.7; // v138 — carimbo CIRCULAR: margens arredondadas (sem colunas retas)
         for (let dy = -3; dy <= 3; dy++) {
           for (let dx = -3; dx <= 3; dx++) {
             if (dx * dx + dy * dy * 1.25 <= rad * rad) {
@@ -6667,11 +6721,11 @@ class PerimScene extends Phaser.Scene {
     }
     { // v131 — LAGOS: único lugar com água funda (rio atravessa-se em qualquer ponto)
       const bridgesX = [0.22, 0.52, 0.8].map(function(f) { return Math.floor(tilesX * f); });
-      const nLakes = 1 + (Math.random() < 0.5 ? 1 : 0);
+      const nLakes = 1 + (rng154() < 0.5 ? 1 : 0);
       let feitos = 0;
       for (let tent = 0; tent < 40 && feitos < nLakes; tent++) { // v132: 40 tentativas (com o guard de rio, lagos sempre nascem)
-        const lx = 7 + Math.floor(Math.random() * (tilesX - 14));
-        const ly = 6 + Math.floor(Math.random() * (tilesY - 12));
+        const lx = 7 + Math.floor(rng154() * (tilesX - 14));
+        const ly = 6 + Math.floor(rng154() * (tilesY - 12));
         if (Math.abs(lx - 18) < 9 && Math.abs(ly - 24) < 9) continue; // praia de chegada
         let perto = false;
         for (let bi = 0; bi < bridgesX.length; bi++) if (Math.abs(lx - bridgesX[bi]) < 6) perto = true;
@@ -6679,7 +6733,7 @@ class PerimScene extends Phaser.Scene {
         let tocaRio = false; // v132: lago não pode tocar o rio (rio 100% raso, atravessável em qualquer ponto)
         for (let dy = -6; dy <= 6 && !tocaRio; dy++) for (let dx = -6; dx <= 6; dx++) { const yy2 = ly + dy, xx2 = lx + dx; if (yy2 >= 0 && yy2 < tilesY && xx2 >= 0 && xx2 < tilesX && this.mapData[yy2][xx2] === 'water') { tocaRio = true; break; } }
         if (tocaRio) continue;
-        const R = 3.4 + Math.random() * 1.5;
+        const R = 3.4 + rng154() * 1.5;
         for (let dy = -5; dy <= 5; dy++) for (let dx = -5; dx <= 5; dx++) {
           const d = Math.sqrt(dx * dx * 1.15 + dy * dy * 1.4) + Math.sin((dx * 2.3 + ly) * 0.9) * 0.5;
           const yy = Phaser.Math.Clamp(ly + dy, 0, tilesY - 1), xx = Phaser.Math.Clamp(lx + dx, 0, tilesX - 1);
@@ -6719,7 +6773,7 @@ class PerimScene extends Phaser.Scene {
           const hsh = (x * 31 + y * 17) % 100;
           if (bm) key = bankTex(this, bm, (x * 5 + y * 11) % 2);
           else if (hsh < 25) key = 'gdec_' + (hsh % 12); // v134 — inclui cogumelos
-          else key = 'grass_' + Math.floor(Math.random() * 3);
+          else key = 'grass_' + Math.floor(rng154() * 3);
         } else if (type === 'path') {
           key = pathTex(this, pathMaskAt(this.mapData, x, y), (x * 3 + y * 7) % 2); // v131 — bordas arredondadas
         }
@@ -6750,17 +6804,17 @@ class PerimScene extends Phaser.Scene {
         if (!vizAgua) continue;
         const h18 = (x18 * 17 + y18 * 29) % 20;
         if (h18 < 2 && bus18 < 14) {
-          const b18 = this.add.image(x18 * 32 + 16, y18 * 32 + 24, 'bushimg').setDepth(5.1).setScale(0.9 + Math.random() * 0.4).setOrigin(0.5, 1);
-          this.tweens.add({ targets: b18, rotation: { from: -0.02, to: 0.02 }, duration: 2400 + Math.random() * 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+          const b18 = this.add.image(x18 * 32 + 16, y18 * 32 + 24, 'bushimg').setDepth(5.1).setScale(0.9 + rng154() * 0.4).setOrigin(0.5, 1);
+          this.tweens.add({ targets: b18, rotation: { from: -0.02, to: 0.02 }, duration: 2400 + rng154() * 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
           bus18++;
         } else if (h18 >= 15 && re18 < 18) {
           reedTex(this);
-          const r18 = this.add.image(x18 * 32 + 16 + (Math.random() * 8 - 4), y18 * 32 + 28, 'reed').setDepth(5.1).setOrigin(0.5, 1).setScale(0.9 + Math.random() * 0.4);
-          this.tweens.add({ targets: r18, rotation: { from: -0.05, to: 0.05 }, duration: 2000 + Math.random() * 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+          const r18 = this.add.image(x18 * 32 + 16 + (rng154() * 8 - 4), y18 * 32 + 28, 'reed').setDepth(5.1).setOrigin(0.5, 1).setScale(0.9 + rng154() * 0.4);
+          this.tweens.add({ targets: r18, rotation: { from: -0.05, to: 0.05 }, duration: 2000 + rng154() * 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
           re18++;
         } else if (h18 === 9 && sf18 < 6) { // v139 — girassóis na margem
-          const sfl = this.add.image(x18 * 32 + 16, y18 * 32 + 28, 'sunflower').setDepth(5.2).setOrigin(0.5, 1).setScale(0.9 + Math.random() * 0.35);
-          this.tweens.add({ targets: sfl, rotation: { from: -0.04, to: 0.04 }, duration: 2300 + Math.random() * 1100, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+          const sfl = this.add.image(x18 * 32 + 16, y18 * 32 + 28, 'sunflower').setDepth(5.2).setOrigin(0.5, 1).setScale(0.9 + rng154() * 0.35);
+          this.tweens.add({ targets: sfl, rotation: { from: -0.04, to: 0.04 }, duration: 2300 + rng154() * 1100, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
           sf18++;
         }
       }
@@ -6771,21 +6825,21 @@ class PerimScene extends Phaser.Scene {
       for (let y2 = 1; y2 < tilesY - 1; y2++) for (let x2 = 1; x2 < tilesX - 1; x2++) {
         const t2 = this.mapData[y2][x2];
         if (t2 === 'deep') {
-          if ((x2 * 13 + y2 * 29) % 7 === 0) { this.tileGroup.add(this.add.image(x2 * 32 + 16, y2 * 32 + 16, 'rock').setDepth(0.6).setScale(1.25 + Math.random() * 0.55)); this._lakeRocks = (this._lakeRocks || 0) + 1; }
+          if ((x2 * 13 + y2 * 29) % 7 === 0) { this.tileGroup.add(this.add.image(x2 * 32 + 16, y2 * 32 + 16, 'rock').setDepth(0.6).setScale(1.25 + rng154() * 0.55)); this._lakeRocks = (this._lakeRocks || 0) + 1; }
           continue;
         }
         if (t2 !== 'water' || reeds >= 46) continue;
         if ((x2 * 7 + y2 * 3) % 5 !== 0) continue;
         if (!(isGr(x2 - 1, y2) || isGr(x2 + 1, y2) || isGr(x2, y2 - 1) || isGr(x2, y2 + 1))) continue;
-        const rd = this.add.image(x2 * 32 + 16 + (Math.random() * 10 - 5), y2 * 32 + 20, reedTex(this)).setDepth(0.7).setScale(0.9 + Math.random() * 0.5).setOrigin(0.5, 1);
-        this.tweens.add({ targets: rd, rotation: { from: -0.05, to: 0.05 }, duration: 2000 + Math.random() * 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        const rd = this.add.image(x2 * 32 + 16 + (rng154() * 10 - 5), y2 * 32 + 20, reedTex(this)).setDepth(0.7).setScale(0.9 + rng154() * 0.5).setOrigin(0.5, 1);
+        this.tweens.add({ targets: rd, rotation: { from: -0.05, to: 0.05 }, duration: 2000 + rng154() * 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
         this.tileGroup.add(rd);
         reeds++;
       }
     }
     { // v134 — todo mapa com lago tem ao menos 1 pedra na água funda (hash pode não sortear em lago pequeno)
       if (!this._lakeRocks) {
-        for (let y3 = 1; y3 < tilesY - 1; y3++) { let feito14 = false; for (let x3 = 1; x3 < tilesX - 1; x3++) if (this.mapData[y3][x3] === 'deep') { this.tileGroup.add(this.add.image(x3 * 32 + 16, y3 * 32 + 16, 'rock').setDepth(0.6).setScale(1.25 + Math.random() * 0.55)); feito14 = true; break; } if (feito14) break; }
+        for (let y3 = 1; y3 < tilesY - 1; y3++) { let feito14 = false; for (let x3 = 1; x3 < tilesX - 1; x3++) if (this.mapData[y3][x3] === 'deep') { this.tileGroup.add(this.add.image(x3 * 32 + 16, y3 * 32 + 16, 'rock').setDepth(0.6).setScale(1.25 + rng154() * 0.55)); feito14 = true; break; } if (feito14) break; }
       }
     }
     { // v133 — vida no Perim: borboletas esvoaçando + brilhos na água + vitórias-régias
@@ -6794,22 +6848,22 @@ class PerimScene extends Phaser.Scene {
       butterflyTex(this); sparkleTex(this); lilyTex(this);
       this.airGroup = [];
       for (let bi = 0; bi < (LITE13 ? 6 : 10); bi++) {
-        const bf = this.add.image(100 + Math.random() * (this.worldW - 200), 100 + Math.random() * (this.worldH - 200), 'butterfly').setDepth(6.5).setScale(1 + Math.random() * 0.5);
-        this.tweens.add({ targets: bf, scaleX: -bf.scaleX, duration: 150 + Math.random() * 90, yoyo: true, repeat: -1 });
+        const bf = this.add.image(100 + rng154() * (this.worldW - 200), 100 + rng154() * (this.worldH - 200), 'butterfly').setDepth(6.5).setScale(1 + rng154() * 0.5);
+        this.tweens.add({ targets: bf, scaleX: -bf.scaleX, duration: 150 + rng154() * 90, yoyo: true, repeat: -1 });
         this.airGroup.push(bf);
       }
       this.time.addEvent({ delay: 1500, loop: true, callbackScope: this, callback: function() {
         for (let bi2 = 0; bi2 < this.airGroup.length; bi2++) {
           const bf2 = this.airGroup[bi2]; if (!bf2.active) continue;
-          this.tweens.add({ targets: bf2, x: Phaser.Math.Clamp(bf2.x + (Math.random() * 160 - 80), 40, this.worldW - 40), y: Phaser.Math.Clamp(bf2.y + (Math.random() * 120 - 60), 40, this.worldH - 40), duration: 1400 + Math.random() * 500, ease: 'Sine.inOut' });
+          this.tweens.add({ targets: bf2, x: Phaser.Math.Clamp(bf2.x + (rng154() * 160 - 80), 40, this.worldW - 40), y: Phaser.Math.Clamp(bf2.y + (rng154() * 120 - 60), 40, this.worldH - 40), duration: 1400 + rng154() * 500, ease: 'Sine.inOut' });
         }
       } });
       const addSparkle = function() {
         for (let tent13 = 0; tent13 < 20; tent13++) {
-          const sx = Math.floor(Math.random() * self13.mapData[0].length), sy = Math.floor(Math.random() * self13.mapData.length);
+          const sx = Math.floor(rng154() * self13.mapData[0].length), sy = Math.floor(rng154() * self13.mapData.length);
           if (self13.mapData[sy][sx] !== 'water') continue;
-          const sp = self13.add.image(sx * 32 + 6 + Math.random() * 20, sy * 32 + 6 + Math.random() * 20, 'sparkle').setDepth(0.85).setScale(0.5 + Math.random() * 0.5).setAlpha(0);
-          self13.tweens.add({ targets: sp, alpha: 0.9, duration: 500 + Math.random() * 400, yoyo: true, hold: 200 + Math.random() * 300, onComplete: function() { sp.destroy(); } });
+          const sp = self13.add.image(sx * 32 + 6 + rng154() * 20, sy * 32 + 6 + rng154() * 20, 'sparkle').setDepth(0.85).setScale(0.5 + rng154() * 0.5).setAlpha(0);
+          self13.tweens.add({ targets: sp, alpha: 0.9, duration: 500 + rng154() * 400, yoyo: true, hold: 200 + rng154() * 300, onComplete: function() { sp.destroy(); } });
           return;
         }
       };
@@ -6821,8 +6875,8 @@ class PerimScene extends Phaser.Scene {
         let temDeep = false;
         for (let dy3 = -1; dy3 <= 1 && !temDeep; dy3++) for (let dx3 = -1; dx3 <= 1; dx3++) if (this.mapData[ly3 + dy3][lx3 + dx3] === 'deep') { temDeep = true; break; }
         if (!temDeep) continue;
-        const lp = this.add.image(lx3 * 32 + 16, ly3 * 32 + 16, 'lily').setDepth(0.75).setScale(0.9 + Math.random() * 0.4).setAlpha(0.96);
-        this.tweens.add({ targets: lp, y: lp.y - 1.2, duration: 1600 + Math.random() * 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        const lp = this.add.image(lx3 * 32 + 16, ly3 * 32 + 16, 'lily').setDepth(0.75).setScale(0.9 + rng154() * 0.4).setAlpha(0.96);
+        this.tweens.add({ targets: lp, y: lp.y - 1.2, duration: 1600 + rng154() * 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
         lilies++;
       }
     }
@@ -6832,7 +6886,7 @@ class PerimScene extends Phaser.Scene {
       fishTex(this); fishRingTex(this);
       this.spawnFishJump = function() {
         for (let t14 = 0; t14 < 30; t14++) {
-          const fx14 = Math.floor(Math.random() * self14.mapData[0].length), fy14 = Math.floor(Math.random() * self14.mapData.length);
+          const fx14 = Math.floor(rng154() * self14.mapData[0].length), fy14 = Math.floor(rng154() * self14.mapData.length);
           if (self14.mapData[fy14][fx14] !== 'water') continue;
           const px14 = fx14 * 32 + 16, py14 = fy14 * 32 + 16;
           const ring = self14.add.image(px14, py14 + 8, 'fishring').setDepth(0.86).setScale(0.3).setAlpha(0);
@@ -6847,7 +6901,7 @@ class PerimScene extends Phaser.Scene {
       bunnyTex(this);
       this.bunnies = [];
       for (let bi14 = 0; bi14 < 4; bi14++) {
-        const bn = this.add.image(120 + Math.random() * (this.worldW - 240), 120 + Math.random() * (this.worldH - 240), 'bunny').setDepth(6.2).setScale(1 + Math.random() * 0.3);
+        const bn = this.add.image(120 + rng154() * (this.worldW - 240), 120 + rng154() * (this.worldH - 240), 'bunny').setDepth(6.2).setScale(1 + rng154() * 0.3);
         this.bunnies.push(bn);
       }
       this.time.addEvent({ delay: 700, loop: true, callbackScope: this, callback: function() {
@@ -6859,9 +6913,9 @@ class PerimScene extends Phaser.Scene {
             bn2.x = Phaser.Math.Clamp(bn2.x + Math.cos(ang) * 90, 40, this.worldW - 40);
             bn2.y = Phaser.Math.Clamp(bn2.y + Math.sin(ang) * 70, 40, this.worldH - 40);
             bn2.setFlipX(Math.cos(ang) < 0);
-          } else if (Math.random() < 0.25) {
-            bn2.x = Phaser.Math.Clamp(bn2.x + (Math.random() * 60 - 30), 40, this.worldW - 40);
-            bn2.setFlipX(Math.random() < 0.5);
+          } else if (rng154() < 0.25) {
+            bn2.x = Phaser.Math.Clamp(bn2.x + (rng154() * 60 - 30), 40, this.worldW - 40);
+            bn2.setFlipX(rng154() < 0.5);
           }
           bn2.y += Math.sin(this.time.now / 160 + bi14 * 2) * 0.4; // quiquinho contínuo
         }
@@ -6870,9 +6924,9 @@ class PerimScene extends Phaser.Scene {
       this.time.addEvent({ delay: 480, loop: true, callbackScope: this, callback: function() {
         const lms = GameState.landmarks || [];
         if (!lms.length) return;
-        const hs = lms[Math.floor(Math.random() * lms.length)];
-        const sm = this.add.image(hs.x + 28, hs.y - hs.displayHeight * 0.97 + 6, 'smokep').setDepth(6.6).setScale(0.5 + Math.random() * 0.3).setAlpha(0.4);
-        this.tweens.add({ targets: sm, y: sm.y - 34 - Math.random() * 18, x: sm.x + 10 + Math.random() * 12, alpha: 0, scale: 1.1, duration: 2600 + Math.random() * 900, onComplete: function() { sm.destroy(); } });
+        const hs = lms[Math.floor(rng154() * lms.length)];
+        const sm = this.add.image(hs.x + 28, hs.y - hs.displayHeight * 0.97 + 6, 'smokep').setDepth(6.6).setScale(0.5 + rng154() * 0.3).setAlpha(0.4);
+        this.tweens.add({ targets: sm, y: sm.y - 34 - rng154() * 18, x: sm.x + 10 + rng154() * 12, alpha: 0, scale: 1.1, duration: 2600 + rng154() * 900, onComplete: function() { sm.destroy(); } });
       } });
     }
     { // v135 — água viva: ripples do herói, patos, libélulas e folhas à deriva
@@ -6894,11 +6948,11 @@ class PerimScene extends Phaser.Scene {
         if (temDeep15) pontosLago.push([x15, y15]);
       }
       for (let di15 = 0; di15 < 2 && pontosLago.length > 1; di15++) {
-        const a15 = pontosLago.splice(Math.floor(Math.random() * pontosLago.length), 1)[0];
-        const b15 = pontosLago[Math.floor(Math.random() * pontosLago.length)];
-        const dux = this.add.image(a15[0] * 32 + 16, a15[1] * 32 + 16, 'duck').setDepth(0.9).setScale(1 + Math.random() * 0.25);
+        const a15 = pontosLago.splice(Math.floor(rng154() * pontosLago.length), 1)[0];
+        const b15 = pontosLago[Math.floor(rng154() * pontosLago.length)];
+        const dux = this.add.image(a15[0] * 32 + 16, a15[1] * 32 + 16, 'duck').setDepth(0.9).setScale(1 + rng154() * 0.25);
         const rg = this.add.image(dux.x, dux.y + 5, 'fishring').setDepth(0.82).setScale(0.8).setAlpha(0.4);
-        const dur15 = (4200 + Math.random() * 2600) * 10; // v143 — 10% da velocidade: passeio tranquilo
+        const dur15 = (4200 + rng154() * 2600) * 10; // v143 — 10% da velocidade: passeio tranquilo
         this.tweens.add({ targets: dux, x: b15[0] * 32 + 16, y: b15[1] * 32 + 16, duration: dur15, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
         this.tweens.add({ targets: rg, x: b15[0] * 32 + 16, y: b15[1] * 32 + 21, duration: dur15, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
         ducklingTex(this);
@@ -6915,10 +6969,10 @@ class PerimScene extends Phaser.Scene {
       }
       this.dragonflies = [];
       for (let li15 = 0; li15 < ((('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) ? 3 : 5) && margens.length; li15++) { // v145 — lite
-        const m15 = margens[Math.floor(Math.random() * margens.length)];
-        const df = this.add.image(m15[0] * 32 + 16, m15[1] * 32 - 10, 'dragonfly').setDepth(6.4).setScale(1 + Math.random() * 0.3);
+        const m15 = margens[Math.floor(rng154() * margens.length)];
+        const df = this.add.image(m15[0] * 32 + 16, m15[1] * 32 - 10, 'dragonfly').setDepth(6.4).setScale(1 + rng154() * 0.3);
         this.tweens.add({ targets: df, scaleY: df.scaleY * 0.45, duration: 90, yoyo: true, repeat: -1 });
-        this.tweens.add({ targets: df, x: df.x + (Math.random() * 90 - 45), y: df.y + (Math.random() * 46 - 23), duration: 900 + Math.random() * 700, yoyo: true, repeat: -1, ease: 'Sine.inOut', delay: Math.random() * 600 });
+        this.tweens.add({ targets: df, x: df.x + (rng154() * 90 - 45), y: df.y + (rng154() * 46 - 23), duration: 900 + rng154() * 700, yoyo: true, repeat: -1, ease: 'Sine.inOut', delay: rng154() * 600 });
         this.dragonflies.push(df);
       }
       // folhas boiando à deriva na água
@@ -6927,14 +6981,14 @@ class PerimScene extends Phaser.Scene {
         this._floatLeaves = this._floatLeaves.filter(function(l15) { return l15.active; });
         if (this._floatLeaves.length >= ((('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) ? 4 : 8)) return; // v145 — lite
         for (let t15 = 0; t15 < 20; t15++) {
-          const fx15 = Math.floor(Math.random() * this.mapData[0].length), fy15 = Math.floor(Math.random() * this.mapData.length);
+          const fx15 = Math.floor(rng154() * this.mapData[0].length), fy15 = Math.floor(rng154() * this.mapData.length);
           if (this.mapData[fy15][fx15] !== 'water') continue;
-          const lf15 = this.add.image(fx15 * 32 + 16, fy15 * 32 + 16, 'leaf').setDepth(0.84).setScale(0.45 + Math.random() * 0.25).setAlpha(0.85).setRotation(Math.random() * 6.28);
+          const lf15 = this.add.image(fx15 * 32 + 16, fy15 * 32 + 16, 'leaf').setDepth(0.84).setScale(0.45 + rng154() * 0.25).setAlpha(0.85).setRotation(rng154() * 6.28);
           lf15.name = 'floatleaf';
           this._floatLeaves.push(lf15);
-          const durL15 = 5200 + Math.random() * 2600;
-          this.tweens.add({ targets: lf15, x: lf15.x + 80 + Math.random() * 50, duration: durL15, onComplete: function() { lf15.destroy(); } });
-          this.tweens.add({ targets: lf15, y: lf15.y + (Math.random() * 24 - 12), rotation: lf15.rotation + (Math.random() * 2 - 1), duration: durL15 });
+          const durL15 = 5200 + rng154() * 2600;
+          this.tweens.add({ targets: lf15, x: lf15.x + 80 + rng154() * 50, duration: durL15, onComplete: function() { lf15.destroy(); } });
+          this.tweens.add({ targets: lf15, y: lf15.y + (rng154() * 24 - 12), rotation: lf15.rotation + (rng154() * 2 - 1), duration: durL15 });
           break;
         }
       } });
@@ -6945,13 +6999,13 @@ class PerimScene extends Phaser.Scene {
       this.frogs = [];
       for (let fi16 = 0; fi16 < 4; fi16++) {
         for (let t16 = 0; t16 < 80; t16++) {
-          const gx16 = Math.floor(Math.random() * tilesX), gy16 = Math.floor(Math.random() * tilesY);
+          const gx16 = Math.floor(rng154() * tilesX), gy16 = Math.floor(rng154() * tilesY);
           if (this.mapData[gy16][gx16] !== 'grass') continue;
           const dirs16 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
           let wd16 = null;
           for (let d16 = 0; d16 < 4; d16++) if (this.mapData[gy16 + dirs16[d16][1]] && this.mapData[gy16 + dirs16[d16][1]][gx16 + dirs16[d16][0]] === 'water') { wd16 = dirs16[d16]; break; }
           if (!wd16) continue;
-          this.frogs.push({ spr: this.add.image(gx16 * 32 + 16, gy16 * 32 + 16, 'frog').setDepth(6.3).setScale(1 + Math.random() * 0.3), wx: wd16[0], wy: wd16[1], last: -9999 });
+          this.frogs.push({ spr: this.add.image(gx16 * 32 + 16, gy16 * 32 + 16, 'frog').setDepth(6.3).setScale(1 + rng154() * 0.3), wx: wd16[0], wy: wd16[1], last: -9999 });
           break;
         }
       }
@@ -6970,18 +7024,18 @@ class PerimScene extends Phaser.Scene {
       for (let y16 = 1; y16 < tilesY - 1; y16++) for (let x16 = 1; x16 < tilesX - 1; x16++) if (this.mapData[y16][x16] === 'deep') deepTiles16.push([x16, y16]);
       this.time.addEvent({ delay: (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) ? 900 : 550, loop: true, callbackScope: this, callback: function() { // v145 — lite
         if (!deepTiles16.length) return;
-        const b16 = deepTiles16[Math.floor(Math.random() * deepTiles16.length)];
-        const bb = this.add.image(b16[0] * 32 + 8 + Math.random() * 16, b16[1] * 32 + 20, 'bubble').setDepth(0.86).setScale(0.7 + Math.random() * 0.6).setAlpha(0.55);
-        this.tweens.add({ targets: bb, y: bb.y - 12 - Math.random() * 8, alpha: 0, duration: 1300 + Math.random() * 700, onComplete: function() { bb.destroy(); } });
+        const b16 = deepTiles16[Math.floor(rng154() * deepTiles16.length)];
+        const bb = this.add.image(b16[0] * 32 + 8 + rng154() * 16, b16[1] * 32 + 20, 'bubble').setDepth(0.86).setScale(0.7 + rng154() * 0.6).setAlpha(0.55);
+        this.tweens.add({ targets: bb, y: bb.y - 12 - rng154() * 8, alpha: 0, duration: 1300 + rng154() * 700, onComplete: function() { bb.destroy(); } });
       } });
       // cristais cintilantes espalhados na grama
       let crs16 = 0;
       for (let t16 = 0; t16 < 300 && crs16 < ((('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) ? 4 : 8); t16++) { // v145 — lite
-        const gx16 = Math.floor(Math.random() * tilesX), gy16 = Math.floor(Math.random() * tilesY);
+        const gx16 = Math.floor(rng154() * tilesX), gy16 = Math.floor(rng154() * tilesY);
         if (this.mapData[gy16][gx16] !== 'grass') continue;
         if (Math.abs(gx16 - 18) < 4 && Math.abs(gy16 - 24) < 4) continue;
-        const cr = this.add.image(gx16 * 32 + 16, gy16 * 32 + 16, 'crystal').setDepth(5.5).setScale(0.9 + Math.random() * 0.5);
-        this.tweens.add({ targets: cr, alpha: { from: 1, to: 0.55 }, duration: 1500 + Math.random() * 1200, yoyo: true, repeat: -1 });
+        const cr = this.add.image(gx16 * 32 + 16, gy16 * 32 + 16, 'crystal').setDepth(5.5).setScale(0.9 + rng154() * 0.5);
+        this.tweens.add({ targets: cr, alpha: { from: 1, to: 0.55 }, duration: 1500 + rng154() * 1200, yoyo: true, repeat: -1 });
         crs16++;
       }
     }
@@ -6989,17 +7043,17 @@ class PerimScene extends Phaser.Scene {
       const WW17 = this.worldW, WH17 = this.worldH;
       cloudShadowTex(this);
       for (let ci17 = 0; ci17 < ((('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) ? 1 : 2); ci17++) { // v145 — lite
-        const cs17 = this.add.image(-300 + Math.random() * (WW17 + 200), 100 + Math.random() * (WH17 - 200), 'cloudsh').setDepth(9.2).setScale(1.3 + Math.random() * 0.8).setAlpha(0.12);
-        this.tweens.add({ targets: cs17, x: WW17 + 300, duration: 62000 + ci17 * 15000, repeat: -1, delay: ci17 * 9000, onRepeat: function() { cs17.y = 100 + Math.random() * (WH17 - 200); } });
+        const cs17 = this.add.image(-300 + rng154() * (WW17 + 200), 100 + rng154() * (WH17 - 200), 'cloudsh').setDepth(9.2).setScale(1.3 + rng154() * 0.8).setAlpha(0.12);
+        this.tweens.add({ targets: cs17, x: WW17 + 300, duration: 62000 + ci17 * 15000, repeat: -1, delay: ci17 * 9000, onRepeat: function() { cs17.y = 100 + rng154() * (WH17 - 200); } });
       }
       birdsitTex(this);
       this.sitBirds = [];
       for (let si17 = 0; si17 < 3; si17++) {
         for (let t17 = 0; t17 < 200; t17++) {
-          const gx17 = Math.floor(Math.random() * tilesX), gy17 = Math.floor(Math.random() * tilesY);
+          const gx17 = Math.floor(rng154() * tilesX), gy17 = Math.floor(rng154() * tilesY);
           if (this.mapData[gy17][gx17] !== 'grass') continue;
           if (Math.abs(gx17 - 18) < 4 && Math.abs(gy17 - 24) < 4) continue;
-          this.sitBirds.push(this.add.image(gx17 * 32 + 16, gy17 * 32 + 20, 'birdsit').setDepth(6.25).setScale(1 + Math.random() * 0.3));
+          this.sitBirds.push(this.add.image(gx17 * 32 + 16, gy17 * 32 + 20, 'birdsit').setDepth(6.25).setScale(1 + rng154() * 0.3));
           break;
         }
       }
@@ -7029,7 +7083,7 @@ class PerimScene extends Phaser.Scene {
       this.time.addEvent({ delay: 1000, loop: true, callbackScope: this, callback: function() {
         if (this._gustUntil && this.time.now > this._gustUntil) { this.tweens.timeScale = 1; this._gustUntil = 0; }
         if (this.time.now >= this._nextGust) {
-          this._nextGust = this.time.now + 18000 + Math.random() * 14000;
+          this._nextGust = this.time.now + 18000 + rng154() * 14000;
           this._gustUntil = this.time.now + 1100;
           this.tweens.timeScale = 2.4;
           for (let gi17 = 0; gi17 < 8; gi17++) spawnFallingLeaf(this);
@@ -7042,10 +7096,10 @@ class PerimScene extends Phaser.Scene {
       const agua140 = [];
       for (let y20 = 2; y20 < tilesY - 2; y20++) for (let x20 = 2; x20 < tilesX - 2; x20++) if (this.mapData[y20][x20] === 'water' || this.mapData[y20][x20] === 'deep') agua140.push([x20, y20]);
       for (let ti20 = 0; ti20 < 3 && agua140.length; ti20++) {
-        const a20 = agua140[Math.floor(Math.random() * agua140.length)];
-        const tt = this.add.image(a20[0] * 32 + 16, a20[1] * 32 + 16, 'turtle').setDepth(0.87).setScale(1 + Math.random() * 0.25);
+        const a20 = agua140[Math.floor(rng154() * agua140.length)];
+        const tt = this.add.image(a20[0] * 32 + 16, a20[1] * 32 + 16, 'turtle').setDepth(0.87).setScale(1 + rng154() * 0.25);
         this.turtles.push(tt);
-        this.tweens.add({ targets: tt, x: Phaser.Math.Clamp(tt.x + (Math.random() * 120 - 60), 64, this.worldW - 64), y: Phaser.Math.Clamp(tt.y + (Math.random() * 80 - 40), 64, this.worldH - 64), duration: 5000 + Math.random() * 3000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        this.tweens.add({ targets: tt, x: Phaser.Math.Clamp(tt.x + (rng154() * 120 - 60), 64, this.worldW - 64), y: Phaser.Math.Clamp(tt.y + (rng154() * 80 - 40), 64, this.worldH - 64), duration: 5000 + rng154() * 3000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       }
       this.time.addEvent({ delay: 350, loop: true, callbackScope: this, callback: function() {
         for (let ti20 = 0; ti20 < this.turtles.length; ti20++) {
@@ -7056,30 +7110,30 @@ class PerimScene extends Phaser.Scene {
             const rg20 = this.add.image(tt2.x, tt2.y + 4, 'fishring').setDepth(0.88).setScale(0.4).setAlpha(0.5);
             this.tweens.add({ targets: rg20, scale: 1.3, alpha: 0, duration: 700, onComplete: function() { rg20.destroy(); } });
             this.tweens.add({ targets: tt2, alpha: 0, duration: 350, onComplete: function() {
-              tt2.scene.time.delayedCall(2600 + Math.random() * 1600, function() { if (tt2.active) { tt2.scene.tweens.add({ targets: tt2, alpha: 1, duration: 400, onComplete: function() { tt2.setData('sub', 0); } }); } });
+              tt2.scene.time.delayedCall(2600 + rng154() * 1600, function() { if (tt2.active) { tt2.scene.tweens.add({ targets: tt2, alpha: 1, duration: 400, onComplete: function() { tt2.setData('sub', 0); } }); } });
             } });
           }
         }
       } });
       let brs20 = 0; // barris na margem (decoração de vila, como na referência)
       for (let t20 = 0; t20 < 300 && brs20 < 4; t20++) {
-        const gx20 = Math.floor(Math.random() * tilesX), gy20 = Math.floor(Math.random() * tilesY);
+        const gx20 = Math.floor(rng154() * tilesX), gy20 = Math.floor(rng154() * tilesY);
         if (this.mapData[gy20][gx20] !== 'grass') continue;
         if (Math.abs(gx20 - 18) < 5 && Math.abs(gy20 - 24) < 5) continue;
         const dirs20 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
         let vizW20 = false;
         for (let d20 = 0; d20 < 4; d20++) { const t18b = this.mapData[gy20 + dirs20[d20][1]] && this.mapData[gy20 + dirs20[d20][1]][gx20 + dirs20[d20][0]]; if (t18b === 'water' || t18b === 'deep') vizW20 = true; }
         if (!vizW20) continue;
-        this.add.image(gx20 * 32 + 16, gy20 * 32 + 26, 'barrel').setDepth(5.3).setOrigin(0.5, 1).setScale(0.95 + Math.random() * 0.25);
+        this.add.image(gx20 * 32 + 16, gy20 * 32 + 26, 'barrel').setDepth(5.3).setOrigin(0.5, 1).setScale(0.95 + rng154() * 0.25);
         brs20++;
       }
       this._caustics = []; // luz dançando sobre a água
       const LITE20 = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
       for (let ci20 = 0; ci20 < (LITE20 ? 3 : 6) && agua140.length; ci20++) {
-        const a20 = agua140[Math.floor(Math.random() * agua140.length)];
-        const ca = this.add.image(a20[0] * 32 + 16, a20[1] * 32 + 16, 'caustic').setDepth(0.468).setScale(1.6 + Math.random() * 1.4).setAlpha(0.05).setName('caustic');
-        this.tweens.add({ targets: ca, alpha: { from: 0.03, to: 0.08 }, duration: 2600 + Math.random() * 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-        this.tweens.add({ targets: ca, x: ca.x + 40 + Math.random() * 30, y: ca.y + 16 + Math.random() * 20, duration: 7000 + Math.random() * 4000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        const a20 = agua140[Math.floor(rng154() * agua140.length)];
+        const ca = this.add.image(a20[0] * 32 + 16, a20[1] * 32 + 16, 'caustic').setDepth(0.468).setScale(1.6 + rng154() * 1.4).setAlpha(0.05).setName('caustic');
+        this.tweens.add({ targets: ca, alpha: { from: 0.03, to: 0.08 }, duration: 2600 + rng154() * 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        this.tweens.add({ targets: ca, x: ca.x + 40 + rng154() * 30, y: ca.y + 16 + rng154() * 20, duration: 7000 + rng154() * 4000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
         this._caustics.push(ca);
       }
     }
@@ -7142,8 +7196,8 @@ class PerimScene extends Phaser.Scene {
         let vw21 = false;
         for (let d21 = 0; d21 < 4; d21++) { const t21b = this.mapData[y21 + dirs21[d21][1]] && this.mapData[y21 + dirs21[d21][1]][x21 + dirs21[d21][0]]; if (t21b === 'water' || t21b === 'deep') vw21 = true; }
         if (!vw21) continue;
-        const bd21 = this.add.image(x21 * 32 + 16, y21 * 32 + 26, 'boulder').setDepth(5.45).setOrigin(0.5, 1).setScale(1 + Math.random() * 0.5);
-        if (Math.random() < 0.5) bd21.setFlipX(true);
+        const bd21 = this.add.image(x21 * 32 + 16, y21 * 32 + 26, 'boulder').setDepth(5.45).setOrigin(0.5, 1).setScale(1 + rng154() * 0.5);
+        if (rng154() < 0.5) bd21.setFlipX(true);
         bld21++;
       }
       for (let y21 = 1; y21 < tilesY - 1; y21++) for (let x21 = 1; x21 < tilesX - 1; x21++) { // guarda-corpo nas bordas laterais das pontes
@@ -7155,7 +7209,7 @@ class PerimScene extends Phaser.Scene {
       const banhar21 = (function() { // pássaro se banhando na beira da água
         const self141 = this;
         for (let t21 = 0; t21 < 40; t21++) {
-          const bx21 = 2 + Math.floor(Math.random() * (tilesX - 4)), by21 = 2 + Math.floor(Math.random() * (tilesY - 4));
+          const bx21 = 2 + Math.floor(rng154() * (tilesX - 4)), by21 = 2 + Math.floor(rng154() * (tilesY - 4));
           if (this.mapData[by21][bx21] !== 'water') continue;
           const dirs21 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
           let gr21 = null;
@@ -7204,7 +7258,7 @@ class PerimScene extends Phaser.Scene {
     for (let i = 0; i < this.region.landmarks.length; i++) {
       const lmName = this.region.landmarks[i];
       const angle = (i / this.region.landmarks.length) * Math.PI * 2;
-      const dist = 250 + Math.random() * 150;
+      const dist = 250 + rng154() * 150;
       let hx = Phaser.Math.Clamp(Math.floor((this.worldW/2 + Math.cos(angle) * dist) / 32), 3, tilesX - 4);
       let hy = Phaser.Math.Clamp(Math.floor((this.worldH/2 + Math.sin(angle) * dist) / 32), 3, tilesY - 4);
       { // v143 — NUNCA deixar a casa na água: empurra pro terreno seco mais próximo
@@ -7224,7 +7278,7 @@ class PerimScene extends Phaser.Scene {
       for (let dy = -1; dy <= 1; dy++) { for (let dx = -2; dx <= 2; dx++) { const ny = hy + dy, nx = hx + dx; if (ny >= 0 && ny < tilesY && nx >= 0 && nx < tilesX) this.mapData[ny][nx] = 'path'; } }
       const house = this.add.image(hx * 32 + 16, hy * 32 + 16, 'house');
       house.setOrigin(0.5, 0.97);                    // base da casa no chao
-      house.setScale(1.1 + Math.random() * 0.15);
+      house.setScale(1.1 + rng154() * 0.15);
       house.setDepth(6); house.name = lmName;
       this.objects.add(house); this.bigScenery.push(house);
       // corpo de fisica = paredes (sem beiral): da pra andar atras do telhado? nao — parede solida
@@ -7236,7 +7290,7 @@ class PerimScene extends Phaser.Scene {
 
     // ===== ARVORES GRANDES (v1.5) — colisao so no tronco, da pra andar sob a copa =====
     for (let i = 0; i < 80; i++) {
-      const tx = Math.floor(Math.random() * tilesX); const ty = Math.floor(Math.random() * tilesY);
+      const tx = Math.floor(rng154() * tilesX); const ty = Math.floor(rng154() * tilesY);
       if (this.mapData[ty][tx] !== 'grass' || Math.abs(tx - tilesX/2) + Math.abs(ty - tilesY/2) <= 5) continue;
       // nao plantar perto das casas (copa nao cobre a casa)
       let nearHouse = false;
@@ -7246,31 +7300,31 @@ class PerimScene extends Phaser.Scene {
       if (nearHouse) continue;
       const tree = this.add.image(tx * 32 + 16, ty * 32 + 16, 'tree');
       tree.setOrigin(0.5, 0.94);                     // base do tronco no tile
-      tree.setScale(1.3 + Math.random() * 0.35);
+      tree.setScale(1.3 + rng154() * 0.35);
       tree.setDepth(5);
       // v129 — vento: balanço suave nas copas (pivô na base do tronco)
-      this.tweens.add({ targets: tree, rotation: { from: -0.02, to: 0.02 }, duration: 2400 + Math.random() * 1800, delay: Math.random() * 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      this.tweens.add({ targets: tree, rotation: { from: -0.02, to: 0.02 }, duration: 2400 + rng154() * 1800, delay: rng154() * 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       (this.leafTrees = this.leafTrees || []).push(tree);
       this.objects.add(tree); this.bigScenery.push(tree);
       this.physics.add.existing(tree, true); tree.body.setSize(18, 14); tree.body.setOffset(39, 106);
     }
     for (let i = 0; i < 20; i++) {
-      const rx = Math.floor(Math.random() * tilesX); const ry = Math.floor(Math.random() * tilesY);
+      const rx = Math.floor(rng154() * tilesX); const ry = Math.floor(rng154() * tilesY);
       if (this.mapData[ry][rx] === 'grass') {
-        const rock = this.add.image(rx * 32 + 16, ry * 32 + 20, 'rock'); rock.setDepth(4); rock.setScale(1.0 + Math.random() * 0.5); this.objects.add(rock);
+        const rock = this.add.image(rx * 32 + 16, ry * 32 + 20, 'rock'); rock.setDepth(4); rock.setScale(1.0 + rng154() * 0.5); this.objects.add(rock);
         this.physics.add.existing(rock, true); rock.body.setSize(14, 8); rock.body.setOffset(9, 20);
       }
     }
     const flowerTypes = ['flower_red', 'flower_yellow', 'flower_purple'];
     for (let i = 0; i < 40; i++) {
-      const fx = Math.floor(Math.random() * tilesX); const fy = Math.floor(Math.random() * tilesY);
+      const fx = Math.floor(rng154() * tilesX); const fy = Math.floor(rng154() * tilesY);
       if (this.mapData[fy][fx] === 'grass') {
-        const flower = this.add.image(fx * 32 + 16, fy * 32 + 24, flowerTypes[Math.floor(Math.random() * 3)]); flower.setDepth(3); flower.setScale(0.6 + Math.random() * 0.3); this.objects.add(flower);
+        const flower = this.add.image(fx * 32 + 16, fy * 32 + 24, flowerTypes[Math.floor(rng154() * 3)]); flower.setDepth(3); flower.setScale(0.6 + rng154() * 0.3); this.objects.add(flower);
       }
     }
     for (let y = 0; y < tilesY; y++) {
       for (let x = 0; x < tilesX; x++) {
-        if (this.mapData[y][x] === 'grass' && Math.random() < 0.03) {
+        if (this.mapData[y][x] === 'grass' && rng154() < 0.03) {
           let nearPath = false;
           for (let dy = -1; dy <= 1; dy++) { for (let dx = -1; dx <= 1; dx++) { const ny = y + dy, nx = x + dx; if (ny >= 0 && ny < tilesY && nx >= 0 && nx < tilesX && this.mapData[ny][nx] === 'path') nearPath = true; } }
           if (nearPath) {
@@ -7302,7 +7356,7 @@ class PerimScene extends Phaser.Scene {
     this.enemies = this.physics.add.group(); GameState.enemies = [];
     if (this.deepGroup) this.physics.add.collider(this.enemies, this.deepGroup); // v130 — monstros não nadam no fundo
     this.monsterSpawnTimer = 0;
-    this.nextSpawnIn = 4000 + Math.random() * 6000; // primeiro spawn em 4-10s
+    this.nextSpawnIn = 4000 + rng154() * 6000; // primeiro spawn em 4-10s
     this.regionEnemies = [];
     for (let i = 0; i < ENEMY_TYPES.length; i++) { if ((MAP_POOLS[this.region.id] || []).indexOf(ENEMY_TYPES[i].name) >= 0) this.regionEnemies.push(ENEMY_TYPES[i]); } // v148 — pool do mapa
     this.items = this.physics.add.group();
@@ -7313,7 +7367,7 @@ class PerimScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.items, this.onPlayerItemOverlap, null, this);
     this.physics.add.overlap(this.player, this.materials, this.collectMaterial, null, this);
     // v0.9.8 — Spawn inicial proporcional ao tamanho do mapa
-    const scaledMonsterCount = getScaledSpawnCount(GameState.currentRegion, 3);
+    const scaledMonsterCount = Math.max(2, Math.round(monsterMax154(GameState.currentRegion) * 0.5)); // v154
     const scaledMaterialCount = getScaledSpawnCount(GameState.currentRegion, 20); // v2.9 — 10x mais itens no chão
     for (let i = 0; i < scaledMonsterCount; i++) this.spawnMonster();
     for (let i = 0; i < scaledMaterialCount; i++) this.spawnMaterial();
@@ -7577,7 +7631,7 @@ class PerimScene extends Phaser.Scene {
       const allEnemies = this.enemies.getChildren();
       for (let i = 0; i < allEnemies.length; i++) { if (allEnemies[i].active && allEnemies[i].hp > 0) activeCount++; }
       // v0.9.8 — Spawn proporcional ao tamanho do mapa
-      const scaledMaxMonsters = getScaledSpawnCount(GameState.currentRegion, CONFIG.MONSTER_MAX_COUNT);
+      const scaledMaxMonsters = monsterMax154(GameState.currentRegion); // v154 — densidade por mapa
       if (activeCount < scaledMaxMonsters && Math.random() < 0.55) {
         this.spawnMonster();
       }
@@ -7594,8 +7648,11 @@ class PerimScene extends Phaser.Scene {
     let vx = 0, vy = 0;
     const spdMult = (1 + getPlayerStats().spd / 100) * (GameState.gadgetEquip === 'botas' ? 1.15 : 1); // v148 — Botas de Agilidade: +15% no idle
     if (this.autoState === 'wander') {
-      if (!this.autoTarget || Phaser.Math.Distance.Between(p.x, p.y, this.autoTarget.x, this.autoTarget.y) < 20) {
-        this.autoTarget = { x: 100 + Math.random() * (CONFIG.WORLD_W - 200), y: 100 + Math.random() * (CONFIG.WORLD_H - 200) };
+      // v154 — a meta tem de caber NO MAPA ATUAL (antes usava CONFIG.WORLD_W/H,
+      // o tamanho do Pórtico: em mapas menores o herói andava contra a borda)
+      if (!this.autoTarget || Phaser.Math.Distance.Between(p.x, p.y, this.autoTarget.x, this.autoTarget.y) < 20
+          || this.autoTarget.x > this.worldW - 60 || this.autoTarget.y > this.worldH - 60) {
+        this.autoTarget = { x: 80 + Math.random() * Math.max(60, this.worldW - 160), y: 80 + Math.random() * Math.max(60, this.worldH - 160) };
       }
       /* v148 — SOBREVIVÊNCIA IDLE (IA de fuga/kiting): o herói NÃO ataca.
        * Agressivo no campo de visão → anda na direção OPOSTA até sair do
@@ -7759,8 +7816,10 @@ class PerimScene extends Phaser.Scene {
     for (let i = 0; i < children.length; i++) {
       const e = children[i];
       if (e.hp <= 0 || !e.active) { if (e.label) e.label.setVisible(false); continue; }
-      // Lifetime: desaparece após 20 segundos
-      if (now - e.spawnTime > CONFIG.MONSTER_LIFETIME) {
+      // Lifetime: desaparece após o tempo de vida (v154 — 45s)
+      // v154 — EXCEÇÃO: quem está sendo escaneado agora NÃO desaparece
+      // (antes a criatura podia sumir no meio do scan e cancelar tudo)
+      if (now - e.spawnTime > CONFIG.MONSTER_LIFETIME && !(this.autoState === 'scan' && GameState.scanTarget === e)) {
         e.hp = 0; e.setVisible(false); e.body.enable = false; if (e.label) e.label.destroy();
         const poof = this.add.circle(e.x, e.y, 15, 0xaaffaa, 0.6); poof.setDepth(20);
         this.tweens.add({ targets: poof, scale: 2, alpha: 0, duration: 300, onComplete: function() { poof.destroy(); } });
@@ -7803,8 +7862,9 @@ class PerimScene extends Phaser.Scene {
           evx = e.wanderVx || 0; evy = e.wanderVy || 0;
         }
       }
-      // Se estiver sendo escaneado, move a 50% da velocidade (não para)
-      if (isBeingScanned) { evx *= 0.5; evy *= 0.5; }
+      // v154 — a criatura PARA enquanto é escaneada (antes andava a 50% e saía do
+      // alcance antes dos 3s de carga, cancelando o scan com "Alvo fugiu!")
+      if (isBeingScanned) { evx = 0; evy = 0; }
       if (tileIsWaterAt(this.mapData, e.x, e.y)) { evx *= 0.8; evy *= 0.8; } // v129 — 20% lento na água
       e.setVelocity(evx, evy);
     }
@@ -7814,17 +7874,17 @@ class PerimScene extends Phaser.Scene {
     // Cancelar scan ativo antes de mudar de direção (evita vazamento de UI/FX de scan)
     if (this.autoState === 'scan') this.cancelScan();
     // Inverte o autoTarget para a direcao oposta
-    if (this.autoTarget && this.autoTarget.x !== undefined) {
+    if (this.autoTarget && this.autoTarget.x !== undefined) { // v154 — limites do MAPA (não do Pórtico)
       const dx = this.autoTarget.x - this.player.x;
       const dy = this.autoTarget.y - this.player.y;
       this.autoTarget = {
-        x: Math.max(100, Math.min(CONFIG.WORLD_W - 100, this.player.x - dx)),
-        y: Math.max(100, Math.min(CONFIG.WORLD_H - 100, this.player.y - dy))
+        x: Math.max(80, Math.min(this.worldW - 80, this.player.x - dx)),
+        y: Math.max(80, Math.min(this.worldH - 80, this.player.y - dy))
       };
     } else {
       this.autoTarget = {
-        x: 100 + Math.random() * (CONFIG.WORLD_W - 200),
-        y: 100 + Math.random() * (CONFIG.WORLD_H - 200)
+        x: 80 + Math.random() * Math.max(60, this.worldW - 160),
+        y: 80 + Math.random() * Math.max(60, this.worldH - 160)
       };
     }
     this.autoState = 'wander';
@@ -8044,7 +8104,7 @@ class PerimScene extends Phaser.Scene {
   }
   onPlayerEnemyOverlap(player, enemy) {}
   onPlayerItemOverlap(player, item) { item.destroy(); showNotif('Item coletado!', 'info'); }
-  updateQuadrant() { const qw = CONFIG.WORLD_W / 4; const qh = CONFIG.WORLD_H / 4; const qx = Math.floor(this.player.x / qw); const qy = Math.floor(this.player.y / qh); GameState.currentQuadrant = { qx: Math.min(3, qx), qy: Math.min(3, qy) }; }
+  updateQuadrant() { const qw = (this.worldW || CONFIG.WORLD_W) / 4; const qh = (this.worldH || CONFIG.WORLD_H) / 4; const qx = Math.floor(this.player.x / qw); const qy = Math.floor(this.player.y / qh); GameState.currentQuadrant = { qx: Math.min(3, qx), qy: Math.min(3, qy) }; }
 }
 
 // ============================================================
@@ -8360,7 +8420,7 @@ class CaveScene extends Phaser.Scene {
           evx = e.wanderVx || 0; evy = e.wanderVy || 0;
         }
       }
-      if (isBeingScanned) { evx *= 0.5; evy *= 0.5; }
+      if (isBeingScanned) { evx = 0; evy = 0; } // v154 — idem: alvo do scan não foge
       if (tileIsWaterAt(this.mapData, e.x, e.y)) { evx *= 0.8; evy *= 0.8; } // v129 — 20% lento na água
       e.setVelocity(evx, evy);
     }
@@ -9310,7 +9370,16 @@ console.log('%cCHAOTIC.IDLEWORLD v123 — chat global + PVP online', 'color:#3fe
 function esc5(s) { return String(s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 let gcTab = 'near', gcLast = 0, gcNLast = 0, gcPLast = 0, gcOpen = true, gcUnread = 0, gcLastSend = 0;
 const gcOn = !!window.CHAOS_ONLINE;
-let gcRoster = [], gcRosterKey = '', gcPlEls = {};
+/* v154 — CADA MAPA É UM MAPA: o online usa o id da REGIÃO, não GameState.location
+ * (que vale 'perim' para todas as regiões e por isso mostrava jogadores de mapas
+ * diferentes como se estivessem no mesmo lugar). Valores possíveis:
+ *   'portico' | 'exterior' | 'drome' | 'cave' | id da região ('ow_grove', ...) */
+function mapaAtual154() {
+  const loc = (typeof GameState !== 'undefined' && GameState.location) || 'portico';
+  if (loc === 'perim') return (typeof GameState !== 'undefined' && GameState.currentRegion) || 'ow_grove';
+  return loc;
+}
+let gcRoster = [], gcRosterKey = '', gcPlEls = {}, gcSpriteMapa154 = null;
 function gcBox(tab) { return document.getElementById('gcl-' + tab); }
 function gcLine(parent, html, cls) {
   const d = document.createElement('div'); d.className = 'gm' + (cls ? ' ' + cls : ''); d.innerHTML = html;
@@ -9385,7 +9454,11 @@ function gcBuildFemTextures() {
 let gcSpriteScene = null;
 function gcSyncSprites() {
   const s = getActiveGameScene(); if (!s || !s.add || typeof GameState === 'undefined' || !GameState.player) return;
-  const myMap = GameState.location || 'portico';
+  const myMap = mapaAtual154();
+  if (gcSpriteMapa154 !== myMap) { // v154 — trocou de mapa: limpa quem era do mapa antigo
+    for (const k in gcPlEls) { try { gcPlEls[k].sp.destroy(); gcPlEls[k].txt.destroy(); } catch (e) {} }
+    gcPlEls = {}; gcSpriteMapa154 = myMap;
+  }
   const alive = {};
   for (const r of gcRoster) {
     if (r.me || r.map !== myMap) continue;
@@ -9449,7 +9522,7 @@ async function gcPoll() {
 async function gcBeat() {
   if (!gcOn || !window.CHAOS_ONLINE || typeof GameState === 'undefined' || !GameState.player) return;
   try {
-    const r = await fetch('/api/presence', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ map: GameState.location || 'portico', x: Math.round(GameState.player.x || 0), y: Math.round(GameState.player.y || 0), nick: window.CHAOS_ONLINE.nick, sex: (window.CHAOS_ONLINE && CHAOS_ONLINE.sex) || 'm' }) });
+    const r = await fetch('/api/presence', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ map: mapaAtual154(), x: Math.round(GameState.player.x || 0), y: Math.round(GameState.player.y || 0), nick: window.CHAOS_ONLINE.nick, sex: (window.CHAOS_ONLINE && CHAOS_ONLINE.sex) || 'm' }) });
     const j = await r.json().catch(function() { return {}; });
     if (j.roster) gcApplyRoster(j.roster);
   } catch (e) {}
