@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chaotic.idleWorld v2.21 — Mapas separados de verdade + scan consertado</title>
+<title>Chaotic.idleWorld v2.23 — Rio de ponta a ponta + 3 pontes (só no rio)</title>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js" onerror="document.write('<script src=https://unpkg.com/phaser@3.60.0/dist/phaser.min.js onerror=document.write(&quot;<script src=https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js><\/script>&quot;)><\/script>')"></script>
 <script>
 window.addEventListener('load', function() {
@@ -1054,6 +1054,64 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
 <script>
 
 // ============================================================
+// CHAOTIC.IDLEWORLD v2.23 — CHANGELOG (patch v156 — RIO DE PONTA A PONTA + 3 PONTES)
+// - O RIO NÃO É MAIS CORTADO: a praia de chegada (tile 18,24) convertia a água do
+//   rio em estrada e o rio ficava interrompido no meio do mapa. Agora a praia não
+//   toca na água do rio (o rio desvia dela com um deslocamento suave de 1 tile por
+//   coluna) e um passe final reimpõe a água em todo tile do rio que algum terreno
+//   tenha tapado — o rio atravessa o mapa de PONTA A PONTA.
+// - SÓ 3 PONTES (esquerda, meio e direita): a v2.22 também transformava em travessia
+//   TODA coluna em que uma estrada encostava na água. Com dezenas de estradas perto
+//   da água isso criava pontes coladas uma na outra, que apareciam como DECKS largos
+//   cobrindo o rio. Agora a travessia só existe nas 3 colunas fixas (0,22 · 0,52 ·
+//   0,80 da largura) — e cada uma tem começo, meio e fim em terra firme.
+// - PONTE SÓ NO RIO, NUNCA NO LAGO: faixa com água funda é lago e não recebe ponte.
+// - SCAN NA CAVERNA COM O BICHO COLADO: se a criatura encosta no herói (≤32px) o
+//   toque cancela o scan, mas a carga da caverna é de 1,5 s e o toque acontece a
+//   cada 1,2 s — o scan nunca fechava (medido: 25 tentativas, 0 concluídas). Agora,
+//   na caverna, o herói recua andando quando o alvo chega a menos de 44px, SEM
+//   largar o scan: sai do alcance do toque e completa a carga. (No mapa aberto
+//   nada mudou: lá o recuo já existia pelo raio de ameaça.)
+// CHAOTIC.IDLEWORLD v2.22 — CHANGELOG (patch v155)
+// - PONTES COM COMEÇO, MEIO E FIM: a geração do mapa criava tábuas soltas —
+//   (a) toda estrada com água ao lado virava 'bridge' (mesmo em terra firme) e
+//   (b) os lagos, desenhados depois, pulavam esses tiles e deixavam pedaços de
+//   ponte/estrada ilhados no meio da água. Agora as pontes são construídas no
+//   FIM, já com a água definitiva: para cada coluna de travessia o jogo acha a
+//   faixa contínua de água e só constrói a ponte se houver terra firme nas duas
+//   pontas (mínimo 3 tiles de água). Toda ponte começa na terra, atravessa e
+//   termina na terra; se não houver travessia válida, não existe ponte.
+// - SCAN NA CAVERNA SECRETA: a regra "agressivos não são caçados" deixava a
+//   Aranha Gigante invisível para o herói na caverna (ele ficava do lado dela e
+//   não escaneava nada). Agora a caverna também caça agressivos: aproxima-se só
+//   até a beirada do raio de ameaça, para e escaneia (recurando se o bicho
+//   colar), mantendo o scan 2x mais rápido da caverna.
+// ============================================================
+// CHAOTIC.IDLEWORLD v2.21c — CHANGELOG (patch v154c — BALANCEAMENTO DO AUTOR)
+// - CRIATURAS RARAS DE NOVO: volta a contagem original do jogo (o cálculo por
+//   área do próprio mapa, ~2 no mapa 1) e a vida de 20 SEGUNDOS. O jogo é para
+//   ser difícil: deixar o Caçador horas no mapa farmando para achar e escanear
+//   as criaturas é o objetivo. (Eu havia aumentado a densidade e a vida — voltei.)
+// - SCAN COMO NO DESIGN ORIGINAL: a criatura perde 50% DA VELOCIDADE enquanto é
+//   escaneada (pode escapar dos 3 tiles e o scan falhar) e o herói PARA para
+//   escanear. Sem "proteções" extras: o alvo também pode desaparecer no fim da
+//   vida dele no meio do scan.
+// - CONTINUAM APENAS OS CONSERTOS DE BUG (não mexem no balanceamento):
+//   · o herói do Auto-Move mira metas DENTRO do mapa atual (antes usava o
+//     tamanho do Pórtico e ficava preso na borda de mapas menores);
+//   · persegue quem passa a até 5 tiles (160px) · escaneia a até 3 tiles (96px)
+//     · carga de 3 segundos;
+//   · cada mapa é uma sala própria no online (chat PERTO separado) e tem o seu
+//     terreno/relevo semeados pelo id da região.
+// ============================================================
+// CHAOTIC.IDLEWORLD v2.21b — CHANGELOG (patch v154b)
+// - TELA CINZA NA JANELA NOVA (?pip=1) RESOLVIDA: ao abrir o jogo pelo botão
+//   🪟 (que usa a URL ?pip=1), a arme ligava o modo "fora da aba" e o
+//   co-piloto dele chamava game.step() ANTES do Phaser terminar o boot — isso
+//   consumia a fila de cenas e o jogo abria vazio (0 cenas, sem erro algum).
+//   Agora o co-piloto só dá passo quando o jogo está de pé (bgPronto152) e a
+//   arme espera esse momento para ligar o modo fora da aba.
+// ============================================================
 // CHAOTIC.IDLEWORLD v2.21 — CHANGELOG (patch v154)
 // - MAPAS SEPARADOS DE VERDADE: jogadores em regiões diferentes não se viam
 //   mais (e o chat PERTO misturava os mapas). O online passou a identificar a
@@ -1341,26 +1399,22 @@ const CONFIG = {
   BATTERY_DRAIN_PERIM_IDLE: 0.00267, BATTERY_RECHARGE_HUB: 5, MAX_BATTERY: 100,
   SAVE_KEY: 'chaotic_idleworld_v098_rpg',
   DAILY_RESET_HOUR: 0, FRAGMENTS_PER_KEY: 5, MISSIONS_PER_DAY: 3,
-  SCAN_RANGE: 130, SCAN_COOLDOWN: 2000, SCAN_CHARGE_TIME: 3000, AUTO_MOVE_INTERVAL: 2000, // v154 — 130px
+  /* v154 — REGRA DO SCAN (design do jogo, conferido com o autor):
+   *   · a carga do scan leva 3s (SCAN_CHARGE_TIME);
+   *   · o alvo tem de estar a no máximo 3 tiles = 96px (SCAN_RANGE);
+   *   · se uma criatura passa a até 5 tiles = 160px (MONSTER_DETECT_RANGE),
+   *     o herói do Auto-Move vai atrás dela para tentar escanear. */
+  SCAN_RANGE: 96, SCAN_COOLDOWN: 2000, SCAN_CHARGE_TIME: 3000, AUTO_MOVE_INTERVAL: 2000, // 3 tiles
   // v2.2 — Caverna Secreta
   CAVE_W: 480, CAVE_H: 384, CAVE_MONSTER_MAX: 2, CAVE_MATERIAL_MAX: 3,
   CAVE_SCAN_MULT: 0.5, CAVE_MONSTER_CHANCE: 0.3, CAVE_HOLE_COOLDOWN: 5000,
-  MONSTER_SPAWN_INTERVAL: 10000, MONSTER_MAX_COUNT: 4, MONSTER_LIFETIME: 45000, // v154 — 45s de vida
-  MONSTER_DETECT_RANGE: 200, MONSTER_WANDER_SPEED: 155, // v154 — 200px: o herói percebe a criatura antes
+  MONSTER_SPAWN_INTERVAL: 10000, MONSTER_MAX_COUNT: 4, MONSTER_LIFETIME: 20000, // design: 20s (raras)
+  MONSTER_DETECT_RANGE: 160, MONSTER_WANDER_SPEED: 155, // 5 tiles — o herói vai atrás de quem passa aqui
   // v0.9.2 — Pilhas = recarga de bateria (1 pilha = 100% = 5 min). Scan é GRATUITO.
   PILHA_PRICE: 8, START_PILHAS: 12,
   // v0.9.0 — Materiais coletáveis no Perim
   MATERIAL_SPAWN_INTERVAL: 8000, MATERIAL_MAX_COUNT: 60,
 };
-
-/* v154 — QUANTAS CRIATURAS CABEM NO MAPA: densidade por área com piso e teto.
- * Antes o mapa 1 (2000×1500) ficava com 2 criaturas (e cada uma vivia 20 s),
- * então quase nunca havia o que escanear. */
-function monsterMax154(regionId) {
-  const d = getRegionDimensions(regionId);
-  const base = Math.round((d.w * d.h) / 300000); // ~1 criatura a cada 300 mil px²
-  return Math.max(6, Math.min(22, base));
-}
 
 // v0.9.8 — Helper para obter dimensões da região atual
 function getRegionDimensions(regionId) {
@@ -6673,52 +6727,45 @@ class PerimScene extends Phaser.Scene {
       else if (dir === 2) px = Math.max(0, px - 1); else px = Math.min(tilesX - 1, px + 1);
     }
     { // v130 — rio LARGO com curvas: caminho serpenteante + carimbo de elipses
+      /* v156 — O RIO É UM PERCURSO DE PONTA A PONTA. Cada tile de água do rio é
+       * marcado aqui (this._rioCells) e no fim da geração um passe reimpõe a água:
+       * nenhum terreno (praia, lago, estrada) pode cortar o rio. */
+      const rioCells156 = this._rioCells = {};
       let ry = Math.floor(tilesY / 2) + Math.floor(rng154() * 4 - 2);
       let vel = 0;
       for (let rx = 0; rx < tilesX; rx++) {
         vel += (rng154() - 0.5) * 0.9;
         vel = Phaser.Math.Clamp(vel + (Math.floor(tilesY / 2) - ry) * 0.02, -1.1, 1.1);
         ry = Phaser.Math.Clamp(Math.round(ry + vel), 3, tilesY - 4);
+        // v156 — o rio DESVIA da praia de chegada (tile 18,24): deslocamento suave de
+        // 1 tile por coluna (em vez de a praia cortar o rio, o rio se afasta dela).
+        if (Math.abs(ry - 24) < 5) ry += (ry < 24) ? -1 : 1;
+        ry = Phaser.Math.Clamp(ry, 3, tilesY - 4);
         const rad = 2.1 + rng154() * 0.7; // v138 — carimbo CIRCULAR: margens arredondadas (sem colunas retas)
         for (let dy = -3; dy <= 3; dy++) {
           for (let dx = -3; dx <= 3; dx++) {
             if (dx * dx + dy * dy * 1.25 <= rad * rad) {
-              this.mapData[Phaser.Math.Clamp(ry + dy, 0, tilesY - 1)][Phaser.Math.Clamp(rx + dx, 0, tilesX - 1)] = 'water';
+              const yy156 = Phaser.Math.Clamp(ry + dy, 0, tilesY - 1), xx156 = Phaser.Math.Clamp(rx + dx, 0, tilesX - 1);
+              this.mapData[yy156][xx156] = 'water';
+              rioCells156[xx156 + ',' + yy156] = 1; // v156 — marca a água do rio
             }
           }
         }
       }
-      // travessias garantidas (pontes de madeira cruzando o rio)
-      const cross = [0.22, 0.52, 0.8].map(function(f) { return Math.floor(tilesX * f); });
-      for (let ci = 0; ci < cross.length; ci++) {
-        const cx2 = cross[ci];
-        let yMin = -1, yMax = -1;
-        for (let y = 0; y < tilesY; y++) if (this.mapData[y][cx2] === 'water') { if (yMin < 0) yMin = y; yMax = y; }
-        if (yMin < 0) continue;
-        for (let y = Math.max(0, yMin - 1); y <= Math.min(tilesY - 1, yMax + 1); y++) {
-          for (let x = Math.max(0, cx2 - 1); x <= Math.min(tilesX - 1, cx2 + 1); x++) {
-            if (this.mapData[y][x] === 'water') this.mapData[y][x] = 'bridge';
-          }
-        }
-      }
+      // v155 — as pontes passaram a ser construídas no FIM da geração
+      // (depois dos lagos), com começo, meio e fim. Ver bloco "PONTES" abaixo.
       // clareira do spawn (600,780 = tile 18,24 — praia de chegada)
+      // v156 — a praia de chegada NUNCA toca na água do rio.
       for (let dy = -1; dy <= 1; dy++) for (let dx = -2; dx <= 2; dx++) {
         const yy = Phaser.Math.Clamp(24 + dy, 0, tilesY - 1), xx = Phaser.Math.Clamp(18 + dx, 0, tilesX - 1);
+        if (rioCells156[xx + ',' + yy]) continue;
         if (this.mapData[yy][xx] === 'water' || this.mapData[yy][xx] === 'deep') this.mapData[yy][xx] = 'path';
       }
     }
-    for (let y = 0; y < tilesY; y++) {
-      for (let x = 0; x < tilesX; x++) {
-        if (this.mapData[y][x] === 'path') {
-          let hasWater = false;
-          if (y > 0 && this.mapData[y-1][x] === 'water') hasWater = true;
-          if (y < tilesY-1 && this.mapData[y+1][x] === 'water') hasWater = true;
-          if (x > 0 && this.mapData[y][x-1] === 'water') hasWater = true;
-          if (x < tilesX-1 && this.mapData[y][x+1] === 'water') hasWater = true;
-          if (hasWater && this.mapData[y][x] === 'path') { this.mapData[y][x] = 'bridge'; }
-        }
-      }
-    }
+    /* v155 — REMOVIDO: aqui toda estrada (path) com água ao lado virava 'bridge',
+     * o que criava tábuas soltas em terra firme (e, quando um lago nascia por
+     * cima, pedaços de ponte ilhados no meio da água). Ponte agora é só o que
+     * o bloco "PONTES" constrói: travessia de terra a terra. */
     { // v131 — LAGOS: único lugar com água funda (rio atravessa-se em qualquer ponto)
       const bridgesX = [0.22, 0.52, 0.8].map(function(f) { return Math.floor(tilesX * f); });
       const nLakes = 1 + (rng154() < 0.5 ? 1 : 0);
@@ -6737,11 +6784,61 @@ class PerimScene extends Phaser.Scene {
         for (let dy = -5; dy <= 5; dy++) for (let dx = -5; dx <= 5; dx++) {
           const d = Math.sqrt(dx * dx * 1.15 + dy * dy * 1.4) + Math.sin((dx * 2.3 + ly) * 0.9) * 0.5;
           const yy = Phaser.Math.Clamp(ly + dy, 0, tilesY - 1), xx = Phaser.Math.Clamp(lx + dx, 0, tilesX - 1);
-          if (this.mapData[yy][xx] === 'bridge' || this.mapData[yy][xx] === 'path') continue;
+          if (this.mapData[yy][xx] === 'bridge') continue; // v155 — o lago pode cobrir estradas
           if (d <= R - 2.1) this.mapData[yy][xx] = 'deep';
           else if (d <= R && this.mapData[yy][xx] === 'grass') this.mapData[yy][xx] = 'water';
         }
         feitos++;
+      }
+    }
+    /* v156 — O RIO É CONTÍNUO E SÓ EXISTEM 3 PONTES (esquerda, meio, direita).
+     * Passe de conserto: se algum terreno (praia de chegada, lago, estrada) tiver
+     * tapado a água do rio, a água VOLTA — o rio atravessa o mapa de ponta a ponta. */
+    {
+      const marcados156 = this._rioCells || {};
+      const chaves156 = Object.keys(marcados156);
+      for (let i = 0; i < chaves156.length; i++) {
+        const par156 = chaves156[i].split(',');
+        const x156 = parseInt(par156[0], 10), y156 = parseInt(par156[1], 10);
+        if (x156 < 0 || y156 < 0 || x156 >= tilesX || y156 >= tilesY) continue;
+        const t156 = this.mapData[y156][x156];
+        if (t156 === 'grass' || t156 === 'path') this.mapData[y156][x156] = 'water'; // o rio não pode ser cortado
+      }
+    }
+    /* v156 — PONTES: exatamente 3 (0,22 · 0,52 · 0,80 da largura), SEMPRE sobre o rio,
+     * NUNCA sobre lago. Cada uma atravessa a faixa contínua de água do rio com terra
+     * firme nas duas pontas: começo, meio e fim. Nada de tábua solta e nada de deck. */
+    {
+      const cols156 = [0.22, 0.52, 0.8].map(function(f) { return Math.floor(tilesX * f); });
+      const ehTerra156 = function(t) { return t === 'grass' || t === 'path'; };
+      const rio156 = this._rioCells || {};
+      for (let ci = 0; ci < cols156.length; ci++) {
+        const cx156 = Phaser.Math.Clamp(cols156[ci], 1, tilesX - 2);
+        let y156 = 0;
+        while (y156 < tilesY) {
+          const t156 = this.mapData[y156][cx156];
+          if (t156 !== 'water' && t156 !== 'deep') { y156++; continue; }
+          const y0 = y156;
+          let temFundo156 = (t156 === 'deep'), temRio156 = !!rio156[cx156 + ',' + y156];
+          while (y156 < tilesY && (this.mapData[y156][cx156] === 'water' || this.mapData[y156][cx156] === 'deep')) {
+            if (this.mapData[y156][cx156] === 'deep') temFundo156 = true;
+            if (rio156[cx156 + ',' + y156]) temRio156 = true;
+            y156++;
+          }
+          const y1 = y156 - 1;
+          const comprimento156 = y1 - y0 + 1;
+          if (comprimento156 < 3) continue;              // ponte precisa de água no meio
+          if (temFundo156) continue;                     // v156 — água funda = LAGO: nada de ponte em lago
+          if (!temRio156) continue;                      // v156 — só o rio ganha ponte
+          const terraAcima156 = (y0 - 1 >= 0) && ehTerra156(this.mapData[y0 - 1][cx156]);
+          const terraAbaixo156 = (y1 + 1 < tilesY) && ehTerra156(this.mapData[y1 + 1][cx156]);
+          if (!terraAcima156 || !terraAbaixo156) continue; // começo e fim têm de ser em terra firme
+          for (let yy = y0; yy <= y1; yy++) {
+            for (let xx = Math.max(0, cx156 - 1); xx <= Math.min(tilesX - 1, cx156 + 1); xx++) {
+              if (this.mapData[yy][xx] === 'water' || this.mapData[yy][xx] === 'deep') this.mapData[yy][xx] = 'bridge';
+            }
+          }
+        }
       }
     }
     this.events.once('shutdown', function() { // v130 — sem corpos fantasmas entre viagens (v142: blindado — o physics pode já estar desmontado ao cair na caverna)
@@ -7367,7 +7464,7 @@ class PerimScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.items, this.onPlayerItemOverlap, null, this);
     this.physics.add.overlap(this.player, this.materials, this.collectMaterial, null, this);
     // v0.9.8 — Spawn inicial proporcional ao tamanho do mapa
-    const scaledMonsterCount = Math.max(2, Math.round(monsterMax154(GameState.currentRegion) * 0.5)); // v154
+    const scaledMonsterCount = getScaledSpawnCount(GameState.currentRegion, 3); // design: criaturas RARAS
     const scaledMaterialCount = getScaledSpawnCount(GameState.currentRegion, 20); // v2.9 — 10x mais itens no chão
     for (let i = 0; i < scaledMonsterCount; i++) this.spawnMonster();
     for (let i = 0; i < scaledMaterialCount; i++) this.spawnMaterial();
@@ -7631,7 +7728,7 @@ class PerimScene extends Phaser.Scene {
       const allEnemies = this.enemies.getChildren();
       for (let i = 0; i < allEnemies.length; i++) { if (allEnemies[i].active && allEnemies[i].hp > 0) activeCount++; }
       // v0.9.8 — Spawn proporcional ao tamanho do mapa
-      const scaledMaxMonsters = monsterMax154(GameState.currentRegion); // v154 — densidade por mapa
+      const scaledMaxMonsters = getScaledSpawnCount(GameState.currentRegion, CONFIG.MONSTER_MAX_COUNT); // design: raras
       if (activeCount < scaledMaxMonsters && Math.random() < 0.55) {
         this.spawnMonster();
       }
@@ -7816,10 +7913,9 @@ class PerimScene extends Phaser.Scene {
     for (let i = 0; i < children.length; i++) {
       const e = children[i];
       if (e.hp <= 0 || !e.active) { if (e.label) e.label.setVisible(false); continue; }
-      // Lifetime: desaparece após o tempo de vida (v154 — 45s)
-      // v154 — EXCEÇÃO: quem está sendo escaneado agora NÃO desaparece
-      // (antes a criatura podia sumir no meio do scan e cancelar tudo)
-      if (now - e.spawnTime > CONFIG.MONSTER_LIFETIME && !(this.autoState === 'scan' && GameState.scanTarget === e)) {
+      // Lifetime: desaparece após 20 segundos (criaturas raras — pode sumir no
+      // meio de um scan; faz parte da dificuldade do idle)
+      if (now - e.spawnTime > CONFIG.MONSTER_LIFETIME) {
         e.hp = 0; e.setVisible(false); e.body.enable = false; if (e.label) e.label.destroy();
         const poof = this.add.circle(e.x, e.y, 15, 0xaaffaa, 0.6); poof.setDepth(20);
         this.tweens.add({ targets: poof, scale: 2, alpha: 0, duration: 300, onComplete: function() { poof.destroy(); } });
@@ -7862,9 +7958,9 @@ class PerimScene extends Phaser.Scene {
           evx = e.wanderVx || 0; evy = e.wanderVy || 0;
         }
       }
-      // v154 — a criatura PARA enquanto é escaneada (antes andava a 50% e saía do
-      // alcance antes dos 3s de carga, cancelando o scan com "Alvo fugiu!")
-      if (isBeingScanned) { evx = 0; evy = 0; }
+      // design: ao ser escaneada a criatura perde 50% da velocidade — ela PODE
+      // escapar dos 3 tiles antes dos 3s e o scan falhar (o jogo é difícil de propósito)
+      if (isBeingScanned) { evx *= 0.5; evy *= 0.5; }
       if (tileIsWaterAt(this.mapData, e.x, e.y)) { evx *= 0.8; evy *= 0.8; } // v129 — 20% lento na água
       e.setVelocity(evx, evy);
     }
@@ -8420,7 +8516,7 @@ class CaveScene extends Phaser.Scene {
           evx = e.wanderVx || 0; evy = e.wanderVy || 0;
         }
       }
-      if (isBeingScanned) { evx = 0; evy = 0; } // v154 — idem: alvo do scan não foge
+      if (isBeingScanned) { evx *= 0.5; evy *= 0.5; } // design: o alvo pode escapar
       if (tileIsWaterAt(this.mapData, e.x, e.y)) { evx *= 0.8; evy *= 0.8; } // v129 — 20% lento na água
       e.setVelocity(evx, evy);
     }
@@ -8431,15 +8527,23 @@ class CaveScene extends Phaser.Scene {
       if (!this.autoTarget || Phaser.Math.Distance.Between(p.x, p.y, this.autoTarget.x, this.autoTarget.y) < 20) {
         this.autoTarget = this.pickCaveWanderTarget(); // v2.11 — só tiles livres
       }
-      let closest = null, closestDist = CONFIG.SCAN_RANGE + 60;
+      /* v155 — A CAVERNA TAMBÉM CAÇA AGRESSIVOS. Antes a regra "agressivos não
+       * são caçados" deixava a Aranha Gigante (espécie agressiva) literalmente
+       * invisível para o herói: ela podia estar colada nele e nada acontecia.
+       * A caverna existe para captura fácil (scan 2x), então aqui o herói vai
+       * atrás de qualquer criatura — mas nunca entra no raio de ameaça: para na
+       * beirada (raio + 16) e só escaneia de fora dele. */
+      let closest = null, closestDist = 1e9;
       const ens = this.enemies.getChildren();
       for (let i = 0; i < ens.length; i++) {
         const e = ens[i];
         if (e.hp <= 0 || !e.active) continue;
-        if (e.type && e.type.isAggressive) continue; // v148 — agressivos não são caçados
         if (e.scanned && !mapPenalty147()) continue; // v148 — re-scan só com penalidade ativa
+        const raio155 = aggroRadiusOf(e.type);
         const d = Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y);
-        if (d < closestDist) { closest = e; closestDist = d; }
+        if (raio155 > 0 && d < raio155 + 16) continue; // já dentro do perigo: não caça agora
+        const alcance155 = raio155 > 0 ? raio155 + 60 : CONFIG.SCAN_RANGE + 60;
+        if (d <= alcance155 && d < closestDist) { closest = e; closestDist = d; }
       }
       if (closest) { this.autoState = 'chase'; this.autoTarget = closest; }
       else { const angle = Phaser.Math.Angle.Between(p.x, p.y, this.autoTarget.x, this.autoTarget.y); vx = Math.cos(angle) * CONFIG.PLAYER_SPEED * 0.7 * spdMult; vy = Math.sin(angle) * CONFIG.PLAYER_SPEED * 0.7 * spdMult; }
@@ -8449,7 +8553,8 @@ class CaveScene extends Phaser.Scene {
       if (!target || target.hp <= 0 || target.scanned) { this.autoState = 'wander'; this.autoTarget = null; }
       else {
         const dist = Phaser.Math.Distance.Between(p.x, p.y, target.x, target.y);
-        if (dist > 48) {
+        const parada155 = Math.max(48, aggroRadiusOf(target.type) + 24); // v155 — agressivo: para na beirada
+        if (dist > parada155) {
           const angle = Phaser.Math.Angle.Between(p.x, p.y, target.x, target.y);
           vx = Math.cos(angle) * CONFIG.PLAYER_SPEED * 0.7 * spdMult; vy = Math.sin(angle) * CONFIG.PLAYER_SPEED * 0.7 * spdMult;
         } else if (this.time.now - GameState.lastScanTime >= CONFIG.SCAN_COOLDOWN) {
@@ -8464,9 +8569,17 @@ class CaveScene extends Phaser.Scene {
       if (!target || target.hp <= 0 || target.scanned) { this.cancelScan(); this.autoState = 'wander'; this.autoTarget = null; }
       else {
         const dist = Phaser.Math.Distance.Between(p.x, p.y, target.x, target.y);
-        if (dist > (GameState.scanTarget && GameState.scanTarget.type && GameState.scanTarget.type.isAggressive ? aggroRadiusOf(GameState.scanTarget.type) + 80 : CONFIG.SCAN_RANGE)) { this.cancelScan(); showFloatText(p.x, p.y - 40, 'Alvo fugiu!', '#ff8fa3'); this.autoState = 'wander'; this.autoTarget = null; } // v148 — alcance estendido
+        const raioAlvo155 = aggroRadiusOf(GameState.scanTarget.type); // v155 — raio de ameaça do alvo (0 = passivo)
+        if (dist > Math.max(CONFIG.SCAN_RANGE, raioAlvo155 + 40)) { this.cancelScan(); showFloatText(p.x, p.y - 40, 'Alvo fugiu!', '#ff8fa3'); this.autoState = 'wander'; this.autoTarget = null; }
         else {
-          p.setVelocity(0, 0);
+          // v157 — colado: recua andando sem largar o scan. No mapa aberto o
+          // limite é o raio de ameaça; na CAVERNA (raio 0) é 44px — assim o toque
+          // da criatura (que cancela o scan) não trava a carga de 1,5 s daqui.
+          const colado157 = raioAlvo155 > 0 ? (raioAlvo155 + 12) : 44;
+          if (dist < colado157) { // colado: recua andando, sem largar o scan
+            const fuga155 = Phaser.Math.Angle.Between(target.x, target.y, p.x, p.y);
+            p.setVelocity(Math.cos(fuga155) * CONFIG.PLAYER_SPEED * 0.9 * spdMult, Math.sin(fuga155) * CONFIG.PLAYER_SPEED * 0.9 * spdMult);
+          } else p.setVelocity(0, 0); // design: parado enquanto escaneia
           GameState.scanCharge += delta;
           this.updateScanBar(target);
           if (GameState.scanCharge >= CONFIG.SCAN_CHARGE_TIME * CONFIG.CAVE_SCAN_MULT) this.completeScan(target);
@@ -10959,7 +11072,13 @@ function pipArme152() {
      outra instância só acontece depois do boot terminar. */
   try {
     PIP152.arme = true;
-    bgSet152(true, true);
+    /* v154b — a arme liga o modo "fora da aba" assim que o jogo estiver de pé
+       (antes disso o co-piloto poderia dar passo no meio do boot do Phaser). */
+    (function ligaBgQuandoPronto(tentativa) {
+      if (bgPronto152()) { bgSet152(true, true); return; }
+      if ((tentativa || 0) > 100) return; // ~10s; se não subir, não força nada
+      setTimeout(function() { ligaBgQuandoPronto((tentativa || 0) + 1); }, 100);
+    })(0);
     setTimeout(function() { // 1) avisa a instância antiga (site/iframe) para parar de simular e salvar
       try { if (window.opener && !window.opener.closed && typeof window.opener.chaosTransferirParaPiP152 === 'function') window.opener.chaosTransferirParaPiP152(); } catch (e) {}
       try { if (window.opener && !window.opener.closed) window.opener.postMessage({ type: 'CHAOS_PIP_ASSUMIR' }, '*'); } catch (e) {}
@@ -11002,6 +11121,19 @@ function bgSet152(on, silencioso) {
     pipAtualizarNota152(BG152.ligado ? 'Modo fora da aba LIGADO (~20 quadros/s).' : 'Modo fora da aba desligado.');
   }
 }
+/* v154b — o jogo JÁ SUBIU? Enquanto o Phaser faz o boot (ou se por algum motivo
+ * a cena ainda não foi registrada), o co-piloto NÃO pode chamar game.step():
+ * um passo nessa hora consome a fila de cenas e o jogo abre numa tela vazia
+ * (bug da janela ?pip=1, reproduzido e corrigido aqui). */
+function bgPronto152() {
+  try {
+    if (!game || game.pendingDestroy) return false;
+    if (!game.isBooted) return false;
+    const sm = game.scene;
+    if (!sm || !sm.isBooted || !sm.scenes || sm.scenes.length < 1) return false;
+    return true;
+  } catch (e) { return false; }
+}
 function bgTickerStart152() { if (BG152.ticker) return; BG152.ultimoPasso = performance.now(); BG152.ticker = setInterval(bgTick152, BG152.taxa); }
 function bgTickerStop152() { if (BG152.ticker) { clearInterval(BG152.ticker); BG152.ticker = null; } }
 /* Um passo de mundo SÓ quando os quadros reais pararam (aba escondida, janela
@@ -11009,6 +11141,7 @@ function bgTickerStop152() { if (BG152.ticker) { clearInterval(BG152.ticker); BG
 function bgTick152() {
   try {
     if (!game || game.pendingDestroy) return;
+    if (!bgPronto152()) return; // v154b — NUNCA dar passo durante o boot do Phaser
     const agora = performance.now();
     if (agora - BG152.ultimoFrame < 120) return; // o rAF está rodando: não dar passo duplo
     let dt = Math.round(agora - (BG152.ultimoPasso || (agora - BG152.taxa)));

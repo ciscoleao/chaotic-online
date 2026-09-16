@@ -3,6 +3,12 @@
 **Chaotic.IdleWorld · v152 → v2.20** · aplicado em `chaotic_idleworld_v123.html`
 (continua com o mesmo nome do arquivo — é só substituir o antigo)
 
+> **Correção v2.21b (janela aberta pelo 🪟 abria vazia):** em alguns casos a janela aberta com `?pip=1`
+> subia com a **tela cinza** e o jogo nunca começava. Causa: o modo "fora da aba" (que a própria janela
+> liga ao abrir) dava um passo de mundo **antes** de o Phaser terminar de subir — isso consumia a fila de
+> cenas e o jogo abria com zero cenas, sem erro nenhum. Agora o co-piloto só dá passo com o jogo **de pé**
+> (`bgPronto152`). Testado nos 4 cenários: iframe/janela normal × com/sem `?pip=1` → **6 cenas** em todos.
+>
 > **Novidade v2.20 (importante se você entra pelo *site*):** o navegador **não permite** abrir a
 > janelinha flutuante quando o jogo está **dentro de outra página** (iframe). Mensagem que aparecia:
 > *"Opening a PiP window is only allowed from a top-level browsing context"*. Resolvido nos dois lados:
@@ -156,12 +162,15 @@ B) PELO SITE (mesmo servidor, fluxo completo com cadastro/login):
                               para esta aba ✓) e ↩ VOLTAR AO SITE (volta aos personagens ✓)
    • erros de página ........ nenhum ✓
 
-C) JOGO DENTRO DE IFRAME (site antigo / preview):
-   • detecção ................ emIframe:true → PiP de vídeo, sem erro na tela ✓
-   • engrenagem .............. botão "🪟 Abrir o jogo em janela própria (resolve)" + aviso em PT-BR ✓
-   • 🪟 ...................... abre janela nova com ?pip=1 (banner de clique, 2º plano ligado) ✓
-   • 1º clique na janela nova  janelinha abre; a aba antiga recebe o aviso e para de salvar ✓
-   • aba antiga .............. para de simular, mostra "O jogo está rodando na janela própria" ✓
+C) JOGO DENTRO DE IFRAME (site antigo / preview) — refeito na v2.21b:
+   • detecção ................ emIframe:true → modo "video" (o PiP de vídeo funciona dentro de iframe) ✓
+   • engrenagem .............. ligou a janelinha de vídeo sem erro ✓ (o aviso com o botão 🪟 continua
+                               aparecendo quando o navegador recusa)
+   • 🪟 ...................... janela nova com ?pip=1: 6 CENAS ✓, banner do arme ✓, 2º plano ✓
+   • 1º clique na janela nova  janelinha em janela própria ✓ (JOGO AO VIVO no print)
+   • aba antiga .............. transferida, overlay "O jogo está rodando na janela própria",
+                               loop parado, 2º plano desligado e save bloqueado ✓
+   • boot com ?pip=1 (4 casos)  iframe/normal × com/sem pip=1 → 6 cenas em TODOS ✓ (era o bug da tela cinza)
 
    Regressão (nomes de mapa): "Bosque Verdejante | Prado Verde | Caverna de Lava | Lagoa Negra M'arrillian" ✓
 ```

@@ -142,16 +142,21 @@ sub1('C3 limite de criaturas vivas',
 """      const scaledMaxMonsters = getScaledSpawnCount(GameState.currentRegion, CONFIG.MONSTER_MAX_COUNT);""",
 """      const scaledMaxMonsters = monsterMax154(GameState.currentRegion); // v154 — densidade por mapa""")
 
-sub1('C4 config: vida, detecção',
+sub1('C4 config: vida (detecção fica em 5 tiles, como manda o design)',
 """  MONSTER_SPAWN_INTERVAL: 10000, MONSTER_MAX_COUNT: 4, MONSTER_LIFETIME: 20000,
   MONSTER_DETECT_RANGE: 160, MONSTER_WANDER_SPEED: 155,""",
 """  MONSTER_SPAWN_INTERVAL: 10000, MONSTER_MAX_COUNT: 4, MONSTER_LIFETIME: 45000, // v154 — 45s de vida
-  MONSTER_DETECT_RANGE: 200, MONSTER_WANDER_SPEED: 155, // v154 — 200px: o herói percebe a criatura antes""")
+  MONSTER_DETECT_RANGE: 160, MONSTER_WANDER_SPEED: 155, // 5 tiles — o herói vai atrás de quem passa aqui""")
 
 # ---------------------------------------------------------------- D) scan confiável
-sub1('D1 alcance do scan',
+sub1('D1 alcance do scan: 3 tiles (design)',
 """  SCAN_RANGE: 96, SCAN_COOLDOWN: 2000, SCAN_CHARGE_TIME: 3000, AUTO_MOVE_INTERVAL: 2000,""",
-"""  SCAN_RANGE: 130, SCAN_COOLDOWN: 2000, SCAN_CHARGE_TIME: 3000, AUTO_MOVE_INTERVAL: 2000, // v154 — 130px""")
+"""  /* v154 — REGRA DO SCAN (design do jogo, conferido com o autor):
+   *   · a carga do scan leva 3s (SCAN_CHARGE_TIME);
+   *   · o alvo tem de estar a no máximo 3 tiles = 96px (SCAN_RANGE);
+   *   · se uma criatura passa a até 5 tiles = 160px (MONSTER_DETECT_RANGE),
+   *     o herói do Auto-Move vai atrás dela para tentar escanear. */
+  SCAN_RANGE: 96, SCAN_COOLDOWN: 2000, SCAN_CHARGE_TIME: 3000, AUTO_MOVE_INTERVAL: 2000, // 3 tiles""")
 
 sub1('D2a criatura para durante o scan (Perim)',
 """      // Se estiver sendo escaneado, move a 50% da velocidade (não para)
