@@ -1,12 +1,19 @@
-# 🗺️ Mapas separados de verdade + scan consertado + pontes e Caverna Secreta
+# 🗺️ Mapas separados de verdade + scan consertado + pontes, Caverna Secreta, o fim dos quadrados escuros e o herói indo atrás da criatura
 
-**Chaotic.IdleWorld · v2.23** · aplicado em `chaotic_idleworld_v123.html`
+**Chaotic.IdleWorld · v2.25** · aplicado em `chaotic_idleworld_v123.html`
 (continua com o mesmo nome do arquivo — é só substituir o antigo)
 
-> 🔝 **Última rodada (v2.23):** o **RIO voltou a ser um percurso de ponta a ponta** (nada de terreno
-> cortando a água), as pontes viraram **3 travessias certas** (esquerda, meio e direita) **só sobre o
-> rio** — nada de deck largo nem ponte em lago — e a **Caverna Secreta** agora fecha o scan mesmo com
-> a criatura **colada** no herói. Tudo na **seção 6**; o balanceamento do autor (seção 2.3) não mudou.
+> 🔝 **Última rodada (v2.25):** o herói **VAI ATRÁS E ESCANEIA QUALQUER CRIATURA**, inclusive as
+> **agressivas dentro do mapa 1 SAFE ZONE**. No seu print do Bosque Verdejante ele passou quase colado
+> numa **Aranha Gigante Lv.6** e não fez nada: a Safe Zone zera o raio de ameaça (correto — lá nada te
+> persegue), mas o auto-move usava esse mesmo zero para **descartar** os agressivos da caça. Agora o
+> zero desliga só a fuga: criatura a **≤160px → vai atrás**; a **≤96px → PARA e escaneia (3s)**. E, se
+> ela encostar, o herói **recua andando sem largar o scan** (senão o toque cancelava a carga para
+> sempre). Detalhes na **seção 8**.
+>
+> 📜 Rodada anterior (v2.24): fim dos **QUADRADOS ESCUROS** no mapa — a grama decorada e os barrancos
+> ficavam com a paleta do mapa anterior; agora toda troca de mapa re-assa tudo o que depende do tema
+> (seção 7).
 
 ---
 
@@ -325,11 +332,359 @@ toque, fecha a carga de 1,5 s e, se a criatura fugir depois, ele volta a caçar.
 
 ---
 
-## 7. Arquivos
+## 7. v2.24 — Os quadrados escuros no mapa (corrigido)
+
+### 7.1 O que você viu
+
+No seu print do **Bosque Verdejante** o chão tinha, espalhados pela grama verde, **quadrados quase
+pretos** (alguns com pedra, cogumelo, tufo ou flor dentro) e a **faixa de barranco** na beira da
+praia também aparecia escura — bem diferente do print que eu mandei, onde tudo estava verdinho.
+
+### 7.2 A causa (medida, não chutada)
+
+Cada tribo tem a **sua paleta** de grama (Bosque `#3f9a46` verde · Cavernas de Brasas `#4a3230`
+marrom-escuro · Túneis do Monte Pillar `#9a7a44` âmbar · Oásis `#c2a86a` areia · Lagoa Negra
+`#2e4a4a` verde-escuro). **Três** famílias de textura são desenhadas com essa paleta:
+
+| Textura | Onde aparece | Era re-assada ao trocar de mapa? |
+|---|---|---|
+| `grass_0..2` | grama lisa (75% dos tiles) | ✅ sim |
+| `gdec_0..11` | **grama decorada** — pedra/cogumelo/tufo/flor (25% dos tiles) | ❌ **não** |
+| `bk_*` | **barranco** da margem da água | ❌ **não** |
+
+Ou seja: a grama lisa mudava de cor junto com o mapa, mas a **decorada e o barranco ficavam
+congelados na paleta do mapa em que o jogo foi aberto**. Provado no Chrome:
+
+```
+BOOT do jogo dentro de Cavernas de Brasas:  grass_* = #4a3230   gdec_* = #4a3230   (tudo certo)
+DEPOIS do Fast Travel -> Bosque Verdejante: grass_* = #3f9a46   gdec_* = #4a3230   <-- os quadrados
+                                            bk_* (corpo)        = #4a3230
+```
+
+Medindo o seu print: as manchas escuras eram exatamente **`#4a3230` / `#4b3432` / `#4c3432`** — a
+paleta de **Cavernas de Brasas** dentro do Bosque. Não era filtro, cache do navegador nem WebGL:
+era textura assada com a cor do mapa errado (por isso só tinha ¼ de tiles escuros — exatamente os
+25% que usam a grama decorada).
+
+### 7.3 A correção
+
+1. **Trocar de mapa re-assa tudo o que depende do tema**: grama lisa, as **12 texturas de grama
+   decorada** (`gdec_*`) e os **barrancos** (`bk_*`, que são apagados para serem recriados com a
+   paleta nova).
+2. **Rede de segurança**: antes de assar o chão, a cena do mapa confere se as texturas estão na
+   paleta da região em que o herói está — se não estiverem, refaz na hora (nenhum caminho de jogo
+   fica de fora).
+
+### 7.4 Provas (Chrome real, no jogo servido pelo `server.js`)
+
+| Verificação | Antes | Depois |
+|---|---|---|
+| Bosque depois de vir das Cavernas: `gdec_*` | `#4a3230` (escuro) | `#3f9a46` (verde) ✅ |
+| Bosque depois de vir das Cavernas: barranco `bk_*` | `#4a3230` | `#3f9a46` ✅ |
+| Pixels da paleta escura na área do print do Bosque | **11,0%** | **0,1%** (tons do tronco) ✅ |
+| Volta para as Cavernas (direção inversa) | manchas verdes | 100% no tema escuro ✅ |
+| Os 5 mapas: grama + 12 decoradas + barranco | — | 5/5 com a paleta certa ✅ |
+| Regressão: CONFIG, 5 mapas, caverna 2x, `?pip=1` | — | OK, 0 erros ✅ |
+| Rio (63/63 colunas, 0 cortes) e 15 pontes terra-terra | — | 3+3+3+3+3, 0 defeito ✅ |
+
+Prints desta rodada: `mapa_bosque_limpo_v224.png` (o mesmo lugar do seu print, agora limpo) e
+`mapa_5_temas_v224.png` (os 5 mapas lado a lado, cada um com a sua paleta).
+
+### 7.5 O que NÃO mudou (de propósito)
+
+- A regra do scan (**3 s**, alvo ≤**3 tiles/96px**, perseguição ≤**5 tiles/160px**) e o balanceamento
+  do autor (criaturas raras, vida de 20 s, 50% de lentidão ao escanear, herói **para** para escanear).
+- O scan **2x** da Caverna Secreta, o recuo com o bicho colado, o rio de ponta a ponta, as **3 pontes
+  só no rio**, 0 pontes em lagos, o servidor e o site.
+- As cores de cada tribo continuam as mesmas — o que muda é que agora **todas** as texturas do chão
+  acompanham o mapa em que o herói está.
+
+---
+
+## 8. v2.25 — O herói vai atrás e escaneia qualquer criatura (inclusive em Safe Zone)
+
+### 8.1 O que você viu
+
+> *"Passei pela aranha quase do lado e meu personagem passou reto, não foi atrás dela e nem escaneou ela."*
+
+O print é o **Bosque Verdejante · OverWorld · Mapa 1 · 🛡 SAFE ZONE**, com a legenda vermelha
+**"Aranha Gigante Lv.6"** (vermelho e **sem ☮️** = espécie agressiva) logo abaixo do herói, no meio do
+caminho do auto-move. O herói andou em linha reta, passou a poucos pixels dela e não reagiu —
+**nem perseguiu, nem escaneou**.
+
+### 8.2 A causa (medida no jogo real, não chutada)
+
+O raio de ameaça (`aggroRadiusOf()`) é **0 nas Safe Zones** — isso é de propósito: no mapa 1 nada te
+persegue, então não existe IA de fuga lá. **O problema é que o auto-move usava esse mesmo zero para
+decidir que a criatura não existia:**
+
+| onde | linha (antes) | efeito |
+| --- | --- | --- |
+| bloco de fuga/stalk | `if (aggroRadiusOf(m.type) <= 0) continue;` | o agressivo nunca entrava na lista de ameaças (certo) — mas era o único caminho que olhava para ele |
+| caça passiva | `if (e.type && e.type.isAggressive) continue;` | **todo agressivo era descartado da caça** (o bug) |
+
+Somando as duas: nos **4 mapas 1 (os SAFE ZONE)** uma criatura agressiva era **invisível para o
+auto-move** — dava para atravessar por cima dela. Medido no Chrome, no jogo servido pelo `server.js`,
+antes da correção: Aranha Gigante a 120px do herói em `ow_grove` → o herói chegou a **58px** dela em
+estado `wander` puro, **0 scans iniciados** e **0 scans concluídos**.
+
+### 8.3 A correção (duas partes, uma de cada vez)
+
+**v159 — o zero passa a desligar SÓ a fuga.** A caça vale para toda criatura, em qualquer mapa,
+agressiva ou não: a **≤160px (5 tiles)** o herói vai atrás; a **≤96px (3 tiles)** ele **PARA** e
+escaneia por **3s**. Em Safe Zone o agressivo não persegue o herói, então não havia motivo nenhum para
+ignorá-lo. A "beirada estendida" do scan (raio de ameaça + 80) continua valendo **só onde o raio
+existe**; em Safe Zone valem os 96px canônicos.
+
+**v159c — blindagem do update (achada nos testes).** Quatro pontos do jogo faziam
+`corpo.enable = false` **sem conferir se o corpo ainda existia**. Se uma criatura fosse **destruída**
+(e não apenas morta/vencida) no meio de um scan, a linha explodia com `TypeError` **dentro do update
+da cena** — e tudo o que vinha depois dela naquele quadro não rodava. Num jogo idle que fica horas no
+automático, uma exceção dessas é **congelamento**. Agora esses quatro pontos só mexem no corpo se ele
+existir; no jogo normal o comportamento é **idêntico**. (Reproduzido de propósito num teste: destruir
+o alvo no meio do scan → antes, erro de página; depois, o herói cancela, volta a andar e nada trava.)
+
+**v159b — o caso do toque.** A criatura a **≤32px cancela o scan a cada 1,2s** (regra de contato). Em
+Safe Zone ela **não causa dano**, mas o cancelamento continuava valendo: o herói ficava literalmente
+encostado, a carga reiniciava para sempre e a criatura **nunca** era escaneada — o mesmo laço que a
+caverna já tinha resolvido na v2.23. Agora, **colado (alvo a menos de 44px), o herói RECUA ANDANDO SEM
+LARGAR O SCAN** (a carga não é zerada). Fora desse caso vale a regra canônica: **o herói fica PARADO
+enquanto escaneia**.
+
+### 8.4 Provas (Chrome real, no jogo servido pelo `server.js`)
+
+| cenário | resultado |
+| --- | --- |
+| **agressiva a 120px em `ow_grove` (SAFE ZONE)** — o seu caso | **antes: 0 scans · depois: perseguiu, parou e escaneou** |
+| passiva (Slime Verde) a 120px em SAFE ZONE (controle) | 2 scans concluídos (não regrediu) |
+| agressiva em mapa **não-safe** (`meadow`) | 3 scans concluídos **só de fora do raio de ameaça** |
+| **fuga/stalk** em mapa perigoso (aranha a 100px, dentro do raio de 150px) | herói saiu para **221px**, nunca voltou ao raio (mín. 141px) e escaneou **de fora** (182px) |
+| **scan em SAFE ZONE** (agressiva a 90px) | iniciado a **40px** (limite 96) · carga **3033ms** (canônico 3000) · herói a **0 px/s** ao concluir |
+| **scan COLADO** (agressiva a 20px) | recuou andando até **83px** e concluiu a carga (**3177ms**) — sem laço de cancelamentos |
+| regressões | título v2.25 · 5 mapas abrem · caverna **scan 2x** (1525ms) · `?pip=1` ok · 15 pontes com começo/meio/fim · 5/5 temas · quadrados escuros 0,1% |
+| **alvo destruído no meio do scan** (blindagem v159c) | antes: erro de página `Cannot set properties of undefined` · depois: **0 erros**, o herói cancela e volta a andar |
+
+Prints: [`comparativo_aranha_antes_depois_v225.png`](comparativo_aranha_antes_depois_v225.png) (seu print
+em cima, a correção embaixo) e [`print_v225_scan_agressiva.png`](print_v225_scan_agressiva.png)
+(herói parado ao lado da aranha com a barra "SCANNING…" carregando) e
+[`print_v225_cacada_natural.png`](print_v225_cacada_natural.png) (a mesma caçada em jogo natural:
+vai atrás → para e escaneia → carta da criatura).
+
+### 8.5 Jogo natural (sem forçar spawn nenhum)
+
+Além dos testes com criatura travada, deixei o jogo rodando **sozinho** no Bosque Verdejante e
+observei **200 s de jogo** (auto-move ligado, nenhum spawn forçado): nasceram **14 criaturas sozinhas**,
+6 delas agressivas (Aranha Gigante Lv.5-6, Lobo Cinzento Lv.3-4). O herói largou o rumo, foi atrás e
+escaneou — a caçada completa (perseguição → parada → 3 s de carga → carta da criatura) levou **13
+segundos** no primeiro caso. Print: `print_v225_cacada_natural.png` (3 quadros da mesma caçada).
+
+> ⚠️ **Detalhe técnico do teste:** o Chrome sem tela (headless) daqui roda a ~7 quadros por segundo e
+> entrega ao jogo menos tempo por quadro do que um navegador normal — a vida de 20 s da criatura e a
+> carga de 3 s do scan saem de sincronia e o scan quase nunca fecharia. Para medir de forma justa,
+> **sincronizei o relógio do jogo com o relógio de parede** (1 s de jogo = 1 s real, como no seu PC a
+> 60 fps) em todos os testes de jogo natural desta rodada.
+
+**Por que um scan ainda pode falhar** (medido — em 100% dos cancelamentos foi isso): a criatura **saiu
+dos 96px** (3 tiles). Escaneada, ela anda na **metade da velocidade**, mas continua andando: numa
+tentativa típica a distância ia de ~40px a ~100px em **1 segundo** e o scan caía. Isso é exatamente a
+regra que você pediu — *"ao ser escaneada a criatura perde 50% da velocidade (pode escapar e o scan
+falhar)"* e *"o jogo é difícil de propósito: deixar o personagem por horas no mapa para conseguir um
+Scan bom"*. O herói **não desiste**: volta, persegue e tenta de novo — nos testes fechou o scan em
+5 s, 41 s e 52 s de tentativas (e num deles de primeira, em 4,9 s).
+
+### 8.7 O SEGUNDO CAMINHO DO "PASSA RETO" (v160) — alvo inalcançável
+
+Depois de corrigir a caça em Safe Zone (v159), fui procurar **outro jeito** de o herói passar reto por
+uma criatura — e achei: o estado de **perseguição** (`chase`) ignora todo o resto do mapa e **não tinha
+desistência**. Como as **criaturas não colidem com casas/paredes** (só com a água funda) e o **herói
+colide**, o alvo pode atravessar uma casa e deixar o herói **empurrando a parede para sempre** —
+enquanto uma Aranha Gigante passa colada e ele não faz **nada**.
+
+> **Medido antes da correção:** herói em `chase` atrás de um alvo, Aranha Gigante a **87px** dele →
+> **0 tentativas de scan** na aranha, **0 quadros** perseguindo ela, e o herói ainda **se afastou**
+> (chegou a 184px). É o sintoma exato do seu print, por um caminho diferente.
+
+**Correção (v160):** em `chase`, o herói larga o alvo quando
+- fica **~2,4s sem sair do lugar** e sem chegar perto (empurrando parede), **ou**
+- o alvo **dispara para além de 300px** (9+ tiles) sem o herói se aproximar.
+
+Aí volta a `wander` e a caça normal (≤160px) pega quem estiver por perto. Vale no **mapa aberto** e na
+**Caverna Secreta**. Depois da correção, no mesmo cenário: **12 tentativas de scan na aranha** e ela
+perseguida em 7 quadros.
+
+**Jogo livre (210s, nada forçado):** 12 criaturas nasceram (6 agressivas), o herói perseguiu em 158
+quadros e tentou 8 scans — as falhas tiveram todas motivo canônico: *fugiu dos 96px* (3), *toque* (2),
+*expirou* os 20s de vida (2). Zero erros de página.
+
+### 8.8 O que NÃO mudou (de propósito)
+
+- A **fuga/stalk** nos mapas perigosos (raio 150, Chefe 220, Manto −30%) — conferida no teste de fuga.
+- O **scan**: 3s de carga, alvo a ≤96px, detecção a ≤160px, o herói **para** para escanear, a criatura
+  RARA perde **50% da velocidade** ao ser escaneada (ela pode escapar e o scan falhar).
+- A **vida de 20s** das criaturas, o **re-scan só sob penalidade** e a **Caverna Secreta 2x** (com o
+  recuo de 44px de lá).
+- O jogo continua **difícil de propósito**: o scan pode falhar, e é assim que deve ser.
+
+---
+
+## 9. v2.26 — Opções limpas, Auto-Move automático, itens raros e o MASTER dos Dromos
+
+### 9.1 O que você pediu (com o print do painel de Opções)
+
+1. *"Remova o comando P de auto move, pois a pessoa não pode controlar quando pode estar em auto move,
+   essa função é exclusiva para mapas de criaturas."*
+2. *"Remova também esses textos explicativos deixando apenas o ícone com o nome dentro de OPÇÕES."*
+3. *"Esses itens não são recolhidos com tanta facilidade justamente pra eles terem mercado no leilão."*
+   (10% da quantidade que existia.)
+4. Um **NPC MASTER na Ilha dos Dromos**: +1 LV, +1000 Bits, +1 Scan aleatório, +1 Equipamento de
+   batalha e +1 Mugic — **um botão para cada**.
+
+### 9.2 Auto-Move automático (v161)
+
+- A **tecla P saiu do jogo** (zero `keydown-P` no código) e o botão 🤖/⏸ do celular virou só 👆 (interação).
+  Você **não controla mais** o auto-move.
+- `GameState.autoMove` é decidido pela cena, no `create()` de cada mapa:
+
+| Onde | Auto-Move | Por quê |
+|---|---|---|
+| Bosque Verdejante · Cavernas de Brasas · Túneis do Monte Pillar · Oásis Enfumaçado · Lagoa Negra | **LIGADO** | são os mapas de criaturas |
+| Caverna Secreta | **LIGADO** | é o lugar do scan (2x) |
+| Pátio Central · Ilha dos Dromos · Dromo (arena) | **DESLIGADO** | lá o controle é 100% seu |
+
+- No mapa de criaturas **não dá para desligar** e no Pátio **não dá para ligar**: não existe mais tecla
+  nem botão para isso — quem decide é o mapa em que você está.
+
+### 9.3 O painel de Opções ficou só ícone + nome (v161)
+
+- Saíram os parágrafos de ajuda/aviso/dica (`opt-mode-note`, a nota fixa da janelinha etc.). O painel
+  abre com **10 botões, cada um só com o ícone e o nome**: PC/Celular · Som · Música · Cor · Movimento ·
+  Janelinha · 🪟 (abrir janela) · Tela cheia · Reconectar · Deslogar.
+- Se a janelinha flutuante falhar, o aviso continua aparecendo — mas **na hora, como aviso rápido na
+  tela** (toast), não como texto fixo dentro de OPÇÕES.
+
+### 9.4 Itens no mapa a 10% (v162)
+
+| Onde | Antes | Agora |
+|---|---|---|
+| Qualquer mapa de criaturas | nascia com 20 · até 60 no chão | nasce com **2** · **teto 6** |
+| Mesma conta, já com a escala do tamanho do mapa | 8 iniciais / até 23 (Lagoa Negra: 11 / 34) | **1 inicial / até 2** (Lagoa Negra: 1 / 3) |
+| Caverna Secreta | 3 | **1** (a caverna nunca fica vazia) |
+
+- Medido no jogo rodando: mapa abre com **1–2 itens** e o pico ao longo do tempo ficou em **2**, contra
+  8–11 na versão anterior. Item agora é item: raro, e por isso **tem mercado no Leilão**.
+
+### 9.5 O NPC MASTER da Ilha dos Dromos (v163)
+
+- Um **NPC dourado** (rótulo **MASTER**) fica na Ilha dos Dromos, a leste do posto do escrivão. Chegue
+  perto e aparece o atalho **[E] Falar com o MASTER** — também funciona **no toque (👆)** e no clique.
+- O painel do MASTER tem **6 botões**: ✕ (fechar) · **+1 LV** · **+1000 Bits** · **+1 Scan aleatório** ·
+  **+1 Equipamento de batalha** · **+1 Mugic**. Cada botão dá **uma** coisa — sem sorteio misturado.
+- O **+1 LV** leva o nível para o próximo e recalcula os atributos pelo mesmo caminho do jogo
+  (no teste: 99 → 100 deu +10 de HP, +2 de ATK, +1 de DEF). Os cards respeitam o **limite de 100 cartas**,
+  e o **Scan aleatório** credita a **região certa da espécie** no banco de scans (do jeito que o mapa
+  contaria se você tivesse escaneado lá).
+
+### 9.6 Provas (Chrome real, no jogo servido pelo `server.js`)
+
+- **`test_v226.js` — 22 ✅ · 0 ❌** (0 erros de página): painel de Opções com 10 botões e **nenhum texto
+  explicativo**; o herói **não anda sozinho** no Pátio Central (0px em 4s) e **anda sozinho** no mapa de
+  criaturas (545px em 5s); a tecla **P não desliga** o auto-move; Caverna Secreta ligado; Ilha dos Dromos
+  **0px em 4s**; e o MASTER entregando LV, Bits, Scan, Equipamento e Mugic (LV 99→100, bits 10→1010,
+  scan *Slime Verde* Lv.4 [Incomum] creditado em `ow_grove`, *Espada de Madeira*, *Hino do Overlord*).
+- **`test_v226_itens.js` — 7 ✅ · 0 ❌**: itens 8→1 (teto 23→2) nos 5 mapas, caverna com 1 item, e as
+  **regressões da v2.25 continuam verdes com o auto-move automático**: aranha **AGRESSIVA em SAFE ZONE**
+  perseguida e escaneada (scan disparado a 44px, carga 3067ms), Caverna Secreta escaneada em **1517ms**
+  (≈ 2x mais rápido) e **5/5 mapas** abrindo com auto-move ligado.
+- Prints: `docs/img/opcoes-limpo-v226.png`, `docs/img/npc-master-v226.png`, `docs/img/itens-raros-v226.png`.
+
+### 9.7 O que NÃO mudou (de propósito)
+
+- O **scan**: 3s de carga, alvo a ≤96px, detecção a ≤160px, o herói **para** para escanear, a criatura
+  RARA perde **50% da velocidade** (pode escapar e o scan falhar), **vida de 20s**, Caverna 2x com o
+  recuo de 44px. O jogo continua **difícil de propósito**.
+- O **rio de ponta a ponta com exatamente 3 pontes**, o fim dos **quadrados escuros**, a caça a
+  agressivos **em SAFE ZONE** e o descarte do **alvo inalcançável** — tudo conferido rodando junto.
+
+---
+
+## 10. v2.27 — O banco de 120 criaturas integrado
+
+### 10.1 O pedido
+
+*"Pode integrar o banco de 120 criaturas."* — Sim: o banco deixou de ser um pacote separado e virou
+**o conteúdo de Perim**. As 120 criaturas agora nascem nos mapas, aparecem nas cartas e valem no
+Leilão/Dromo.
+
+### 10.2 Como ficou
+
+- **120 espécies de verdade**: 4 tribos × 30 criaturas (OverWorld, UnderWorld, Danian, Mipedian), cada
+  tribo com 3 mapas — **m1 com 5 · m2 com 10 · m3 com 15** (7 passivas/8 agressivas no m3, 2 raras).
+- **Cada criatura trouxe a sua ficha do banco**: HP, ATK, velocidade, XP, Bits, arte, **elementos**,
+  **habilidade** (com custo de Mugic), **contadores de Mugic**, raridade e agressividade.
+
+| Mapa do jogo | Criaturas | Tribo · mapa do banco |
+|---|---|---|
+| Bosque Verdejante · Cavernas de Brasas · Túneis do Monte Pillar · Oásis Enfumaçado | 5 cada | m1 de cada tribo (100% passivas) |
+| Prado Verde · Caverna de Lava · Pantano Nebuloso · Ruinas do Tempo | 10 cada | m2 (1 rara, 4 agressivas) |
+| Floresta Sombria · Picos de Cinza · Borda do Vazio · **Miragens do Palmeiral** | 15 cada | m3 (2 raras, 8 agressivas) |
+| Lagoa Negra M’arrillian | 6 | segue o pool clássico (o banco não tem M’arrillians) |
+
+- **Nova região: “Miragens do Palmeiral”** — o banco tinha **15 criaturas mipedianas do mapa 3** e o jogo
+  não tinha esse mapa. Ela entrou como **Mapa 3 dos Mipedians** (Requer **Lv.20** + **100%** de scan das
+  Ruinas do Tempo), com tema próprio de deserto/miragem e os marcos *Palmeiral Invertido* e *Espelho de
+  Areia*. No Portal, a aba dos Mipedians agora mostra os 3 mapas.
+- **Spawn ponderado pelo banco**: passiva **34** · agressiva **26** · **RARA 12**. Medido: 900 sorteios
+  no mapa 3 deram **6,1% de raras** (o esperado pelo peso é 5,7%) — a rara continua sendo rara de
+  encontrar, como você pediu.
+- **Velocidade por espécie**: cada criatura anda na velocidade da sua ficha (`baseSpeed`), com **teto de
+  175 px/s** para o herói (140 px/s) ainda conseguir alcançar. Na prática: m1 anda a 124–129 (mais lento
+  que o herói, mapa 1 é o lugar do scan fácil), m2 a 142–155 e m3 a 166–240 (aí o teto entra). A regra
+  da **RARA +20% de velocidade** continua valendo, e o **−50% ao ser escaneada** também.
+- **Rótulo da criatura no mapa**: **★** marca a espécie **RARA** e **☮️** marca a **passiva** (a
+  agressiva vem sem ☮️, em vermelho).
+- **Cartas com a cara do banco**: a carta de scan, a da roleta e o painel do Scanner agora mostram
+  **Tribo · Mapa**, **elementos do banco** (Terra 🌍, Água 💧, Fogo 🔥, Ar 🌪️ — não mais sorteados),
+  **habilidade** e **Mugic**. A **raridade da espécie virou o piso da carta**: criatura RARA nunca sai
+  como “Comum”, e muito-forte nunca sai como “Comum” (os IVs continuam podendo subir a carta).
+- **HUD**: o banner do mapa e o card do Portal mostram **🐾 N espécies** — dá para saber na hora quantas
+  espécies vivem ali (e, portanto, quantas faltam para os 100% de scan).
+- **A progressão acompanhou**: o `%` de scan de cada mapa passa a ser sobre as espécies do banco (1/5,
+  1/10, 1/15), então mapa 100% = **todas as espécies do banco daquele mapa escaneadas**.
+
+### 10.3 Provas (Chrome real, no jogo servido pelo `server.js`)
+
+- **`test_v227_banco.js` — 24 ✅ · 0 ❌**: 120 espécies registradas com ficha do banco; os 12 mapas com
+  o pool certo (5/10/15, todos do banco); m3 com 2 raras e 8 agressivas; Miragens do Palmeiral existe,
+  é mapa 3 (Lv.20) e nasce com 15/15 do banco; **sorteio ponderado** (6,1% de raras); **velocidade por
+  espécie** (rara m3 224→175 px/s, m1 127 px/s); criatura rara nasce com o HP do banco e **★ no rótulo**;
+  carta do scan com elementos/habilidade/Mugic e **piso de raridade** (IV fraco 2/2/2/2 → carta “Raro”);
+  a ficha **sobrevive ao save/load**; o **MASTER +1 Scan** sorteia do banco e credita o mapa certo; a
+  **Caverna Secreta** usa o pool do banco; o **Portal** mostra 🐾 por mapa e o Mapa 3 dos Mipedians.
+- **Regressões verdes**: `test_v226.js` **22 ✅** (Opções limpas, auto-move automático, MASTER — o +1 Scan
+  já entregando criatura do banco) · `test_v226_itens.js` **7 ✅** (itens a 10%; aranha agressiva em SAFE
+  ZONE escaneada a 44px em 3017ms; Caverna escaneando em 1533ms) · `test_banco.js` **146 OK**.
+- **A caça não piorou** (mesmo instrumento, 150s no Bosque Verdejante): v2.26 → 3 scans iniciados e 2
+  concluídos; v2.27 → 3 iniciados e 1 concluído (mesma faixa, variação normal do mapa). No mapa 3 novo
+  (**Miragens do Palmeiral**) a caça também funciona: 1 scan concluído com carga de 2983ms.
+- Prints: `docs/img/banco-120-mapa-v227.png` · `banco-120-carta-v227.png` · `banco-120-portal-v227.png` ·
+  `banco-120-scanner-v227.png`.
+
+### 10.4 O que NÃO mudou (de propósito)
+
+- A **Lagoa Negra M’arrillian** (5ª tribo) segue com o pool clássico — o banco não tem M’arrillians.
+- A **arena do Dromo** sorteia espécies de todo o `ENEMY_TYPES`: como o banco entrou na lista, a arena
+  passou a mostrar as criaturas novas **sem nenhuma mudança de código**.
+- O **scan** (3s · 96px · 160px · o herói para para escanear · RARA −50% de velocidade **na hora do
+  scan**), a **vida de 20s**, a **Caverna 2x**, os **itens a 10%**, o **auto-move automático** e o
+  **MASTER** continuam exatamente como estavam na v2.26.
+
+---
+
+## 11. Arquivos
 
 | Arquivo | O que é |
 |---|---|
-| `chaotic_idleworld_v123.html` | **o jogo com tudo** (v2.23: rio contínuo + 3 pontes só no rio + scan da caverna + tudo o que já existia) |
+| `chaotic_idleworld_v123.html` | **o jogo com tudo** (v2.27: banco de 120 criaturas integrado + v2.26/v2.25/v2.24/v2.23 e tudo o que já existia) |
 | `LEIA-ME-MAPAS-E-SCAN.md` | este guia |
 | `LEIA-ME-JANELINHA-PIP.md` | guia da janelinha flutuante / modo fora da aba (v2.20) |
 | `LEIA-ME-CORRECAO-NOMES-DE-MAPA.md` | guia dos nomes de mapa (v2.18) |
@@ -337,12 +692,21 @@ toque, fecha a carga de 1,5 s e, se a criatura fugir depois, ele volta a caçar.
 | `patch_pontes_e_caverna.py` | script da v2.22: pontes por último + caverna caçando agressivos |
 | `patch_rio_e_3pontes.py` | script da v2.23: rio de ponta a ponta + só 3 pontes (só no rio) |
 | `patch_scan_colado_caverna.py` | script da v2.23: recuo na caverna com o bicho colado (scan fecha) |
+| `patch_quadrados_escuros.py` | script da v2.24: re-assa grama decorada + barrancos ao trocar de mapa |
+| `patch_agressivo_safezone.py` | script da v2.25: em SAFE ZONE o raio 0 desliga só a fuga — a caça (perseguir + escanear) vale para todo mundo |
+| `patch_scan_nao_encosta.py` | script da v2.25: colado (<44px) o herói recua andando sem largar o scan (fim do laço de cancelamentos) |
+| `patch_body_guard.py` | script da v2.25: blindagem — nunca mexer em `corpo.enable` de um corpo que já não existe (update nunca congela) |
+| `patch_alvo_inalcancavel.py` | script da v2.25 (v160): largar alvo inalcançável (parede no meio) ou que disparou para 300px+, em vez de perseguir para sempre |
+| `patch_opcoes_automove.py` | script da v2.26 (v161): tira a tecla P, limpa o painel de Opções e liga/desliga o auto-move por cena |
+| `patch_itens_10.py` | script da v2.26 (v162): itens do mapa a 10% (nasce com 2, teto 6, caverna 1) |
+| `patch_master_dromos.py` | script da v2.26 (v163): o NPC MASTER da Ilha dos Dromos com os 5 botões |
+| `patch_banco_120.py` | script da v2.27 (v164): integra o banco de 120 criaturas (pools por tribo/mapa, spawn ponderado, velocidade por espécie, ficha nas cartas e o Mapa 3 dos Mipedians) |
 
 ### Publicar
 Suba o `chaotic_idleworld_v123.html` por cima do antigo no GitHub/Render (o `server.js` busca
 esse nome exato) e faça o deploy. **Só o jogo mudou** — o `site/index.html` e o servidor continuam
 iguais aos da v2.20. Depois de subir, abra o jogo com Ctrl+F5 (ou aba anônima) para o navegador
-não usar a versão antiga do arquivo. O título interno passa a mostrar **v2.21**.
+não usar a versão antiga do arquivo. O título interno passa a mostrar **v2.27**.
 
 > ℹ️ Se você já tinha jogado antes, o **progresso é preservado** (save no navegador + conta).
 > O que muda é o desenho dos mapas a partir de agora — e o fato de cada mapa ter criaturas próprias.

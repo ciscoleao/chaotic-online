@@ -1,0 +1,158 @@
+{
+  "OverWorld": {
+    "total": 30,
+    "mapas": {
+      "1": {
+        "total": 5,
+        "passivas": 5,
+        "agressivas": 0,
+        "raras": 0
+      },
+      "2": {
+        "total": 10,
+        "passivas": 6,
+        "agressivas": 4,
+        "raras": 1,
+        "aggressives": 4
+      },
+      "3": {
+        "total": 15,
+        "passivas": 7,
+        "agressivas": 8,
+        "raras": 2,
+        "aggressives": 8
+      }
+    },
+    "elementos": {
+      "Ar": 6,
+      "Terra": 15,
+      "Água": 11,
+      "Fogo": 7
+    },
+    "mugic": [
+      10,
+      11,
+      9
+    ],
+    "raras": 3,
+    "agressivas": 12,
+    "excecoes": 6
+  },
+  "UnderWorld": {
+    "total": 30,
+    "mapas": {
+      "1": {
+        "total": 5,
+        "passivas": 5,
+        "agressivas": 0,
+        "raras": 0
+      },
+      "2": {
+        "total": 10,
+        "passivas": 6,
+        "agressivas": 4,
+        "raras": 1,
+        "aggressives": 4
+      },
+      "3": {
+        "total": 15,
+        "passivas": 7,
+        "agressivas": 8,
+        "raras": 2,
+        "aggressives": 8
+      }
+    },
+    "elementos": {
+      "Terra": 19,
+      "Fogo": 16,
+      "Água": 4,
+      "Ar": 5
+    },
+    "mugic": [
+      10,
+      11,
+      9
+    ],
+    "raras": 3,
+    "agressivas": 12,
+    "excecoes": 6
+  },
+  "Danian": {
+    "total": 30,
+    "mapas": {
+      "1": {
+        "total": 5,
+        "passivas": 5,
+        "agressivas": 0,
+        "raras": 0
+      },
+      "2": {
+        "total": 10,
+        "passivas": 6,
+        "agressivas": 4,
+        "raras": 1,
+        "aggressives": 4
+      },
+      "3": {
+        "total": 15,
+        "passivas": 7,
+        "agressivas": 8,
+        "raras": 2,
+        "aggressives": 8
+      }
+    },
+    "elementos": {
+      "Ar": 4,
+      "Terra": 17,
+      "Água": 19,
+      "Fogo": 3
+    },
+    "mugic": [
+      10,
+      11,
+      9
+    ],
+    "raras": 3,
+    "agressivas": 12,
+    "excecoes": 6
+  },
+  "Mipedian": {
+    "total": 30,
+    "mapas": {
+      "1": {
+        "total": 5,
+        "passivas": 5,
+        "agressivas": 0,
+        "raras": 0
+      },
+      "2": {
+        "total": 10,
+        "passivas": 6,
+        "agressivas": 4,
+        "raras": 1,
+        "aggressives": 4
+      },
+      "3": {
+        "total": 15,
+        "passivas": 7,
+        "agressivas": 8,
+        "raras": 2,
+        "aggressives": 8
+      }
+    },
+    "elementos": {
+      "Ar": 18,
+      "Fogo": 5,
+      "Água": 3,
+      "Terra": 22
+    },
+    "mugic": [
+      10,
+      11,
+      9
+    ],
+    "raras": 3,
+    "agressivas": 12,
+    "excecoes": 6
+  }
+}

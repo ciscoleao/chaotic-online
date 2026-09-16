@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chaotic.idleWorld v2.23 — Rio de ponta a ponta + 3 pontes (só no rio)</title>
+<title>Chaotic.idleWorld v2.27 — Banco de 120 criaturas integrado (4 tribos, mapa 3 dos Mipedians e o MASTER)</title>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js" onerror="document.write('<script src=https://unpkg.com/phaser@3.60.0/dist/phaser.min.js onerror=document.write(&quot;<script src=https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js><\/script>&quot;)><\/script>')"></script>
 <script>
 window.addEventListener('load', function() {
@@ -77,6 +77,20 @@ body { background: #1a1a1a; color: #e0e0e0; font-family: 'Segoe UI', system-ui, 
 .stg-sec { color: #e8c76a; font-size: 11px; letter-spacing: 2px; margin: 10px 0 6px; font-family: Georgia, serif; }
 #clerk-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(560px, 94vw); max-height: 88vh; overflow: auto; background: linear-gradient(180deg, #12181f, #0a0d13); border: 2px solid #7ec850; border-radius: 14px; z-index: 92; display: none; padding: 16px; box-shadow: 0 0 46px rgba(0,0,0,0.75); }
 #clerk-panel.open { display: block; }
+/* ===== v163 — NPC MASTER (Ilha dos Dromos) ===== */
+#master-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(520px, 94vw); max-height: 88vh; overflow: auto; background: linear-gradient(180deg, #1c1808, #0e0c06); border: 2px solid #ffd54f; border-radius: 14px; z-index: 93; display: none; padding: 16px; box-shadow: 0 0 46px rgba(255,213,79,0.28); }
+#master-panel.open { display: block; }
+.mst-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.mst-head h3 { margin: 0; font-size: 15px; color: #ffd54f; letter-spacing: 1px; }
+.mst-head .mst-x { margin-left: auto; background: #2a2410; border: 1px solid #6b5a20; color: #ffd54f; border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 14px; }
+.mst-row { display: flex; align-items: center; gap: 10px; background: #15130a; border: 1px solid #3a3320; border-radius: 10px; padding: 9px 12px; margin-bottom: 6px; }
+.mst-ic { font-size: 20px; width: 26px; text-align: center; }
+.mst-nm { flex: 1; color: #ffe9b0; font-size: 13px; font-weight: 700; }
+.mst-sub { display: block; color: #8a8060; font-size: 10px; font-weight: 400; }
+.mst-go { background: linear-gradient(180deg, #ffe9a8, #d4a72c); color: #241c06; border: none; border-radius: 9px; padding: 9px 14px; font-weight: 800; cursor: pointer; font-size: 12px; white-space: nowrap; font-family: monospace; }
+.mst-go:hover { filter: brightness(1.12); }
+.mst-msg { margin-top: 10px; font-size: 11px; color: #ffe9b0; background: rgba(255,213,79,0.08); border: 1px solid rgba(255,213,79,0.28); border-radius: 8px; padding: 8px 10px; min-height: 14px; line-height: 1.6; }
+.mst-bits { margin-top: 8px; font-size: 10px; color: #8a8060; text-align: right; font-family: monospace; }
 .ck-row { background: #12161f; border: 1px solid #232b3a; border-radius: 9px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 12px; color: #b8c4d8; }
 .ck-row.ok { border-color: rgba(126,200,80,0.5); }
 .ck-row.no { border-color: rgba(224,92,92,0.5); opacity: 0.8; }
@@ -988,7 +1002,6 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
     <button class="opt-mode-btn" id="opt-mode-pc">🖥️ PC</button>
     <button class="opt-mode-btn" id="opt-mode-mobile">📱 Celular</button>
   </div>
-  <div class="opt-note" id="opt-mode-note"></div>
   <div class="opt-label" style="margin-top:10px">🎁 Código de resgate</div>
   <div style="display:flex;gap:6px">
     <input id="opt-redeem-in" type="text" placeholder="ex.: scan10" autocomplete="off" style="flex:1;background:#0b1120;border:1px solid #33415c;border-radius:8px;color:#e9eefc;padding:7px 8px;font-size:12px">
@@ -998,7 +1011,6 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
   <div class="opt-label" style="margin-top:10px">📺 Janela flutuante (Picture-in-Picture)</div>
   <button class="opt-mode-btn" id="opt-pip152" style="width:100%">📺 Janelinha flutuante (PiP): DESLIGADA</button>
   <button class="opt-mode-btn" id="opt-bg152" style="width:100%">🌙 Fora da aba: ligar modo segundo plano</button>
-  <div class="opt-note" id="opt-pip-nota152"></div>
   <div id="opt-pip-alt152" style="display:none">
     <button class="opt-mode-btn" id="opt-pip-janela152" style="width:100%">🪟 Abrir o jogo em janela própria</button>
     <button class="opt-mode-btn" id="opt-pip-bg2-152" style="width:100%">🌙 Ligar modo fora da aba</button>
@@ -1043,6 +1055,7 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
 <div id="gc-panel"><div id="gc-head"><b>💬 CHAT</b><span style="font-size:9px;opacity:.55;font-weight:400">v123</span><span id="gc-badge">0</span><span id="gc-toggle">▼</span></div><div id="gc-tabs"><div class="gtab on" data-t="near">📍 PERTO</div><div class="gtab" data-t="global">🌐 GLOBAL</div><div class="gtab" data-t="pm">✉️ PRIVADO</div></div><div id="gc-list"></div><div id="gc-pm-row" style="display:none"><input id="gc-pm-to" list="gc-pm-list" placeholder="digite o nome do jogador..." autocomplete="off"><datalist id="gc-pm-list"></datalist></div></div>
 <div id="dromo-battle"></div>
 <div id="clerk-panel"></div>
+<div id="master-panel"></div>
 
 <div id="mobile-controls">
   <div id="mc-joy"><div id="mc-joy-knob"></div></div>
@@ -1054,6 +1067,90 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
 <script>
 
 // ============================================================
+// CHAOTIC.IDLEWORLD v2.27 — CHANGELOG (v164 Banco de 120 criaturas integrado)
+// - v164 — BANCO DE 120 CRIATURAS INTEGRADO: as 4 tribos x 30 criaturas do banco
+//   viram espécies do jogo. Cada mapa nasce só com as criaturas da sua tribo e do
+//   seu nível (m1/m2/m3), com HP/ATK/velocidade/XP/Bits/arte/elementos/habilidade/
+//   Mugic do banco. Nova região "Miragens do Palmeiral" (Mipedian mapa 3, Lv.20) para
+//   as 15 criaturas mipedianas. Spawn ponderado (passiva 34 · agressiva 26 · rara 12),
+//   velocidade por espécie (teto 175 px/s), ✷ no rótulo da rara, ficha do banco nas
+//   cartas (scan, roleta e Scanner) e a raridade da espécie como piso da carta.
+// CHAOTIC.IDLEWORLD v2.26 — CHANGELOG (v161 Opções limpas + Auto-Move automático · v162 itens raros · v163 MASTER dos Dromos)
+// - v163 — NPC MASTER NA ILHA DOS DROMOS: um NPC dourado na praça (ao lado da
+//   entrada do Pátio Central) que fala pelo [E], pelo 👆 do celular ou clique.
+//   O painel tem 5 botões, cada um entrega na hora: +1 LV, +1000 Bits, +1 Scan
+//   (criatura aleatória de Perim, que também conta para o % do mapa dela), +1
+//   Equipamento de batalha e +1 Mugic. Tudo respeita o limite dos Scanners (100).
+// - v162 — ITENS NO MAPA A 10%: a quantidade de itens largados pelo chão caiu para
+//   um décimo (nascem 2 por mapa em vez de 20; o teto do spawn contínuo caiu de 60
+//   para 6; na Caverna Secreta, de 3 para 1). O objetivo é o mercado: com item
+//   sobrando em toda esquina ninguém compra no LEILÃO DO PÓRTICO — agora cada
+//   material vale de verdade. Preços, tipos e drops do scan continuam iguais.
+// - v161 — AUTO-MOVE AUTOMÁTICO: a tecla P deixou de existir (e com ela o botão
+//   🤖/⏸ do celular e a dica "aperte P"). O jogador não controla mais quando está
+//   em auto-move: nos MAPAS DE CRIATURAS (os 5 mapas de tribo e a Caverna Secreta)
+//   ele liga SOZINHO, sempre — o Caçador anda e escaneia sem ninguém mexer em nada.
+//   O Pátio Central, a Ilha dos Dromos e o Dromo (arena) NÃO são mapas de
+//   criaturas: lá o herói fica parado e o jogador anda com WASD/joystick.
+// - v161 — PAINEL DE OPÇÕES LIMPO: saíram os parágrafos explicativos (linha de
+//   movimento/atalhos, avisos e dicas do Picture-in-Picture). Ficaram apenas os
+//   botões com ícone + nome: PC/Celular, código de resgate, janelinha/PiP,
+//   fora da aba, teleportar ao Pátio, modo foto e deslogar. Erros do PiP que antes
+//   apareciam como texto continuam aparecendo como aviso no canto da tela.
+
+// CHAOTIC.IDLEWORLD v2.25 — CHANGELOG (patch v159 — O HERÓI VAI ATRÁS E ESCANEIA QUALQUER CRIATURA)
+// - O BUG (relato com print): no Bosque Verdejante (mapa 1, SAFE ZONE) o
+//   auto-move passou quase colado numa "Aranha Gigante Lv.6" (espécie
+//   AGRESSIVA) e o herói não foi atrás dela nem escaneou nada.
+// - A CAUSA: em SAFE ZONE o raio de ameaça é 0 POR DESIGN (não existe IA de
+//   fuga/stalk no mapa 1 — o herói não precisa fugir de nada ali). Só que o
+//   auto-move usava esse MESMO 0 para DESCARTAR os agressivos da caça passiva:
+//     · bloco de fuga/stalk: `if (aggroRadiusOf(m.type) <= 0) continue;`
+//     · caça passiva:        `if (e.type && e.type.isAggressive) continue;`
+//   Resultado: em TODOS os 4 mapas 1 (mapas SAFE ZONE) nenhuma criatura
+//   agressiva era perseguida ou escaneada — ela era literalmente invisível
+//   para o auto-move, mesmo passando a 58px do herói.
+// - A CORREÇÃO: o raio 0 passa a desligar APENAS a fuga/stalk. A caça vale para
+//   toda criatura no campo de visão, agressiva ou não, em QUALQUER mapa:
+//   a ≤160px (5 tiles) o herói vai atrás; a ≤96px (3 tiles) ele PARA e escaneia
+//   por 3s. Em SAFE ZONE o agressivo não persegue o herói, então não há motivo
+//   para ignorá-lo. A beirada estendida do scan (raio + 80) continua valendo só
+//   onde o raio existe; em SAFE ZONE valem os 96px canônicos.
+// - E O TOQUE (v159b): a criatura a ≤32px cancela o scan a cada 1,2s. Em SAFE
+//   ZONE ela não causa dano, mas o cancelamento continuava valendo — o herói
+//   ficava encostado, a carga reiniciava para sempre e o bicho nunca era
+//   escaneado. Agora, colado (alvo a <44px), o herói RECUA ANDANDO SEM LARGAR O
+//   SCAN — a mesma saída da caverna (v157). Fora disso ele fica PARADO.
+// - BLINDAGEM (v159c): quatro pontos do jogo faziam `corpo.enable = false` sem
+//   conferir se o corpo ainda existia. Se a criatura fosse DESTRUÍDA no meio de um
+//   scan (e não apenas morta), a linha explodia com TypeError DENTRO do update da
+//   cena — e tudo o que vinha depois dela naquele quadro não rodava. Num idle que
+//   fica horas no automático, é congelamento. Agora esses pontos só mexem no corpo
+//   se ele existir (comportamento normal do jogo: idêntico).
+// - 2º CAMINHO DO MESMO BUG (v160): o estado 'chase' IGNORA todo o resto do mapa e
+//   não tinha desistência. Como as CRIATURAS não colidem com casas/paredes (só com
+//   água funda) e o HERÓI colide, o alvo podia atravessar uma casa e deixar o herói
+//   empurrando a parede para sempre — enquanto uma Aranha Gigante passava a 87px
+//   sem ser olhada (medido: 0 tentativas de scan nela). Agora o herói larga o alvo
+//   quando fica ~2,4s sem sair do lugar sem chegar perto ou quando o alvo dispara
+//   para além de 300px sem aproximação — e volta a caçar quem estiver por perto.
+//   Vale no mapa aberto e na Caverna Secreta.
+// - NÃO MUDOU: fuga/stalk (mapas não-safe), carga do scan (3s), alvo a 96px,
+//   detecção a 160px, 50% de velocidade da criatura RARA ao ser escaneada, o
+//   herói PARA para escanear, caverna 2x (patch v155/v157) e o re-scan só sob
+//   penalidade (v148).
+
+// CHAOTIC.IDLEWORLD v2.24 — CHANGELOG (patch v158 — FIM DOS QUADRADOS ESCUROS NO MAPA)
+// - O QUE ERA: 25% dos tiles de grama são tiles DECORADOS (pedra, cogumelo, tufo,
+//   flor). As texturas dessa grama decorada (gdec_*) e as dos barrancos de margem
+//   (bk_*) também são desenhadas com a paleta da tribo, mas só a grama lisa
+//   (grass_*) era re-assada ao trocar de mapa. Resultado: quem estava num mapa
+//   escuro (Cavernas de Brasas, #4a3230) e ia para o Bosque Verdejante via a grama
+//   verde com manchas quase pretas espalhadas, e os barrancos da margem escuros
+//   (medido: gdec_* = #4a3230 no meio de grass_* = #3f9a46).
+// - CORREÇÃO: a troca de mapa agora re-assa TUDO o que depende do tema — grama
+//   lisa, grama decorada e barrancos — e a cena do mapa confere o tema antes de
+//   assar o chão. Nenhuma regra de jogo mudou (scan, pontes, rio e caverna iguais).
 // CHAOTIC.IDLEWORLD v2.23 — CHANGELOG (patch v156 — RIO DE PONTA A PONTA + 3 PONTES)
 // - O RIO NÃO É MAIS CORTADO: a praia de chegada (tile 18,24) convertia a água do
 //   rio em estrada e o rio ficava interrompido no meio do mapa. Agora a praia não
@@ -1402,18 +1499,20 @@ const CONFIG = {
   /* v154 — REGRA DO SCAN (design do jogo, conferido com o autor):
    *   · a carga do scan leva 3s (SCAN_CHARGE_TIME);
    *   · o alvo tem de estar a no máximo 3 tiles = 96px (SCAN_RANGE);
+   *   · v159: a regra vale em TODOS os mapas, inclusive nos 4 mapas 1 SAFE ZONE
+   *     (lá a criatura agressiva não persegue o herói, mas é escaneada igual);
    *   · se uma criatura passa a até 5 tiles = 160px (MONSTER_DETECT_RANGE),
    *     o herói do Auto-Move vai atrás dela para tentar escanear. */
   SCAN_RANGE: 96, SCAN_COOLDOWN: 2000, SCAN_CHARGE_TIME: 3000, AUTO_MOVE_INTERVAL: 2000, // 3 tiles
   // v2.2 — Caverna Secreta
-  CAVE_W: 480, CAVE_H: 384, CAVE_MONSTER_MAX: 2, CAVE_MATERIAL_MAX: 3,
+  CAVE_W: 480, CAVE_H: 384, CAVE_MONSTER_MAX: 2, CAVE_MATERIAL_MAX: 1, // v162 — 10% de 3 (mínimo 1: a caverna não fica vazia)
   CAVE_SCAN_MULT: 0.5, CAVE_MONSTER_CHANCE: 0.3, CAVE_HOLE_COOLDOWN: 5000,
   MONSTER_SPAWN_INTERVAL: 10000, MONSTER_MAX_COUNT: 4, MONSTER_LIFETIME: 20000, // design: 20s (raras)
   MONSTER_DETECT_RANGE: 160, MONSTER_WANDER_SPEED: 155, // 5 tiles — o herói vai atrás de quem passa aqui
   // v0.9.2 — Pilhas = recarga de bateria (1 pilha = 100% = 5 min). Scan é GRATUITO.
   PILHA_PRICE: 8, START_PILHAS: 12,
   // v0.9.0 — Materiais coletáveis no Perim
-  MATERIAL_SPAWN_INTERVAL: 8000, MATERIAL_MAX_COUNT: 60,
+  MATERIAL_SPAWN_INTERVAL: 8000, MATERIAL_MAX_COUNT: 6, // v162 — 10% de 60 (itens raros: é o que dá mercado no Leilão)
 };
 
 // v0.9.8 — Helper para obter dimensões da região atual
@@ -1464,7 +1563,7 @@ function renderCraftingUI() {
   html += '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; max-height:220px; overflow-y:auto; padding:4px;">';
   for (let i = 0; i < ENEMY_TYPES.length; i++) {
     const enemy = ENEMY_TYPES[i];
-    html += '<div style="background:#1e2418; border:1px solid #3a4a2f; border-radius:6px; padding:6px; text-align:center; font-size:10px; color:#8a9a70;"><div style="height:44px; display:flex; align-items:center; justify-content:center; margin-bottom:2px;">' + getCardSpriteHTML(enemy.name, 40) + '</div><div style="color:#d4cfa8; font-weight:700;">' + enemy.name + '</div><div>Lv.' + enemy.level + '</div></div>';
+    html += '<div style="background:#1e2418; border:1px solid #3a4a2f; border-radius:6px; padding:6px; text-align:center; font-size:10px; color:#8a9a70;"><div style="height:44px; display:flex; align-items:center; justify-content:center; margin-bottom:2px;">' + getCardSpriteHTML(enemy.name, 40) + '</div><div style="color:#d4cfa8; font-weight:700;">' + enemy.name + '</div><div>Lv.' + enemy.level + '</div>' + (enemy.banco164 ? '<div style="color:#7ec850;">' + (TRIBOS164[enemy.tribo164] || '') + ' · M' + enemy.mapa164 + (enemy.isRare ? ' · ★' : '') + '</div>' : '') + '</div>';
   }
   html += '</div>';
 
@@ -1548,10 +1647,15 @@ function generateRouletteCard(enemyType) {
   const ivPercent = Math.round((ivAvg / 31) * 100);
   let rarity = 'common';
   if (ivAvg >= 28) rarity = 'legendary'; else if (ivAvg >= 23) rarity = 'epic'; else if (ivAvg >= 18) rarity = 'rare'; else if (ivAvg >= 12) rarity = 'uncommon';
+  if (enemyType.banco164) rarity = pisoRaridade164(enemyType, rarity); // v164 — raridade da espécie = piso da carta
   const rarityData = RARITIES[rarity];
-  const elements = getCardElements({ str: ivs.hp, dex: ivs.atk, vit: ivs.def, int: ivs.spd }); // v128 — ivs corretos (antes: string → NaN, sem estrelas/coroas)
+  const _ivsElem164 = { str: ivs.hp, dex: ivs.atk, vit: ivs.def, int: ivs.spd };
+  const elements = enemyType.banco164 ? elementosDaCarta164(enemyType, _ivsElem164) : getCardElements(_ivsElem164); // v164 — criatura do banco usa os elementos dela
   const code = generateCardCode();
-  return { name: enemyType.name, sprite: getCardSprite(enemyType.name), level: level, hp: hp, atk: atk, def: def, spd: spd, ivs: ivs, ivAvg: ivAvg, ivPercent: ivPercent, rarity: rarity, rarityName: rarityData.name, rarityColor: rarityData.color, elements: elements, code: code, scannedAt: Date.now(), source: 'roleta' };
+  return { name: enemyType.name, sprite: getCardSprite(enemyType.name), level: level, hp: hp, atk: atk, def: def, spd: spd, ivs: ivs, ivAvg: ivAvg, ivPercent: ivPercent, rarity: rarity, rarityName: rarityData.name, rarityColor: rarityData.color, elements: elements, code: code, scannedAt: Date.now(), source: 'roleta',
+    banco: enemyType.banco164 || null, tribe: enemyType.tribo164 || null, rare: !!enemyType.isRare,
+    tier: enemyType.tier164 || null, ability: enemyType.ability164 || null, mugicCounters: enemyType.mugic164 || 0,
+    moveSpeed: enemyType.moveSpeed164 || null, desc: enemyType.desc164 || null }; // v164 — ficha do banco na carta
 }
 
 const RARITIES = {
@@ -1672,6 +1776,7 @@ function rng154() { return __rng154(); }
 /* v147 — aplica o TEMA VISUAL da região: redesenha as texturas de grama
  * com a paleta da tribo ANTES da cena nascer, para o bake do chão (v144)
  * sair com lava, âmbar de colmeia, areia de oásis etc. */
+let __temaAssado158 = null; // v158 — região com que as texturas de tema foram assadas
 function applyRegionTheme147(regionId) {
   try {
     GameState.currentRegion = regionId;
@@ -1682,6 +1787,24 @@ function applyRegionTheme147(regionId) {
       if (game.textures.exists(key)) game.textures.remove(key);
       createTextureFromCanvas(boot, key, drawGrassTile, 32, 32, v);
     }
+    /* v158 — os QUADRADOS ESCUROS: a grama decorada (gdec_*) e os barrancos de
+     * margem (bk_*) também são desenhados com a paleta do tema (TG147/TD147).
+     * Antes só grass_0..2 era re-assada, então quem trocava de mapa ficava com
+     * ~25% dos tiles de grama na cor do mapa ANTERIOR. Agora tudo é re-assado. */
+    for (let gi = 0; gi < 12; gi++) {
+      const kg = 'gdec_' + gi;
+      if (game.textures.exists(kg)) game.textures.remove(kg);
+      const cvd = document.createElement('canvas'); cvd.width = 32; cvd.height = 32;
+      const cdx = cvd.getContext('2d');
+      drawGrassTile(cdx, gi % 3);
+      drawGrassDecor(cdx, gi);
+      boot.textures.addCanvas(kg, cvd);
+    }
+    // v158 — barrancos: criados sob demanda e cacheados pelo nome (bk_MASK_v);
+    // apagar aqui faz bankTex recriar já com o tema novo
+    const ks158 = game.textures.getTextureKeys();
+    for (let i = 0; i < ks158.length; i++) { if (ks158[i].indexOf('bk_') === 0) game.textures.remove(ks158[i]); }
+    __temaAssado158 = regionId;
   } catch (e) {}
 }
 // v147 — estado da UI do Portal (aba ativa; persiste durante a sessão)
@@ -1722,6 +1845,14 @@ const ENEMY_TYPES = [
  * Mapa 1 (Safe Zones): 4 espécies 100% passivas.
  * Mapa 2 (Nv 10+): 6 espécies — exatamente 2 com isAggressive.
  * O aggro é POR ESPÉCIE e é suprimido nas Safe Zones (regionIsSafe). */
+/* ============================================================
+ * v164 — BANCO DE 120 CRIATURAS (4 tribos x 30) — fonte de verdade do spawn.
+ * Gerado a partir de creatures/data/creatures.json (tools/gerar_banco.js).
+ * Campos: id · n(ome) · t(ribo) · m(apa 1/2/3) · lvl · el(ementos) · ek · tint ·
+ * agg · rar · tier · mug(ic) · hp · atk · spd(px/s) · xp · b0/b1(bits) · art ·
+ * ab(ilidad) · d(escrição) · w(peso de spawn).
+ * ============================================================ */
+const BANCO164 = [{"id":"ow_m1_01","n":"Cordeiro Sibilante","t":"overworld","m":1,"lvl":3,"el":["Ar"],"ek":"excecao","tint":"#9fd8e8","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":55,"atk":11,"spd":127,"xp":19,"b0":7,"b1":17,"art":"wolf","ab":{"n":"Bênção da Clareira","t":"buff","mc":2,"d":"Bênção da Clareira — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por os caminhos de terra batida; prefere observar a lutar.","w":34},{"id":"ow_m1_02","n":"Carneiro Mineral","t":"overworld","m":1,"lvl":5,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"muito-forte","mug":0,"hp":81,"atk":16,"spd":129,"xp":42,"b0":15,"b1":38,"art":"bruto","ab":{"n":"Investida de Seiva","t":"dano","mc":3,"d":"Investida de Seiva — Causa dano físico pesado a um alvo."},"d":"Vagueia por os caminhos de terra batida; prefere observar a lutar.","w":34},{"id":"ow_m1_03","n":"Coelho Nebuloso","t":"overworld","m":1,"lvl":3,"el":["Água"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":53,"atk":11,"spd":127,"xp":19,"b0":7,"b1":17,"art":"escudeiro","ab":{"n":"Bênção da Clareira","t":"buff","mc":2,"d":"Bênção da Clareira — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por os caminhos de terra batida; prefere observar a lutar.","w":34},{"id":"ow_m1_04","n":"Coruja Barrenta","t":"overworld","m":1,"lvl":2,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":33,"atk":5,"spd":124,"xp":10,"b0":4,"b1":9,"art":"cronomante","ab":{"n":"Névoa do Lago","t":"controle","mc":2,"d":"Névoa do Lago — Impede o alvo de agir por 1 turno."},"d":"Vagueia por o bosque alto; prefere observar a lutar.","w":34},{"id":"ow_m1_05","n":"Búfalo Titânico","t":"overworld","m":1,"lvl":4,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"muito-forte","mug":0,"hp":79,"atk":16,"spd":129,"xp":29,"b0":10,"b1":26,"art":"bruto","ab":{"n":"Chifre de Carvalho","t":"dano","mc":3,"d":"Chifre de Carvalho — Causa dano físico pesado a um alvo."},"d":"Vagueia por o bosque alto; prefere observar a lutar.","w":34},{"id":"ow_m2_01","n":"Pato Gélido","t":"overworld","m":2,"lvl":9,"el":["Água"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":47,"atk":8,"spd":142,"xp":108,"b0":38,"b1":97,"art":"encantador","ab":{"n":"Seiva Curativa","t":"cura","mc":2,"d":"Seiva Curativa — Restaura vida do seu lado."},"d":"Vagueia por as margens do lago espelhado; prefere observar a lutar.","w":34},{"id":"ow_m2_02","n":"Urso Marítimo","t":"overworld","m":2,"lvl":11,"el":["Água"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":74,"atk":16,"spd":147,"xp":148,"b0":52,"b1":133,"art":"escudeiro","ab":{"n":"Névoa do Lago","t":"controle","mc":2,"d":"Névoa do Lago — Impede o alvo de agir por 1 turno."},"d":"Vagueia por os caminhos de terra batida; prefere observar a lutar.","w":34},{"id":"ow_m2_03","n":"Lobo Cristalino","t":"overworld","m":2,"lvl":10,"el":["Terra","Água"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":76,"atk":16,"spd":147,"xp":127,"b0":44,"b1":114,"art":"batedor","ab":{"n":"Bênção da Clareira","t":"buff","mc":2,"d":"Bênção da Clareira — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por os caminhos de terra batida; prefere observar a lutar.","w":34},{"id":"ow_m2_04","n":"Falcão Carbonizado","t":"overworld","m":2,"lvl":13,"el":["Fogo","Terra"],"ek":"principal","tint":"#ff6a2a","agg":true,"rar":true,"tier":"muito-forte","mug":0,"hp":96,"atk":32,"spd":186,"xp":426,"b0":149,"b1":383,"art":"sentinela","ab":{"n":"Investida de Seiva","t":"dano","mc":3,"d":"Investida de Seiva — Causa dano físico pesado a um alvo."},"d":"Lendária de os caminhos de terra batida: poucos voltaram para contar o encontro.","w":12},{"id":"ow_m2_05","n":"Truta Elevada","t":"overworld","m":2,"lvl":12,"el":["Ar"],"ek":"excecao","tint":"#9fd8e8","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":77,"atk":16,"spd":147,"xp":171,"b0":60,"b1":154,"art":"escudeiro","ab":{"n":"Bênção da Clareira","t":"buff","mc":2,"d":"Bênção da Clareira — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por as clareiras do bosque; prefere observar a lutar.","w":34},{"id":"ow_m2_06","n":"Tartaruga Flamejante","t":"overworld","m":2,"lvl":12,"el":["Fogo"],"ek":"principal","tint":"#ff6a2a","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":95,"atk":28,"spd":155,"xp":171,"b0":60,"b1":154,"art":"sentinela","ab":{"n":"Investida de Seiva","t":"dano","mc":3,"d":"Investida de Seiva — Causa dano físico pesado a um alvo."},"d":"Patrulha as margens do lago espelhado e ataca qualquer intruso à vista.","w":26},{"id":"ow_m2_07","n":"Cabra Mineral","t":"overworld","m":2,"lvl":10,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":47,"atk":7,"spd":142,"xp":127,"b0":44,"b1":114,"art":"cronomante","ab":{"n":"Seiva Curativa","t":"cura","mc":2,"d":"Seiva Curativa — Restaura vida do seu lado."},"d":"Vagueia por as clareiras do bosque; prefere observar a lutar.","w":34},{"id":"ow_m2_08","n":"Texugo Escaldado","t":"overworld","m":2,"lvl":11,"el":["Fogo","Terra"],"ek":"principal","tint":"#ff6a2a","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":61,"atk":20,"spd":151,"xp":148,"b0":52,"b1":133,"art":"wolf","ab":{"n":"Névoa do Lago","t":"controle","mc":2,"d":"Névoa do Lago — Impede o alvo de agir por 1 turno."},"d":"Patrulha as clareiras do bosque e ataca qualquer intruso à vista.","w":26},{"id":"ow_m2_09","n":"Coelho Célere","t":"overworld","m":2,"lvl":12,"el":["Ar","Água"],"ek":"excecao","tint":"#9fd8e8","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":96,"atk":28,"spd":155,"xp":171,"b0":60,"b1":154,"art":"bruto","ab":{"n":"Chifre de Carvalho","t":"dano","mc":3,"d":"Chifre de Carvalho — Causa dano físico pesado a um alvo."},"d":"Patrulha as margens do lago espelhado e ataca qualquer intruso à vista.","w":26},{"id":"ow_m2_10","n":"Esquilo Aquoso","t":"overworld","m":2,"lvl":9,"el":["Água","Terra"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":47,"atk":7,"spd":142,"xp":108,"b0":38,"b1":97,"art":"mare","ab":{"n":"Névoa do Lago","t":"controle","mc":2,"d":"Névoa do Lago — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as clareiras do bosque; prefere observar a lutar.","w":34},{"id":"ow_m3_01","n":"Libélula Fuliginosa","t":"overworld","m":3,"lvl":21,"el":["Fogo"],"ek":"principal","tint":"#ff6a2a","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":107,"atk":22,"spd":173,"xp":418,"b0":146,"b1":376,"art":"escudeiro","ab":{"n":"Bênção da Clareira","t":"buff","mc":2,"d":"Bênção da Clareira — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por as margens do lago espelhado; prefere observar a lutar.","w":34},{"id":"ow_m3_02","n":"Urso Titânico","t":"overworld","m":3,"lvl":18,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":65,"atk":11,"spd":165,"xp":326,"b0":114,"b1":293,"art":"mare","ab":{"n":"Névoa do Lago","t":"controle","mc":2,"d":"Névoa do Lago — Impede o alvo de agir por 1 turno."},"d":"Vagueia por os caminhos de terra batida; prefere observar a lutar.","w":34},{"id":"ow_m3_03","n":"Castor Granítico","t":"overworld","m":3,"lvl":23,"el":["Terra","Fogo"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":135,"atk":38,"spd":188,"xp":483,"b0":169,"b1":435,"art":"golem_stone","ab":{"n":"Chifre de Carvalho","t":"dano","mc":3,"d":"Chifre de Carvalho — Causa dano físico pesado a um alvo."},"d":"Patrulha as margens do lago espelhado e ataca qualquer intruso à vista.","w":26},{"id":"ow_m3_04","n":"Garça Cristalina","t":"overworld","m":3,"lvl":22,"el":["Terra","Água"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":88,"atk":27,"spd":181,"xp":450,"b0":158,"b1":405,"art":"wolf","ab":{"n":"Névoa do Lago","t":"controle","mc":2,"d":"Névoa do Lago — Impede o alvo de agir por 1 turno."},"d":"Patrulha os caminhos de terra batida e ataca qualquer intruso à vista.","w":26},{"id":"ow_m3_05","n":"Raposa Marítima","t":"overworld","m":3,"lvl":17,"el":["Água"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":65,"atk":11,"spd":165,"xp":298,"b0":104,"b1":268,"art":"cronomante","ab":{"n":"Seiva Curativa","t":"cura","mc":2,"d":"Seiva Curativa — Restaura vida do seu lado."},"d":"Vagueia por os caminhos de terra batida; prefere observar a lutar.","w":34},{"id":"ow_m3_06","n":"Truta Ventosa","t":"overworld","m":3,"lvl":21,"el":["Ar","Terra"],"ek":"excecao","tint":"#9fd8e8","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":88,"atk":27,"spd":182,"xp":418,"b0":146,"b1":376,"art":"batedor","ab":{"n":"Névoa do Lago","t":"controle","mc":2,"d":"Névoa do Lago — Impede o alvo de agir por 1 turno."},"d":"Patrulha os caminhos de terra batida e ataca qualquer intruso à vista.","w":26},{"id":"ow_m3_07","n":"Abelha Ventosa","t":"overworld","m":3,"lvl":23,"el":["Ar"],"ek":"excecao","tint":"#9fd8e8","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":132,"atk":37,"spd":186,"xp":483,"b0":169,"b1":435,"art":"bruto","ab":{"n":"Chifre de Carvalho","t":"dano","mc":3,"d":"Chifre de Carvalho — Causa dano físico pesado a um alvo."},"d":"Patrulha as clareiras do bosque e ataca qualquer intruso à vista.","w":26},{"id":"ow_m3_08","n":"Pato Barrento","t":"overworld","m":3,"lvl":18,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":66,"atk":11,"spd":165,"xp":326,"b0":114,"b1":293,"art":"cronomante","ab":{"n":"Névoa do Lago","t":"controle","mc":2,"d":"Névoa do Lago — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as clareiras do bosque; prefere observar a lutar.","w":34},{"id":"ow_m3_09","n":"Búfalo Ondeante","t":"overworld","m":3,"lvl":21,"el":["Água"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":104,"atk":22,"spd":174,"xp":418,"b0":146,"b1":376,"art":"escudeiro","ab":{"n":"Bênção da Clareira","t":"buff","mc":2,"d":"Bênção da Clareira — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por as clareiras do bosque; prefere observar a lutar.","w":34},{"id":"ow_m3_10","n":"Cervo Vulcânico","t":"overworld","m":3,"lvl":24,"el":["Fogo"],"ek":"principal","tint":"#ff6a2a","agg":true,"rar":true,"tier":"muito-forte","mug":0,"hp":134,"atk":47,"spd":225,"xp":1137,"b0":398,"b1":1023,"art":"golem_stone","ab":{"n":"Investida de Seiva","t":"dano","mc":3,"d":"Investida de Seiva — Causa dano físico pesado a um alvo."},"d":"Lendária de as margens do lago espelhado: poucos voltaram para contar o encontro.","w":12},{"id":"ow_m3_11","n":"Louva-a-deus Choroso","t":"overworld","m":3,"lvl":23,"el":["Água"],"ek":"principal","tint":"#3f8fd4","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":130,"atk":38,"spd":187,"xp":483,"b0":169,"b1":435,"art":"bruto","ab":{"n":"Chifre de Carvalho","t":"dano","mc":3,"d":"Chifre de Carvalho — Causa dano físico pesado a um alvo."},"d":"Patrulha as clareiras do bosque e ataca qualquer intruso à vista.","w":26},{"id":"ow_m3_12","n":"Rã Marítima","t":"overworld","m":3,"lvl":19,"el":["Água"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":68,"atk":11,"spd":165,"xp":356,"b0":125,"b1":320,"art":"cronomante","ab":{"n":"Névoa do Lago","t":"controle","mc":2,"d":"Névoa do Lago — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as clareiras do bosque; prefere observar a lutar.","w":34},{"id":"ow_m3_13","n":"Javali Titânico","t":"overworld","m":3,"lvl":23,"el":["Terra","Fogo"],"ek":"principal","tint":"#a9803f","agg":true,"rar":true,"tier":"muito-forte","mug":0,"hp":130,"atk":45,"spd":225,"xp":1063,"b0":372,"b1":957,"art":"sentinela","ab":{"n":"Chifre de Carvalho","t":"dano","mc":3,"d":"Chifre de Carvalho — Causa dano físico pesado a um alvo."},"d":"Lendária de as margens do lago espelhado: poucos voltaram para contar o encontro.","w":12},{"id":"ow_m3_14","n":"Coelho Fulminante","t":"overworld","m":3,"lvl":17,"el":["Ar"],"ek":"excecao","tint":"#9fd8e8","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":66,"atk":11,"spd":165,"xp":298,"b0":104,"b1":268,"art":"encantador","ab":{"n":"Névoa do Lago","t":"controle","mc":2,"d":"Névoa do Lago — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as margens do lago espelhado; prefere observar a lutar.","w":34},{"id":"ow_m3_15","n":"Besouro Férreo","t":"overworld","m":3,"lvl":22,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":87,"atk":27,"spd":180,"xp":450,"b0":158,"b1":405,"art":"batedor","ab":{"n":"Bênção da Clareira","t":"buff","mc":2,"d":"Bênção da Clareira — Aumenta o dano do seu lado por 2 turnos."},"d":"Patrulha o bosque alto e ataca qualquer intruso à vista.","w":26},{"id":"uw_m1_01","n":"Ogro Titânico","t":"underworld","m":1,"lvl":5,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"muito-forte","mug":0,"hp":80,"atk":18,"spd":129,"xp":42,"b0":15,"b1":38,"art":"bruto","ab":{"n":"Erupção de Lava","t":"dano","mc":4,"d":"Erupção de Lava — Causa dano físico pesado a um alvo."},"d":"Vagueia por as galerias de obsidiana; prefere observar a lutar.","w":34},{"id":"uw_m1_02","n":"Crocodilo Ígneo","t":"underworld","m":1,"lvl":2,"el":["Fogo","Terra"],"ek":"principal","tint":"#ff6a2a","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":52,"atk":12,"spd":127,"xp":10,"b0":4,"b1":9,"art":"flagelo","ab":{"n":"Correntes de Magma","t":"controle","mc":3,"d":"Correntes de Magma — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as galerias de obsidiana; prefere observar a lutar.","w":34},{"id":"uw_m1_03","n":"Caracol Vulcânico","t":"underworld","m":1,"lvl":4,"el":["Fogo"],"ek":"principal","tint":"#ff6a2a","agg":false,"rar":false,"tier":"muito-forte","mug":0,"hp":82,"atk":18,"spd":129,"xp":29,"b0":10,"b1":26,"art":"golem_obsidian","ab":{"n":"Erupção de Lava","t":"dano","mc":4,"d":"Erupção de Lava — Causa dano físico pesado a um alvo."},"d":"Vagueia por os túneis de cinza; prefere observar a lutar.","w":34},{"id":"uw_m1_04","n":"Basilisco Férreo","t":"underworld","m":1,"lvl":3,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":55,"atk":12,"spd":127,"xp":19,"b0":7,"b1":17,"art":"devorador","ab":{"n":"Correntes de Magma","t":"controle","mc":3,"d":"Correntes de Magma — Impede o alvo de agir por 1 turno."},"d":"Vagueia por os túneis de cinza; prefere observar a lutar.","w":34},{"id":"uw_m1_05","n":"Aranha Gélida","t":"underworld","m":1,"lvl":1,"el":["Água","Ar"],"ek":"excecao","tint":"#3f8fd4","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":33,"atk":6,"spd":125,"xp":3,"b0":1,"b1":3,"art":"cronomante","ab":{"n":"Pacto de Brasa","t":"cura","mc":2,"d":"Pacto de Brasa — Restaura vida do seu lado."},"d":"Vagueia por as forjas adormecidas; prefere observar a lutar.","w":34},{"id":"uw_m2_01","n":"Cascudo Fuliginoso","t":"underworld","m":2,"lvl":12,"el":["Fogo"],"ek":"principal","tint":"#ff6a2a","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":95,"atk":31,"spd":155,"xp":171,"b0":60,"b1":154,"art":"bruto","ab":{"n":"Erupção de Lava","t":"dano","mc":4,"d":"Erupção de Lava — Causa dano físico pesado a um alvo."},"d":"Patrulha os rios de lava e ataca qualquer intruso à vista.","w":26},{"id":"uw_m2_02","n":"Sapo Neblinoso","t":"underworld","m":2,"lvl":12,"el":["Ar","Fogo"],"ek":"excecao","tint":"#9fd8e8","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":98,"atk":31,"spd":155,"xp":171,"b0":60,"b1":154,"art":"golem_obsidian","ab":{"n":"Chicote de Brasas","t":"dano","mc":3,"d":"Chicote de Brasas — Causa dano físico pesado a um alvo."},"d":"Patrulha os túneis de cinza e ataca qualquer intruso à vista.","w":26},{"id":"uw_m2_03","n":"Basilisco Ondeante","t":"underworld","m":2,"lvl":12,"el":["Água"],"ek":"excecao","tint":"#3f8fd4","agg":true,"rar":true,"tier":"muito-forte","mug":0,"hp":98,"atk":36,"spd":185,"xp":375,"b0":131,"b1":338,"art":"golem_obsidian","ab":{"n":"Erupção de Lava","t":"dano","mc":4,"d":"Erupção de Lava — Causa dano físico pesado a um alvo."},"d":"Lendária de os túneis de cinza: poucos voltaram para contar o encontro.","w":12},{"id":"uw_m2_04","n":"Aranha Ardente","t":"underworld","m":2,"lvl":11,"el":["Fogo"],"ek":"principal","tint":"#ff6a2a","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":76,"atk":18,"spd":147,"xp":148,"b0":52,"b1":133,"art":"devorador","ab":{"n":"Correntes de Magma","t":"controle","mc":3,"d":"Correntes de Magma — Impede o alvo de agir por 1 turno."},"d":"Vagueia por os rios de lava; prefere observar a lutar.","w":34},{"id":"uw_m2_05","n":"Lacraia Mineral","t":"underworld","m":2,"lvl":10,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":47,"atk":8,"spd":142,"xp":127,"b0":44,"b1":114,"art":"paradox","ab":{"n":"Pacto de Brasa","t":"cura","mc":2,"d":"Pacto de Brasa — Restaura vida do seu lado."},"d":"Vagueia por as forjas adormecidas; prefere observar a lutar.","w":34},{"id":"uw_m2_06","n":"Imp Pedregoso","t":"underworld","m":2,"lvl":11,"el":["Terra","Fogo"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":61,"atk":22,"spd":151,"xp":148,"b0":52,"b1":133,"art":"devorador","ab":{"n":"Correntes de Magma","t":"controle","mc":3,"d":"Correntes de Magma — Impede o alvo de agir por 1 turno."},"d":"Patrulha os rios de lava e ataca qualquer intruso à vista.","w":26},{"id":"uw_m2_07","n":"Diabrete Rochoso","t":"underworld","m":2,"lvl":11,"el":["Terra","Fogo"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":74,"atk":18,"spd":147,"xp":148,"b0":52,"b1":133,"art":"chamao","ab":{"n":"Muralha de Obsidiana","t":"buff","mc":2,"d":"Muralha de Obsidiana — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por os rios de lava; prefere observar a lutar.","w":34},{"id":"uw_m2_08","n":"Touro Férreo","t":"underworld","m":2,"lvl":9,"el":["Terra","Fogo"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":47,"atk":8,"spd":142,"xp":108,"b0":38,"b1":97,"art":"cronomante","ab":{"n":"Correntes de Magma","t":"controle","mc":3,"d":"Correntes de Magma — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as forjas adormecidas; prefere observar a lutar.","w":34},{"id":"uw_m2_09","n":"Brutamontes Cristalino","t":"underworld","m":2,"lvl":12,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":77,"atk":17,"spd":147,"xp":171,"b0":60,"b1":154,"art":"flagelo","ab":{"n":"Muralha de Obsidiana","t":"buff","mc":2,"d":"Muralha de Obsidiana — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por as forjas adormecidas; prefere observar a lutar.","w":34},{"id":"uw_m2_10","n":"Bode Carbonizado","t":"underworld","m":2,"lvl":9,"el":["Fogo"],"ek":"principal","tint":"#ff6a2a","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":49,"atk":8,"spd":142,"xp":108,"b0":38,"b1":97,"art":"paradox","ab":{"n":"Correntes de Magma","t":"controle","mc":3,"d":"Correntes de Magma — Impede o alvo de agir por 1 turno."},"d":"Vagueia por os túneis de cinza; prefere observar a lutar.","w":34},{"id":"uw_m3_01","n":"Imp Flamejante","t":"underworld","m":3,"lvl":22,"el":["Fogo"],"ek":"principal","tint":"#ff6a2a","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":84,"atk":32,"spd":182,"xp":450,"b0":158,"b1":405,"art":"chamao","ab":{"n":"Muralha de Obsidiana","t":"buff","mc":2,"d":"Muralha de Obsidiana — Aumenta o dano do seu lado por 2 turnos."},"d":"Patrulha as galerias de obsidiana e ataca qualquer intruso à vista.","w":26},{"id":"uw_m3_02","n":"Lagarto Férreo","t":"underworld","m":3,"lvl":18,"el":["Terra","Fogo"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":65,"atk":12,"spd":165,"xp":326,"b0":114,"b1":293,"art":"encantador","ab":{"n":"Correntes de Magma","t":"controle","mc":3,"d":"Correntes de Magma — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as galerias de obsidiana; prefere observar a lutar.","w":34},{"id":"uw_m3_03","n":"Escorpião Barrento","t":"underworld","m":3,"lvl":20,"el":["Terra","Fogo"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":105,"atk":23,"spd":173,"xp":386,"b0":135,"b1":347,"art":"flagelo","ab":{"n":"Muralha de Obsidiana","t":"buff","mc":2,"d":"Muralha de Obsidiana — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por as galerias de obsidiana; prefere observar a lutar.","w":34},{"id":"uw_m3_04","n":"Basilisco Pedregoso","t":"underworld","m":3,"lvl":24,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":true,"rar":true,"tier":"muito-forte","mug":0,"hp":129,"atk":49,"spd":224,"xp":1137,"b0":398,"b1":1023,"art":"cao_magma","ab":{"n":"Chicote de Brasas","t":"dano","mc":3,"d":"Chicote de Brasas — Causa dano físico pesado a um alvo."},"d":"Lendária de as galerias de obsidiana: poucos voltaram para contar o encontro.","w":12},{"id":"uw_m3_05","n":"Aranha Incandescente","t":"underworld","m":3,"lvl":21,"el":["Fogo"],"ek":"principal","tint":"#ff6a2a","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":85,"atk":31,"spd":182,"xp":418,"b0":146,"b1":376,"art":"devorador","ab":{"n":"Muralha de Obsidiana","t":"buff","mc":2,"d":"Muralha de Obsidiana — Aumenta o dano do seu lado por 2 turnos."},"d":"Patrulha as galerias de obsidiana e ataca qualquer intruso à vista.","w":26},{"id":"uw_m3_06","n":"Javali Célere","t":"underworld","m":3,"lvl":21,"el":["Ar","Água"],"ek":"excecao","tint":"#9fd8e8","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":88,"atk":30,"spd":182,"xp":418,"b0":146,"b1":376,"art":"devorador","ab":{"n":"Correntes de Magma","t":"controle","mc":3,"d":"Correntes de Magma — Impede o alvo de agir por 1 turno."},"d":"Patrulha os rios de lava e ataca qualquer intruso à vista.","w":26},{"id":"uw_m3_07","n":"Fungo Cristalino","t":"underworld","m":3,"lvl":22,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":135,"atk":43,"spd":186,"xp":450,"b0":158,"b1":405,"art":"bruto","ab":{"n":"Erupção de Lava","t":"dano","mc":4,"d":"Erupção de Lava — Causa dano físico pesado a um alvo."},"d":"Patrulha os túneis de cinza e ataca qualquer intruso à vista.","w":26},{"id":"uw_m3_08","n":"Morcego Mineral","t":"underworld","m":3,"lvl":17,"el":["Terra","Fogo"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":68,"atk":11,"spd":165,"xp":298,"b0":104,"b1":268,"art":"cronomante","ab":{"n":"Correntes de Magma","t":"controle","mc":3,"d":"Correntes de Magma — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as forjas adormecidas; prefere observar a lutar.","w":34},{"id":"uw_m3_09","n":"Gnomo Cristalino","t":"underworld","m":3,"lvl":23,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":true,"rar":true,"tier":"muito-forte","mug":0,"hp":129,"atk":49,"spd":224,"xp":1063,"b0":372,"b1":957,"art":"golem_obsidian","ab":{"n":"Erupção de Lava","t":"dano","mc":4,"d":"Erupção de Lava — Causa dano físico pesado a um alvo."},"d":"Lendária de as galerias de obsidiana: poucos voltaram para contar o encontro.","w":12},{"id":"uw_m3_10","n":"Diabrete Mineral","t":"underworld","m":3,"lvl":18,"el":["Terra","Fogo"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":68,"atk":12,"spd":165,"xp":326,"b0":114,"b1":293,"art":"paradox","ab":{"n":"Correntes de Magma","t":"controle","mc":3,"d":"Correntes de Magma — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as galerias de obsidiana; prefere observar a lutar.","w":34},{"id":"uw_m3_11","n":"Brutamontes Alado","t":"underworld","m":3,"lvl":19,"el":["Ar","Terra"],"ek":"excecao","tint":"#9fd8e8","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":68,"atk":12,"spd":165,"xp":356,"b0":125,"b1":320,"art":"cronomante","ab":{"n":"Pacto de Brasa","t":"cura","mc":2,"d":"Pacto de Brasa — Restaura vida do seu lado."},"d":"Vagueia por os rios de lava; prefere observar a lutar.","w":34},{"id":"uw_m3_12","n":"Caracol Barrento","t":"underworld","m":3,"lvl":23,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":131,"atk":41,"spd":188,"xp":483,"b0":169,"b1":435,"art":"golem_obsidian","ab":{"n":"Chicote de Brasas","t":"dano","mc":3,"d":"Chicote de Brasas — Causa dano físico pesado a um alvo."},"d":"Patrulha as forjas adormecidas e ataca qualquer intruso à vista.","w":26},{"id":"uw_m3_13","n":"Cascudo Titânico","t":"underworld","m":3,"lvl":19,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":67,"atk":12,"spd":165,"xp":356,"b0":125,"b1":320,"art":"encantador","ab":{"n":"Pacto de Brasa","t":"cura","mc":2,"d":"Pacto de Brasa — Restaura vida do seu lado."},"d":"Vagueia por as galerias de obsidiana; prefere observar a lutar.","w":34},{"id":"uw_m3_14","n":"Troglodita Sibilante","t":"underworld","m":3,"lvl":21,"el":["Ar","Água"],"ek":"excecao","tint":"#9fd8e8","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":108,"atk":24,"spd":174,"xp":418,"b0":146,"b1":376,"art":"chamao","ab":{"n":"Correntes de Magma","t":"controle","mc":3,"d":"Correntes de Magma — Impede o alvo de agir por 1 turno."},"d":"Vagueia por os rios de lava; prefere observar a lutar.","w":34},{"id":"uw_m3_15","n":"Ogro Granítico","t":"underworld","m":3,"lvl":23,"el":["Terra","Fogo"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":132,"atk":42,"spd":187,"xp":483,"b0":169,"b1":435,"art":"bruto","ab":{"n":"Erupção de Lava","t":"dano","mc":4,"d":"Erupção de Lava — Causa dano físico pesado a um alvo."},"d":"Patrulha os túneis de cinza e ataca qualquer intruso à vista.","w":26},{"id":"dn_m1_01","n":"Térmite Fulminante","t":"danian","m":1,"lvl":2,"el":["Ar"],"ek":"excecao","tint":"#9fd8e8","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":53,"atk":11,"spd":127,"xp":10,"b0":4,"b1":9,"art":"mandiblor","ab":{"n":"Casco Reforçado","t":"buff","mc":2,"d":"Casco Reforçado — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por a colmeia profunda; prefere observar a lutar.","w":34},{"id":"dn_m1_02","n":"Vaga-lume Pedregoso","t":"danian","m":1,"lvl":2,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":34,"atk":5,"spd":124,"xp":10,"b0":4,"b1":9,"art":"encantador","ab":{"n":"Enxame Cegante","t":"controle","mc":2,"d":"Enxame Cegante — Impede o alvo de agir por 1 turno."},"d":"Vagueia por a colmeia profunda; prefere observar a lutar.","w":34},{"id":"dn_m1_03","n":"Gafanhoto Profundo","t":"danian","m":1,"lvl":4,"el":["Água"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"muito-forte","mug":0,"hp":80,"atk":16,"spd":129,"xp":29,"b0":10,"b1":26,"art":"mandiblor","ab":{"n":"Néctar Corrosivo","t":"dano","mc":3,"d":"Néctar Corrosivo — Causa dano físico pesado a um alvo."},"d":"Vagueia por os túneis de âmbar; prefere observar a lutar.","w":34},{"id":"dn_m1_04","n":"Cupim Barrento","t":"danian","m":1,"lvl":4,"el":["Terra","Água"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":54,"atk":11,"spd":127,"xp":29,"b0":10,"b1":26,"art":"mandiblor","ab":{"n":"Enxame Cegante","t":"controle","mc":2,"d":"Enxame Cegante — Impede o alvo de agir por 1 turno."},"d":"Vagueia por os túneis de âmbar; prefere observar a lutar.","w":34},{"id":"dn_m1_05","n":"Rainha Límpida","t":"danian","m":1,"lvl":4,"el":["Água"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"muito-forte","mug":0,"hp":78,"atk":16,"spd":129,"xp":29,"b0":10,"b1":26,"art":"vespa","ab":{"n":"Néctar Corrosivo","t":"dano","mc":3,"d":"Néctar Corrosivo — Causa dano físico pesado a um alvo."},"d":"Vagueia por os túneis de âmbar; prefere observar a lutar.","w":34},{"id":"dn_m2_01","n":"Mutuca Pedregosa","t":"danian","m":2,"lvl":12,"el":["Terra","Água"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":95,"atk":27,"spd":156,"xp":171,"b0":60,"b1":154,"art":"mandiblor","ab":{"n":"Néctar Corrosivo","t":"dano","mc":3,"d":"Néctar Corrosivo — Causa dano físico pesado a um alvo."},"d":"Patrulha a colmeia profunda e ataca qualquer intruso à vista.","w":26},{"id":"dn_m2_02","n":"Centopeia Incandescente","t":"danian","m":2,"lvl":10,"el":["Fogo"],"ek":"excecao","tint":"#ff6a2a","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":60,"atk":20,"spd":152,"xp":127,"b0":44,"b1":114,"art":"vespa","ab":{"n":"Enxame Cegante","t":"controle","mc":2,"d":"Enxame Cegante — Impede o alvo de agir por 1 turno."},"d":"Patrulha os túneis de âmbar e ataca qualquer intruso à vista.","w":26},{"id":"dn_m2_03","n":"Joaninha Marítima","t":"danian","m":2,"lvl":10,"el":["Água"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":49,"atk":7,"spd":142,"xp":127,"b0":44,"b1":114,"art":"gargula","ab":{"n":"Gel Real","t":"cura","mc":2,"d":"Gel Real — Restaura vida do seu lado."},"d":"Vagueia por a galeria do néctar; prefere observar a lutar.","w":34},{"id":"dn_m2_04","n":"Mosca Límpida","t":"danian","m":2,"lvl":9,"el":["Água","Terra"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":48,"atk":7,"spd":142,"xp":108,"b0":38,"b1":97,"art":"encantador","ab":{"n":"Enxame Cegante","t":"controle","mc":2,"d":"Enxame Cegante — Impede o alvo de agir por 1 turno."},"d":"Vagueia por a colmeia profunda; prefere observar a lutar.","w":34},{"id":"dn_m2_05","n":"Larva Chorosa","t":"danian","m":2,"lvl":12,"el":["Água"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":77,"atk":15,"spd":147,"xp":171,"b0":60,"b1":154,"art":"mandiblor","ab":{"n":"Casco Reforçado","t":"buff","mc":2,"d":"Casco Reforçado — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por a colmeia profunda; prefere observar a lutar.","w":34},{"id":"dn_m2_06","n":"Formiga Límpida","t":"danian","m":2,"lvl":11,"el":["Água"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":74,"atk":16,"spd":146,"xp":148,"b0":52,"b1":133,"art":"mandiblor","ab":{"n":"Enxame Cegante","t":"controle","mc":2,"d":"Enxame Cegante — Impede o alvo de agir por 1 turno."},"d":"Vagueia por a galeria do néctar; prefere observar a lutar.","w":34},{"id":"dn_m2_07","n":"Lacraia Límpida","t":"danian","m":2,"lvl":13,"el":["Água","Terra"],"ek":"principal","tint":"#3f8fd4","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":95,"atk":28,"spd":155,"xp":194,"b0":68,"b1":175,"art":"mandiblor","ab":{"n":"Néctar Corrosivo","t":"dano","mc":3,"d":"Néctar Corrosivo — Causa dano físico pesado a um alvo."},"d":"Patrulha a galeria do néctar e ataca qualquer intruso à vista.","w":26},{"id":"dn_m2_08","n":"Lagarta Terrosa","t":"danian","m":2,"lvl":11,"el":["Terra","Água"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":78,"atk":16,"spd":147,"xp":148,"b0":52,"b1":133,"art":"mandiblor","ab":{"n":"Enxame Cegante","t":"controle","mc":2,"d":"Enxame Cegante — Impede o alvo de agir por 1 turno."},"d":"Vagueia por a galeria do néctar; prefere observar a lutar.","w":34},{"id":"dn_m2_09","n":"Aranha Sibilante","t":"danian","m":2,"lvl":10,"el":["Ar","Água"],"ek":"excecao","tint":"#9fd8e8","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":48,"atk":8,"spd":142,"xp":127,"b0":44,"b1":114,"art":"gargula","ab":{"n":"Gel Real","t":"cura","mc":2,"d":"Gel Real — Restaura vida do seu lado."},"d":"Vagueia por a colmeia profunda; prefere observar a lutar.","w":34},{"id":"dn_m2_10","n":"Mamangaba Profunda","t":"danian","m":2,"lvl":12,"el":["Água"],"ek":"principal","tint":"#3f8fd4","agg":true,"rar":true,"tier":"muito-forte","mug":0,"hp":96,"atk":34,"spd":186,"xp":375,"b0":131,"b1":338,"art":"forjador","ab":{"n":"Ferrão Duplo","t":"dano","mc":4,"d":"Ferrão Duplo — Causa dano físico pesado a um alvo."},"d":"Lendária de a câmara da rainha: poucos voltaram para contar o encontro.","w":12},{"id":"dn_m3_01","n":"Lagarta Titânica","t":"danian","m":3,"lvl":24,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":130,"atk":37,"spd":187,"xp":517,"b0":181,"b1":465,"art":"mandiblor","ab":{"n":"Néctar Corrosivo","t":"dano","mc":3,"d":"Néctar Corrosivo — Causa dano físico pesado a um alvo."},"d":"Patrulha a câmara da rainha e ataca qualquer intruso à vista.","w":26},{"id":"dn_m3_02","n":"Grilo Férreo","t":"danian","m":3,"lvl":21,"el":["Terra","Água"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":103,"atk":21,"spd":174,"xp":418,"b0":146,"b1":376,"art":"vespa","ab":{"n":"Enxame Cegante","t":"controle","mc":2,"d":"Enxame Cegante — Impede o alvo de agir por 1 turno."},"d":"Vagueia por a galeria do néctar; prefere observar a lutar.","w":34},{"id":"dn_m3_03","n":"Centopeia Terrosa","t":"danian","m":3,"lvl":22,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":87,"atk":28,"spd":181,"xp":450,"b0":158,"b1":405,"art":"vespa","ab":{"n":"Casco Reforçado","t":"buff","mc":2,"d":"Casco Reforçado — Aumenta o dano do seu lado por 2 turnos."},"d":"Patrulha a câmara da rainha e ataca qualquer intruso à vista.","w":26},{"id":"dn_m3_04","n":"Percevejo Férreo","t":"danian","m":3,"lvl":21,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":109,"atk":22,"spd":173,"xp":418,"b0":146,"b1":376,"art":"mandiblor","ab":{"n":"Enxame Cegante","t":"controle","mc":2,"d":"Enxame Cegante — Impede o alvo de agir por 1 turno."},"d":"Vagueia por a galeria do néctar; prefere observar a lutar.","w":34},{"id":"dn_m3_05","n":"Taturana Titânica","t":"danian","m":3,"lvl":21,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":88,"atk":28,"spd":182,"xp":418,"b0":146,"b1":376,"art":"vespa","ab":{"n":"Casco Reforçado","t":"buff","mc":2,"d":"Casco Reforçado — Aumenta o dano do seu lado por 2 turnos."},"d":"Patrulha os túneis de âmbar e ataca qualquer intruso à vista.","w":26},{"id":"dn_m3_06","n":"Rainha Ardente","t":"danian","m":3,"lvl":18,"el":["Fogo"],"ek":"excecao","tint":"#ff6a2a","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":65,"atk":10,"spd":165,"xp":326,"b0":114,"b1":293,"art":"gargula","ab":{"n":"Enxame Cegante","t":"controle","mc":2,"d":"Enxame Cegante — Impede o alvo de agir por 1 turno."},"d":"Vagueia por os túneis de âmbar; prefere observar a lutar.","w":34},{"id":"dn_m3_07","n":"Lacraia Sedimentar","t":"danian","m":3,"lvl":20,"el":["Terra","Água"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":83,"atk":28,"spd":182,"xp":386,"b0":135,"b1":347,"art":"sentinela","ab":{"n":"Casco Reforçado","t":"buff","mc":2,"d":"Casco Reforçado — Aumenta o dano do seu lado por 2 turnos."},"d":"Patrulha a câmara da rainha e ataca qualquer intruso à vista.","w":26},{"id":"dn_m3_08","n":"Broca Tempestuosa","t":"danian","m":3,"lvl":23,"el":["Ar","Fogo"],"ek":"excecao","tint":"#9fd8e8","agg":true,"rar":true,"tier":"muito-forte","mug":0,"hp":133,"atk":46,"spd":224,"xp":1063,"b0":372,"b1":957,"art":"vespa","ab":{"n":"Ferrão Duplo","t":"dano","mc":4,"d":"Ferrão Duplo — Causa dano físico pesado a um alvo."},"d":"Lendária de a colmeia profunda: poucos voltaram para contar o encontro.","w":12},{"id":"dn_m3_09","n":"Caruncho Granítico","t":"danian","m":3,"lvl":18,"el":["Terra","Água"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":66,"atk":11,"spd":165,"xp":326,"b0":114,"b1":293,"art":"gargula","ab":{"n":"Gel Real","t":"cura","mc":2,"d":"Gel Real — Restaura vida do seu lado."},"d":"Vagueia por a galeria do néctar; prefere observar a lutar.","w":34},{"id":"dn_m3_10","n":"Louva-a-deus Férreo","t":"danian","m":3,"lvl":18,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":67,"atk":11,"spd":165,"xp":326,"b0":114,"b1":293,"art":"gargula","ab":{"n":"Enxame Cegante","t":"controle","mc":2,"d":"Enxame Cegante — Impede o alvo de agir por 1 turno."},"d":"Vagueia por a câmara da rainha; prefere observar a lutar.","w":34},{"id":"dn_m3_11","n":"Pulgão Gélido","t":"danian","m":3,"lvl":18,"el":["Água","Terra"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":67,"atk":11,"spd":166,"xp":326,"b0":114,"b1":293,"art":"encantador","ab":{"n":"Gel Real","t":"cura","mc":2,"d":"Gel Real — Restaura vida do seu lado."},"d":"Vagueia por a galeria do néctar; prefere observar a lutar.","w":34},{"id":"dn_m3_12","n":"Gafanhoto Etéreo","t":"danian","m":3,"lvl":23,"el":["Ar"],"ek":"excecao","tint":"#9fd8e8","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":135,"atk":37,"spd":188,"xp":483,"b0":169,"b1":435,"art":"vespa","ab":{"n":"Ferrão Duplo","t":"dano","mc":4,"d":"Ferrão Duplo — Causa dano físico pesado a um alvo."},"d":"Patrulha a colmeia profunda e ataca qualquer intruso à vista.","w":26},{"id":"dn_m3_13","n":"Térmite Límpido","t":"danian","m":3,"lvl":23,"el":["Água"],"ek":"principal","tint":"#3f8fd4","agg":true,"rar":true,"tier":"muito-forte","mug":0,"hp":134,"atk":47,"spd":225,"xp":1063,"b0":372,"b1":957,"art":"mandiblor","ab":{"n":"Néctar Corrosivo","t":"dano","mc":3,"d":"Néctar Corrosivo — Causa dano físico pesado a um alvo."},"d":"Lendária de a galeria do néctar: poucos voltaram para contar o encontro.","w":12},{"id":"dn_m3_14","n":"Cigarra Gélida","t":"danian","m":3,"lvl":23,"el":["Água","Terra"],"ek":"principal","tint":"#3f8fd4","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":132,"atk":37,"spd":187,"xp":483,"b0":169,"b1":435,"art":"forjador","ab":{"n":"Ferrão Duplo","t":"dano","mc":4,"d":"Ferrão Duplo — Causa dano físico pesado a um alvo."},"d":"Patrulha a câmara da rainha e ataca qualquer intruso à vista.","w":26},{"id":"dn_m3_15","n":"Mariposa Límpida","t":"danian","m":3,"lvl":19,"el":["Água","Terra"],"ek":"principal","tint":"#3f8fd4","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":68,"atk":11,"spd":165,"xp":356,"b0":125,"b1":320,"art":"gargula","ab":{"n":"Gel Real","t":"cura","mc":2,"d":"Gel Real — Restaura vida do seu lado."},"d":"Vagueia por a câmara da rainha; prefere observar a lutar.","w":34},{"id":"mp_m1_01","n":"Crocodilo Célere","t":"mipedian","m":1,"lvl":4,"el":["Ar"],"ek":"principal","tint":"#9fd8e8","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":53,"atk":12,"spd":127,"xp":29,"b0":10,"b1":26,"art":"escudeiro","ab":{"n":"Véu de Vento","t":"buff","mc":2,"d":"Véu de Vento — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por as dunas do oásis; prefere observar a lutar.","w":34},{"id":"mp_m1_02","n":"Serpente Incandescente","t":"mipedian","m":1,"lvl":1,"el":["Fogo","Água"],"ek":"excecao","tint":"#ff6a2a","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":34,"atk":6,"spd":124,"xp":3,"b0":1,"b1":3,"art":"paradox","ab":{"n":"Vendaval Seco","t":"controle","mc":2,"d":"Vendaval Seco — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as dunas do oásis; prefere observar a lutar.","w":34},{"id":"mp_m1_03","n":"Gênio Elevado","t":"mipedian","m":1,"lvl":4,"el":["Ar"],"ek":"principal","tint":"#9fd8e8","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":54,"atk":12,"spd":127,"xp":29,"b0":10,"b1":26,"art":"escudeiro","ab":{"n":"Véu de Vento","t":"buff","mc":2,"d":"Véu de Vento — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por as areias enfumaçadas; prefere observar a lutar.","w":34},{"id":"mp_m1_04","n":"Escorpião Pedregoso","t":"mipedian","m":1,"lvl":3,"el":["Terra","Ar"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"muito-forte","mug":0,"hp":81,"atk":17,"spd":129,"xp":19,"b0":7,"b1":17,"art":"sentinela","ab":{"n":"Presas do Sol","t":"dano","mc":4,"d":"Presas do Sol — Causa dano físico pesado a um alvo."},"d":"Vagueia por as miragens do palmeiral; prefere observar a lutar.","w":34},{"id":"mp_m1_05","n":"Águia Férrea","t":"mipedian","m":1,"lvl":4,"el":["Terra","Ar"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"muito-forte","mug":0,"hp":80,"atk":17,"spd":129,"xp":29,"b0":10,"b1":26,"art":"bruto","ab":{"n":"Lâmina de Areia","t":"dano","mc":3,"d":"Lâmina de Areia — Causa dano físico pesado a um alvo."},"d":"Vagueia por o poço das areias; prefere observar a lutar.","w":34},{"id":"mp_m2_01","n":"Crocodilo Etéreo","t":"mipedian","m":2,"lvl":9,"el":["Ar","Terra"],"ek":"principal","tint":"#9fd8e8","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":49,"atk":8,"spd":142,"xp":108,"b0":38,"b1":97,"art":"cronomante","ab":{"n":"Orvalho Frio","t":"cura","mc":2,"d":"Orvalho Frio — Restaura vida do seu lado."},"d":"Vagueia por as miragens do palmeiral; prefere observar a lutar.","w":34},{"id":"mp_m2_02","n":"Gafanhoto Fumegante","t":"mipedian","m":2,"lvl":10,"el":["Fogo","Água"],"ek":"excecao","tint":"#ff6a2a","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":62,"atk":21,"spd":152,"xp":127,"b0":44,"b1":114,"art":"batedor","ab":{"n":"Vendaval Seco","t":"controle","mc":2,"d":"Vendaval Seco — Impede o alvo de agir por 1 turno."},"d":"Patrulha as miragens do palmeiral e ataca qualquer intruso à vista.","w":26},{"id":"mp_m2_03","n":"Feneco Célere","t":"mipedian","m":2,"lvl":12,"el":["Ar","Terra"],"ek":"principal","tint":"#9fd8e8","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":95,"atk":30,"spd":154,"xp":171,"b0":60,"b1":154,"art":"sentinela","ab":{"n":"Lâmina de Areia","t":"dano","mc":3,"d":"Lâmina de Areia — Causa dano físico pesado a um alvo."},"d":"Patrulha as areias enfumaçadas e ataca qualquer intruso à vista.","w":26},{"id":"mp_m2_04","n":"Lagarto Pedregoso","t":"mipedian","m":2,"lvl":9,"el":["Terra","Ar"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":47,"atk":8,"spd":142,"xp":108,"b0":38,"b1":97,"art":"cronomante","ab":{"n":"Vendaval Seco","t":"controle","mc":2,"d":"Vendaval Seco — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as areias enfumaçadas; prefere observar a lutar.","w":34},{"id":"mp_m2_05","n":"Píton Tempestuosa","t":"mipedian","m":2,"lvl":13,"el":["Ar","Terra"],"ek":"principal","tint":"#9fd8e8","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":95,"atk":29,"spd":155,"xp":194,"b0":68,"b1":175,"art":"golem_stone","ab":{"n":"Lâmina de Areia","t":"dano","mc":3,"d":"Lâmina de Areia — Causa dano físico pesado a um alvo."},"d":"Patrulha o poço das areias e ataca qualquer intruso à vista.","w":26},{"id":"mp_m2_06","n":"Falcão Tempestuoso","t":"mipedian","m":2,"lvl":11,"el":["Ar","Terra"],"ek":"principal","tint":"#9fd8e8","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":76,"atk":17,"spd":146,"xp":148,"b0":52,"b1":133,"art":"forjador","ab":{"n":"Vendaval Seco","t":"controle","mc":2,"d":"Vendaval Seco — Impede o alvo de agir por 1 turno."},"d":"Vagueia por o poço das areias; prefere observar a lutar.","w":34},{"id":"mp_m2_07","n":"Caracal Carbonizado","t":"mipedian","m":2,"lvl":11,"el":["Fogo","Terra"],"ek":"excecao","tint":"#ff6a2a","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":77,"atk":17,"spd":147,"xp":148,"b0":52,"b1":133,"art":"escudeiro","ab":{"n":"Véu de Vento","t":"buff","mc":2,"d":"Véu de Vento — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por as miragens do palmeiral; prefere observar a lutar.","w":34},{"id":"mp_m2_08","n":"Escorpião Mineral","t":"mipedian","m":2,"lvl":13,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":true,"rar":true,"tier":"muito-forte","mug":0,"hp":97,"atk":34,"spd":186,"xp":426,"b0":149,"b1":383,"art":"golem_stone","ab":{"n":"Presas do Sol","t":"dano","mc":4,"d":"Presas do Sol — Causa dano físico pesado a um alvo."},"d":"Lendária de as miragens do palmeiral: poucos voltaram para contar o encontro.","w":12},{"id":"mp_m2_09","n":"Verme-da-areia Pedregoso","t":"mipedian","m":2,"lvl":10,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":77,"atk":17,"spd":147,"xp":127,"b0":44,"b1":114,"art":"escudeiro","ab":{"n":"Véu de Vento","t":"buff","mc":2,"d":"Véu de Vento — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por as areias enfumaçadas; prefere observar a lutar.","w":34},{"id":"mp_m2_10","n":"Mamba Tempestuosa","t":"mipedian","m":2,"lvl":8,"el":["Ar"],"ek":"principal","tint":"#9fd8e8","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":49,"atk":8,"spd":142,"xp":89,"b0":31,"b1":80,"art":"cronomante","ab":{"n":"Vendaval Seco","t":"controle","mc":2,"d":"Vendaval Seco — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as areias enfumaçadas; prefere observar a lutar.","w":34},{"id":"mp_m3_01","n":"Verme-da-areia Férreo","t":"mipedian","m":3,"lvl":22,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":86,"atk":30,"spd":181,"xp":450,"b0":158,"b1":405,"art":"batedor","ab":{"n":"Véu de Vento","t":"buff","mc":2,"d":"Véu de Vento — Aumenta o dano do seu lado por 2 turnos."},"d":"Patrulha o poço das areias e ataca qualquer intruso à vista.","w":26},{"id":"mp_m3_02","n":"Jerboa Trovejante","t":"mipedian","m":3,"lvl":23,"el":["Ar","Terra"],"ek":"principal","tint":"#9fd8e8","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":135,"atk":40,"spd":187,"xp":483,"b0":169,"b1":435,"art":"sentinela","ab":{"n":"Presas do Sol","t":"dano","mc":4,"d":"Presas do Sol — Causa dano físico pesado a um alvo."},"d":"Patrulha o poço das areias e ataca qualquer intruso à vista.","w":26},{"id":"mp_m3_03","n":"Formiga Sedimentar","t":"mipedian","m":3,"lvl":18,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":67,"atk":11,"spd":166,"xp":326,"b0":114,"b1":293,"art":"paradox","ab":{"n":"Orvalho Frio","t":"cura","mc":2,"d":"Orvalho Frio — Restaura vida do seu lado."},"d":"Vagueia por as dunas do oásis; prefere observar a lutar.","w":34},{"id":"mp_m3_04","n":"Caracal Férreo","t":"mipedian","m":3,"lvl":21,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":107,"atk":23,"spd":173,"xp":418,"b0":146,"b1":376,"art":"forjador","ab":{"n":"Vendaval Seco","t":"controle","mc":2,"d":"Vendaval Seco — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as miragens do palmeiral; prefere observar a lutar.","w":34},{"id":"mp_m3_05","n":"Feneco Pedregoso","t":"mipedian","m":3,"lvl":23,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":129,"atk":40,"spd":186,"xp":483,"b0":169,"b1":435,"art":"bruto","ab":{"n":"Lâmina de Areia","t":"dano","mc":3,"d":"Lâmina de Areia — Causa dano físico pesado a um alvo."},"d":"Patrulha o poço das areias e ataca qualquer intruso à vista.","w":26},{"id":"mp_m3_06","n":"Lagartixa Férrea","t":"mipedian","m":3,"lvl":23,"el":["Terra"],"ek":"principal","tint":"#a9803f","agg":true,"rar":true,"tier":"muito-forte","mug":0,"hp":136,"atk":47,"spd":224,"xp":1063,"b0":372,"b1":957,"art":"golem_stone","ab":{"n":"Presas do Sol","t":"dano","mc":4,"d":"Presas do Sol — Causa dano físico pesado a um alvo."},"d":"Lendária de as dunas do oásis: poucos voltaram para contar o encontro.","w":12},{"id":"mp_m3_07","n":"Camelo Terroso","t":"mipedian","m":3,"lvl":22,"el":["Terra","Ar"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":84,"atk":29,"spd":182,"xp":450,"b0":158,"b1":405,"art":"batedor","ab":{"n":"Véu de Vento","t":"buff","mc":2,"d":"Véu de Vento — Aumenta o dano do seu lado por 2 turnos."},"d":"Patrulha as areias enfumaçadas e ataca qualquer intruso à vista.","w":26},{"id":"mp_m3_08","n":"Gênio Fluido","t":"mipedian","m":3,"lvl":23,"el":["Água","Ar"],"ek":"excecao","tint":"#3f8fd4","agg":true,"rar":true,"tier":"muito-forte","mug":0,"hp":130,"atk":49,"spd":224,"xp":1063,"b0":372,"b1":957,"art":"bruto","ab":{"n":"Presas do Sol","t":"dano","mc":4,"d":"Presas do Sol — Causa dano físico pesado a um alvo."},"d":"Lendária de as dunas do oásis: poucos voltaram para contar o encontro.","w":12},{"id":"mp_m3_09","n":"Miragem Trovejante","t":"mipedian","m":3,"lvl":19,"el":["Ar","Terra"],"ek":"principal","tint":"#9fd8e8","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":68,"atk":11,"spd":165,"xp":356,"b0":125,"b1":320,"art":"cronomante","ab":{"n":"Orvalho Frio","t":"cura","mc":2,"d":"Orvalho Frio — Restaura vida do seu lado."},"d":"Vagueia por as miragens do palmeiral; prefere observar a lutar.","w":34},{"id":"mp_m3_10","n":"Chacal Flamejante","t":"mipedian","m":3,"lvl":22,"el":["Fogo","Terra"],"ek":"excecao","tint":"#ff6a2a","agg":true,"rar":false,"tier":"mediana","mug":1,"hp":87,"atk":29,"spd":182,"xp":450,"b0":158,"b1":405,"art":"escudeiro","ab":{"n":"Vendaval Seco","t":"controle","mc":2,"d":"Vendaval Seco — Impede o alvo de agir por 1 turno."},"d":"Patrulha as miragens do palmeiral e ataca qualquer intruso à vista.","w":26},{"id":"mp_m3_11","n":"Tatu-bola Sedimentar","t":"mipedian","m":3,"lvl":22,"el":["Terra","Ar"],"ek":"principal","tint":"#a9803f","agg":true,"rar":false,"tier":"muito-forte","mug":0,"hp":135,"atk":40,"spd":186,"xp":450,"b0":158,"b1":405,"art":"bruto","ab":{"n":"Lâmina de Areia","t":"dano","mc":3,"d":"Lâmina de Areia — Causa dano físico pesado a um alvo."},"d":"Patrulha as miragens do palmeiral e ataca qualquer intruso à vista.","w":26},{"id":"mp_m3_12","n":"Mamba Vulcânica","t":"mipedian","m":3,"lvl":18,"el":["Fogo"],"ek":"excecao","tint":"#ff6a2a","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":65,"atk":11,"spd":166,"xp":326,"b0":114,"b1":293,"art":"paradox","ab":{"n":"Vendaval Seco","t":"controle","mc":2,"d":"Vendaval Seco — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as areias enfumaçadas; prefere observar a lutar.","w":34},{"id":"mp_m3_13","n":"Dromedário Fulminante","t":"mipedian","m":3,"lvl":18,"el":["Ar","Terra"],"ek":"principal","tint":"#9fd8e8","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":65,"atk":11,"spd":165,"xp":326,"b0":114,"b1":293,"art":"cronomante","ab":{"n":"Orvalho Frio","t":"cura","mc":2,"d":"Orvalho Frio — Restaura vida do seu lado."},"d":"Vagueia por as dunas do oásis; prefere observar a lutar.","w":34},{"id":"mp_m3_14","n":"Dragão Ventoso","t":"mipedian","m":3,"lvl":18,"el":["Ar","Terra"],"ek":"principal","tint":"#9fd8e8","agg":false,"rar":false,"tier":"fraca","mug":2,"hp":68,"atk":11,"spd":165,"xp":326,"b0":114,"b1":293,"art":"paradox","ab":{"n":"Vendaval Seco","t":"controle","mc":2,"d":"Vendaval Seco — Impede o alvo de agir por 1 turno."},"d":"Vagueia por as areias enfumaçadas; prefere observar a lutar.","w":34},{"id":"mp_m3_15","n":"Escorpião Célere","t":"mipedian","m":3,"lvl":22,"el":["Ar"],"ek":"principal","tint":"#9fd8e8","agg":false,"rar":false,"tier":"mediana","mug":1,"hp":109,"atk":24,"spd":173,"xp":450,"b0":158,"b1":405,"art":"escudeiro","ab":{"n":"Véu de Vento","t":"buff","mc":2,"d":"Véu de Vento — Aumenta o dano do seu lado por 2 turnos."},"d":"Vagueia por as areias enfumaçadas; prefere observar a lutar.","w":34}];
 const MAP_POOLS = {
   ow_grove: ['Slime Verde', 'Lobo Cinzento', 'Escudeiro de Perim', 'Aranha Gigante'],
   meadow: ['Slime Verde', 'Lobo Cinzento', 'Escudeiro de Perim', 'Batedor Mipediano', 'Esqueleto', 'Aranha Gigante'],
@@ -1759,11 +1890,138 @@ const AGGRO_SPECIES = {
 })();
 /* v148 — RAIO DE AMEAÇA (Aggro Radius): base 150px; o Manto de
  * Furtividade reduz 30%; Safe Zones e passivos = 0 (nunca perseguem). */
+/* ============================================================
+ * v164 — INTEGRAÇÃO DO BANCO DE 120 CRIATURAS (4 tribos x 30)
+ * Cada criatura do banco é uma espécie do jogo: nasce no mapa da sua tribo e do
+ * seu nível, com os atributos/arte/elementos/habilidade/Mugic do banco.
+ * ============================================================ */
+const TRIBOS164 = { overworld: 'OverWorld', underworld: 'UnderWorld', danian: 'Danian', mipedian: 'Mipedian' };
+const MAPA_PARA_REGIAO164 = { // (tribo do banco + mapa do banco) -> região do jogo
+  'overworld:1': 'ow_grove', 'overworld:2': 'meadow', 'overworld:3': 'forest',
+  'underworld:1': 'uw_ember', 'underworld:2': 'lava_cave', 'underworld:3': 'mountain',
+  'danian:1': 'dan_hive', 'danian:2': 'swamp', 'danian:3': 'void_rim',
+  'mipedian:1': 'mip_oasis', 'mipedian:2': 'time_ruins', 'mipedian:3': 'mp_mirage',
+};
+const ELEMENTO_EMOJI164 = { 'Terra': '🌍', 'Água': '💧', 'Fogo': '🔥', 'Ar': '🌪️' };
+const ORDEM_RARIDADE164 = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+const PESO_PADRAO164 = 34;  // passiva 34 · agressiva 26 · rara 12 (pesos do banco)
+const VEL_MAX164 = 175;     // teto de velocidade: o herói (140 px/s) precisa alcançar
+const CAVE_MONSTERS164 = 0; // (reservado)
+
+/* 1) As 120 criaturas do banco entram no ENEMY_TYPES como espécies de verdade */
+const BANCO_POR_REGIAO164 = {};
+BANCO164.forEach(function (b) {
+  const regiao = MAPA_PARA_REGIAO164[b.t + ':' + b.m];
+  let t = ENEMY_TYPES.find(function (e) { return e.name === b.n; });
+  if (!t) { t = { name: b.n, regions: [] }; ENEMY_TYPES.push(t); }
+  t.hp = b.hp; t.atk = b.atk; t.xp = b.xp; t.bits = [b.b0, b.b1]; t.level = b.lvl; t.art = b.art;
+  t.isAggressive = !!b.agg; t.isRare = !!b.rar; t.regions = t.regions || [];
+  t.banco164 = b.id; t.tribo164 = b.t; t.mapa164 = b.m; t.tier164 = b.tier;
+  t.elements = b.el.slice(); t.elementKind = b.ek; t.tint = b.tint;
+  t.mugic164 = b.mug; t.moveSpeed164 = b.spd; t.ability164 = b.ab; t.desc164 = b.d; t.peso164 = b.w;
+  if (regiao) (BANCO_POR_REGIAO164[regiao] = BANCO_POR_REGIAO164[regiao] || []).push(b.n);
+});
+/* 2) O mapa nasce SÓ com as criaturas do banco da sua tribo/nível */
+Object.keys(BANCO_POR_REGIAO164).forEach(function (reg) { MAP_POOLS[reg] = BANCO_POR_REGIAO164[reg].slice(); });
+/* 3) A região que faltava: o mapa 3 dos Mipedians (o banco tem 15 criaturas para ele) */
+if (!REGIONS.some(function (r) { return r.id === 'mp_mirage'; })) {
+  REGIONS.push({
+    id: 'mp_mirage', name: 'Miragens do Palmeiral', tribe: 'mipedian', mapLevel: 3, safe: false, level: 20,
+    color: 0xc0a86a, desc: 'O palmeiral invertido no espelho do deserto — onde os Mipedians treinam as miragens.',
+    landmarks: ['Palmeiral Invertido', 'Espelho de Areia'], width: 3600, height: 2600,
+    theme: { grass: '#c2a86a', grassD1: '#ccb376', grassD2: '#b69c5e', sand: '#e8d9a8', fog: 2.0 },
+  });
+}
+/* 4) Recalcula em que mapas cada espécie vive (o pool é a fonte de verdade) */
+(function () {
+  ENEMY_TYPES.forEach(function (t) { t.regions = []; });
+  Object.keys(MAP_POOLS).forEach(function (rid) {
+    (MAP_POOLS[rid] || []).forEach(function (n) {
+      const t = ENEMY_TYPES.find(function (e) { return e.name === n; });
+      if (t && t.regions.indexOf(rid) < 0) t.regions.push(rid);
+    });
+  });
+})();
+/* 5) Sorteio ponderado do banco (a rara sai bem menos que a passiva) */
+function sorteiaEspecie164(pool) {
+  if (!pool || !pool.length) return null;
+  let total = 0;
+  for (let i = 0; i < pool.length; i++) total += (pool[i].peso164 || PESO_PADRAO164);
+  let r = Math.random() * total;
+  for (let i = 0; i < pool.length; i++) { r -= (pool[i].peso164 || PESO_PADRAO164); if (r <= 0) return pool[i]; }
+  return pool[pool.length - 1];
+}
+/* 6) Velocidade de caminhada da espécie (banco) com teto de perseguição */
+function velAndar164(e) {
+  const v = (e && e.type && e.type.moveSpeed164) || CONFIG.MONSTER_WANDER_SPEED;
+  return Math.min(VEL_MAX164, v);
+}
+/* 7) Rótulo do mapa: ✷ marca a espécie RARA; ☮️ marca a passiva (não persegue) */
+function rotulo164(et, nivel) {
+  return et.name + ' Lv.' + nivel + (et.isRare ? ' ★' : '') + (et.isAggressive ? '' : ' ☮️');
+}
+function tipoDaEspecie164(type) {
+  if (type.isRare) return '★ Rara' + (type.isAggressive ? ' e agressiva' : '');
+  return type.isAggressive ? '⚔️ Agressiva' : '☮️ Passiva';
+}
+/* 8) Cartas: elementos do banco + piso de raridade da espécie */
+function elementosDaCarta164(type, ivs) {
+  const chips = (type.elements || []).map(function (el) { return ELEMENTO_EMOJI164[el] || '✨'; });
+  const avg = ivs ? ((ivs.str + ivs.dex + ivs.vit + ivs.int) / 4) : 0;
+  if (avg >= 20) chips.push('⭐');
+  if (avg >= 28) chips.push('👑');
+  while (chips.length < 4) chips.push('✨');
+  return chips.slice(0, 4);
+}
+function raridadeDoGrade164(grade) {
+  return grade === 'Perfeito' ? 'legendary' : grade === 'Excelente' ? 'epic' : grade === 'Bom' ? 'rare' : grade === 'Medio' ? 'uncommon' : 'common';
+}
+function pisoRaridade164(type, raridade) {
+  const piso = (type && type.isRare) ? 'rare' : (type && type.tier164 === 'muito-forte') ? 'uncommon' : null;
+  if (!piso) return raridade || 'common';
+  return ORDEM_RARIDADE164.indexOf(raridade || 'common') < ORDEM_RARIDADE164.indexOf(piso) ? piso : (raridade || 'common');
+}
+function fichaBanco164(type) {
+  if (!type || !type.banco164) return '';
+  const els = (type.elements || []).map(function (el) { return (ELEMENTO_EMOJI164[el] || '✨') + ' ' + el; }).join(' · ');
+  return '<div style="margin-top:6px;font-size:10px;line-height:1.5;color:#cfe8a0;">' +
+    (TRIBOS164[type.tribo164] || '') + ' · Mapa ' + type.mapa164 + ' · ' + tipoDaEspecie164(type) + '<br>' +
+    els + ' · 🎵 Mugic: ' + (type.mugic164 || 0) + '<br>' +
+    '🔮 ' + (type.ability164 ? type.ability164.n : '—') + '</div>';
+}
 const AGGRO_BASE148 = 150;
 function aggroRadiusOf(type) {
   if (!type || !type.isAggressive || regionIsSafe()) return 0;
   if (type.isBoss) return BOSS_AGGRO149; // v149 — Chefe: raio próprio; o Manto NÃO engana o Guardião
   return GameState.gadgetEquip === 'manto' ? Math.round(AGGRO_BASE148 * 0.7) : AGGRO_BASE148;
+}
+/* v159 — BUG "herói passa reto pela criatura" (print do jogador): em SAFE ZONE
+ * o raio de ameaça é 0 POR DESIGN (não existe IA de fuga/stalk no mapa 1), mas
+ * o auto-move usava esse MESMO 0 para descartar os agressivos da caça passiva —
+ * a Aranha Gigante passava do lado e o herói nem ia atrás nem escaneava.
+ * Agora o 0 só desliga a fuga/stalk: a caça (perseguir a ≤160px e PARAR para
+ * escanear a ≤96px por 3s) vale para toda criatura, em QUALQUER mapa. */
+function temFugaStalk159(type) { return !!type && aggroRadiusOf(type) > 0; }
+/* v160 — DESISTIR DE ALVO INALCANÇÁVEL (2º caminho do "passou reto pela criatura"):
+ * o estado 'chase' IGNORA todo o resto do mapa e não tinha desistência. Como as
+ * CRIATURAS não colidem com casas/paredes (só com água funda) e o HERÓI colide, o
+ * alvo pode atravessar uma casa e deixar o herói empurrando a parede para sempre —
+ * enquanto uma Aranha Gigante passa colada e ele não faz nada. Devolve true quando
+ * é hora de largar o alvo: ~2,4s sem sair do lugar sem chegar perto, ou alvo a mais
+ * de 300px sem o herói se aproximar. */
+function alvoInalcancavel160(sc, alvo, dist, p) {
+  if (!sc.__caca160 || sc.__caca160.alvo !== alvo) {
+    sc.__caca160 = { alvo: alvo, t: sc.time.now, x: p.x, y: p.y, dist: dist, travado: 0 };
+    return false;
+  }
+  const c = sc.__caca160;
+  if (sc.time.now - c.t >= 1200) {
+    const andou = Phaser.Math.Distance.Between(p.x, p.y, c.x, c.y);
+    if (andou < 14 && dist >= c.dist - 8) c.travado++; else c.travado = 0;
+    c.t = sc.time.now; c.x = p.x; c.y = p.y; c.dist = dist;
+  }
+  const longe = dist > CONFIG.MONSTER_DETECT_RANGE + 140 && dist >= c.dist - 8; // 300px
+  return c.travado >= 2 || longe;
 }
 function mapPenalty147() { return !!(GameState.mapPenalty && GameState.mapPenalty[GameState.currentRegion] > 0); }
 /* v149 — CHEFE DE MAPA (Game Design): dominar um mapa de tribo (100% de scan)
@@ -2006,6 +2264,10 @@ function sanitizeCard(c) {
     grade: typeof c.grade === 'string' ? c.grade : 'Fraco',
     code: typeof c.code === 'string' ? c.code : '???? ???? ????',
     elements: (Array.isArray(c.elements) && c.elements.length >= 4) ? c.elements.slice(0, 4) : ['❓', '❓', '❓', '❓'],
+    banco: typeof c.banco === 'string' ? c.banco : null, tribe: typeof c.tribe === 'string' ? c.tribe : null, rare: !!c.rare, // v164 — ficha do banco
+    tier: typeof c.tier === 'string' ? c.tier : null, mugicCounters: num(c.mugicCounters, 0), moveSpeed: num(c.moveSpeed, 0),
+    ability: (c.ability && typeof c.ability === 'object') ? { n: c.ability.n || '', t: c.ability.t || '', mc: c.ability.mc || 0 } : null,
+    desc: typeof c.desc === 'string' ? c.desc : null,
     timestamp: num(c.timestamp, Date.now())
   });
 }
@@ -2239,6 +2501,7 @@ function placeSub151() {
   const tb = tribeObj151(r.tribe);
   const parts = [];
   if (tb) parts.push(tb.icon + ' ' + tb.name);
+  const pool164 = (MAP_POOLS[r.id] || []).length; if (pool164) parts.push('🐾 ' + pool164 + ' espécies'); // v164 — espécies do banco no mapa
   if (loc === 'cave') {
     parts.push('sob ' + r.name);
     parts.push('scan 2x');
@@ -2348,6 +2611,12 @@ function updateScannerPanel(enemy) {
     '<div class="scan-row"><span class="scan-label">HP</span><span class="scan-val">' + Math.floor(enemy.hp) + '/' + enemy.maxHp + '</span></div>' +
     '<div class="scan-row"><span class="scan-label">ATK</span><span class="scan-val">' + enemy.type.atk + '</span></div>' +
     '<div class="scan-row"><span class="scan-label">IV Grade</span><span class="scan-val" style="color:' + grade.color + '">' + grade.label + '</span></div>' +
+    (enemy.type && enemy.type.banco164 ? // v164 — ficha do banco no painel do Scanner
+      '<div class="scan-row"><span class="scan-label">Tipo</span><span class="scan-val">' + tipoDaEspecie164(enemy.type) + '</span></div>' +
+      '<div class="scan-row"><span class="scan-label">Elementos</span><span class="scan-val">' + (enemy.type.elements || []).map(function (el) { return (ELEMENTO_EMOJI164[el] || '') + ' ' + el; }).join(' · ') + '</span></div>' +
+      '<div class="scan-row"><span class="scan-label">Habilidade</span><span class="scan-val">' + (enemy.type.ability164 ? enemy.type.ability164.n : '—') + '</span></div>' +
+      '<div class="scan-row"><span class="scan-label">Mugic</span><span class="scan-val">🎵 ' + (enemy.type.mugic164 || 0) + '</span></div>' +
+      '<div class="scan-row"><span class="scan-label">Mapa</span><span class="scan-val">' + (TRIBOS164[enemy.type.tribo164] || '') + ' · M' + enemy.type.mapa164 + '</span></div>' : '') +
     '<div class="scan-row"><span class="scan-label">STR</span><span class="scan-val">' + ivs.str + ' ' + ivBar(ivs.str) + '</span></div>' +
     '<div class="scan-row"><span class="scan-label">DEX</span><span class="scan-val">' + ivs.dex + ' ' + ivBar(ivs.dex) + '</span></div>' +
     '<div class="scan-row"><span class="scan-label">VIT</span><span class="scan-val">' + ivs.vit + ' ' + ivBar(ivs.vit) + '</span></div>' +
@@ -2471,7 +2740,7 @@ function renderTravelUI() {
     html += '<div class="region-card' + (aberto ? '' : ' locked') + '" onclick="' + (aberto ? "travelTo('" + r.id + "')" : "portalLockedNotif('" + r.id + "')") + '">'
       + '<h5>' + r.name + ' ' + (GameState.currentRegion === r.id ? '●' : '') + (r.safe ? '<span class="safe-badge">🛡 SAFE ZONE</span>' : '') + '</h5>'
       + '<p>' + r.desc + '</p>'
-      + '<p style="margin-top:3px;color:' + (corTribe147[r.tribe] || '#7ec850') + ';font-size:9px;">Mapa ' + r.mapLevel + ' da tribo · ' + (r.level > 0 ? 'Requer Lv.' + r.level : 'Acesso livre') + (aberto ? '' : ' · 🔒 bloqueado') + '</p>'
+      + '<p style="margin-top:3px;color:' + (corTribe147[r.tribe] || '#7ec850') + ';font-size:9px;">Mapa ' + r.mapLevel + ' da tribo · ' + (r.level > 0 ? 'Requer Lv.' + r.level : 'Acesso livre') + (aberto ? '' : ' · 🔒 bloqueado') + ' · 🐾 ' + (MAP_POOLS[r.id] || []).length + ' espécies</p>'
       + '<div class="scanbar" title="Escaneamento do mapa"><div style="width:' + pct + '%"></div></div>'
       + '<p style="margin-top:2px;font-size:8px;color:#8be2ff;">📡 Escaneado: ' + pct + '%</p>'
       + '<div class="landmarks">';
@@ -2708,6 +2977,103 @@ function deliverRequest(r) {
   ahPushHistory('🛒', 'Comprou (solicitação) ' + r.name, Math.round(r.price * r.qty));
   updateInventoryUI();
   return true;
+}
+// ---- abrir/fechar ----
+/* ============================================================
+ * v163 — NPC MASTER (Ilha dos Dromos): entrega presentes
+ * ============================================================ */
+let masterMsg = '';
+function openMasterPanel() {
+  const el = document.getElementById('master-panel');
+  if (!el) return;
+  el.classList.add('open');
+  masterRender();
+}
+function closeMasterPanel() {
+  const el = document.getElementById('master-panel');
+  if (el) el.classList.remove('open');
+}
+function masterRender() {
+  const el = document.getElementById('master-panel');
+  if (!el) return;
+  const p = GameState.player;
+  const linhas = [
+    { ic: '⭐', nm: '+1 LV', sub: 'Sobe um nível agora (nível atual: ' + p.lvl + ')', fn: 'masterDarLv()' },
+    { ic: '💠', nm: '+1000 Bits', sub: 'Carteira: ' + (p.bits || 0) + ' bits', fn: 'masterDarBits()' },
+    { ic: '📡', nm: '+1 Scan', sub: 'Escaneia uma criatura aleatória de Perim', fn: 'masterDarScan()' },
+    { ic: '⚔️', nm: '+1 Equipamento', sub: 'Um equipamento de batalha aleatório', fn: 'masterDarEquip()' },
+    { ic: '🎵', nm: '+1 Mugic', sub: 'Um Mugic aleatório (toque para sentir o efeito)', fn: 'masterDarMugic()' }
+  ];
+  let html = '<div class="mst-head"><span style="font-size:22px">🏆</span><h3>MASTER DOS DROMOS</h3>' +
+             '<button class="mst-x" onclick="closeMasterPanel()" title="Fechar">✕</button></div>';
+  for (let i = 0; i < linhas.length; i++) {
+    const l = linhas[i];
+    html += '<div class="mst-row"><span class="mst-ic">' + l.ic + '</span>' +
+            '<span class="mst-nm">' + l.nm + '<span class="mst-sub">' + l.sub + '</span></span>' +
+            '<button class="mst-go" onclick="' + l.fn + '">' + l.nm + '</button></div>';
+  }
+  html += '<div class="mst-msg" id="master-msg">' + (masterMsg || 'Aperte um botão: o presente é seu na hora. Volte sempre que quiser.') + '</div>';
+  html += '<div class="mst-bits">📡 Scanners: ' + (GameState.player.scannedCards ? GameState.player.scannedCards.length : 0) + '/100 cartas</div>';
+  el.innerHTML = html;
+}
+function masterFechar(msg, tipo) {
+  masterMsg = msg;
+  try { updateTopBar(); } catch (e) {}
+  try { renderScannerCardsUI(); } catch (e) {}
+  try { updateInventoryUI(); } catch (e) {}
+  try { saveGame(true); } catch (e) {}
+  showNotif(msg.replace(/<[^>]*>/g, ''), tipo || 'success');
+  masterRender();
+}
+// ⭐ +1 nível — mesma conta do level up normal (checkLevelUp)
+function masterDarLv() {
+  const p = GameState.player;
+  p.lvl++;
+  p.xpToNext = Math.floor(100 * Math.pow(1.2, p.lvl - 1));
+  p.maxHp += 10; p.hp = getPlayerStats().maxHp; p.atk += 2; p.def += 1;
+  masterFechar('⭐ Nível ' + p.lvl + '! +10 de vida, +2 de ataque e +1 de defesa.');
+}
+// 💠 +1000 bits
+function masterDarBits() {
+  const p = GameState.player;
+  p.bits = (p.bits || 0) + 1000;
+  masterFechar('💠 +1000 bits! Carteira: ' + p.bits + ' bits.');
+}
+// 📡 +1 scan de criatura aleatória (conta para o % do mapa dela, como um scan de verdade)
+function masterDarScan() {
+  const p = GameState.player;
+  if (!p.scannedCards) p.scannedCards = [];
+  if (p.scannedCards.length >= 100) { masterFechar('📡 Scanners cheios (100 cartas)! Nada foi guardado.', 'warning'); return; }
+  const pool = ENEMY_TYPES.filter(function(t) { return !t.isBoss; });
+  const t = pool[Math.floor(Math.random() * pool.length)];
+  const card = generateRouletteCard(t); card.source = 'master';
+  p.scannedCards.push(card);
+  const reg = (t.regions && t.regions[0]) || GameState.currentRegion;
+  if (reg) {
+    if (!GameState.mapScan) GameState.mapScan = {};
+    if (!GameState.mapScan[reg]) GameState.mapScan[reg] = {};
+    GameState.mapScan[reg][t.name] = (GameState.mapScan[reg][t.name] || 0) + 1;
+  }
+  const regNome = (REGIONS.find(function(x) { return x.id === reg; }) || {}).name || reg;
+  masterFechar('📡 Scan aleatório: <b>' + t.name + '</b> Lv.' + card.level + ' [' + card.rarityName + '] — guardado nos Scanners (' + regNome + ').');
+}
+// ⚔️ +1 equipamento de batalha
+function masterDarEquip() {
+  const p = GameState.player;
+  if (!p.scannedCards) p.scannedCards = [];
+  if (p.scannedCards.length >= 100) { masterFechar('⚔️ Scanners cheios (100 cartas)! Nada foi guardado.', 'warning'); return; }
+  const eq = generateItem(Math.max(1, p.lvl));
+  p.scannedCards.push(makeGearCard(eq));
+  masterFechar('⚔️ Equipamento de batalha: <b>' + eq.name + '</b> [' + RARITIES[eq.rarity].name + '] — guardado nos Scanners.');
+}
+// 🎵 +1 mugic
+function masterDarMugic() {
+  const p = GameState.player;
+  if (!p.scannedCards) p.scannedCards = [];
+  if (p.scannedCards.length >= 100) { masterFechar('🎵 Scanners cheios (100 cartas)! Nada foi guardado.', 'warning'); return; }
+  const def = MUGIC_DEFS[Math.floor(Math.random() * MUGIC_DEFS.length)];
+  p.scannedCards.push(makeMugicCard(def.id));
+  masterFechar('🎵 Mugic: ' + def.icon + ' <b>' + def.name + '</b> — guardado nos Scanners. ' + def.desc);
 }
 // ---- abrir/fechar ----
 function openAuctionHouse() {
@@ -5240,7 +5606,7 @@ function showScanCard(enemy) {
   const overlay = document.createElement('div');
   overlay.className = 'scan-card-overlay';
   overlay.id = 'scan-card-overlay';
-  const elements = getCardElements(enemy.ivs);
+  const elements = (enemy.type && enemy.type.banco164) ? elementosDaCarta164(enemy.type, enemy.ivs) : getCardElements(enemy.ivs); // v164 — elementos do banco
   const code = generateCardCode();
   const grade = ivGrade(enemy.ivs);
   const hp = enemy.maxHp;
@@ -5271,6 +5637,7 @@ function showScanCard(enemy) {
         '<div class="card-element">' + elements[2] + '</div>' +
         '<div class="card-element">' + elements[3] + '</div>' +
       '</div>' +
+      fichaBanco164(enemy.type) +
       '<div class="card-code">' + code + '</div>' +
     '</div>';
   document.getElementById('ui-layer').appendChild(overlay);
@@ -5281,7 +5648,12 @@ function showScanCard(enemy) {
   if (!GameState.player.scannedCards) GameState.player.scannedCards = [];
   GameState.player.scannedCards.push(normalizeScanCard({
     name: enemy.type.name, level: enemy.level, hp: hp, atk: atk,
-    ivs: enemy.ivs, grade: grade.label, code: code, elements: elements, timestamp: Date.now()
+    ivs: enemy.ivs, grade: grade.label, code: code, elements: elements, timestamp: Date.now(),
+    rarity: pisoRaridade164(enemy.type, raridadeDoGrade164(grade.label)), // v164 — raridade da espécie vira o piso
+    banco: enemy.type.banco164 || null, tribe: enemy.type.tribo164 || null, rare: !!enemy.type.isRare,
+    tier: enemy.type.tier164 || null, ability: enemy.type.ability164 || null,
+    mugicCounters: enemy.type.mugic164 || 0, moveSpeed: enemy.type.moveSpeed164 || null,
+    desc: enemy.type.desc164 || null
   }));
 }
 
@@ -5473,6 +5845,7 @@ class BootScene extends Phaser.Scene {
     createTextureFromCanvas(this, 'mat_circuito', drawMatCircuito, 32, 32);
     createTextureFromCanvas(this, 'mat_cristal', drawMatCristal, 32, 32);
     for (let i = 0; i < NPCS_DATA.length; i++) { createTextureFromCanvas(this, 'npc_' + i, drawNPC, 32, 32, NPCS_DATA[i].color); }
+    createTextureFromCanvas(this, 'npc_master', drawNPC, 32, 32, '#ffd54f'); // v163 — NPC MASTER da Ilha dos Dromos (dourado)
     // Portico textures
     for (let v = 0; v < 3; v++) { createTextureFromCanvas(this, 'portico_floor_' + v, drawPorticoFloor, 32, 32, v); }
     createTextureFromCanvas(this, 'portico_wall', drawPorticoWall, 32, 32);
@@ -6560,10 +6933,9 @@ class PorticoScene extends Phaser.Scene {
     this.wasd = this.input.keyboard.addKeys({ up: 'W', down: 'S', left: 'A', right: 'D' });
     this.input.keyboard.on('keydown-I', function() { togglePanel('inv-panel', 'btn-inv'); });
     this.input.keyboard.on('keydown-Q', function() { togglePanel('scanner-panel', 'btn-scan'); });
-    this.input.keyboard.on('keydown-P', function() {
-      GameState.autoMove = !GameState.autoMove;
-      showNotif(GameState.autoMove ? '\u{1F916} Auto-Move ATIVADO' : '\u{1F6D1} Auto-Move DESATIVADO', GameState.autoMove ? 'success' : 'warning');
-    });
+    /* v161 — AUTO-MOVE AUTOMÁTICO (a tecla P saiu de vez). O Pátio Central NÃO é
+     * mapa de criaturas: o herói fica parado e você anda com WASD/joystick. */
+    GameState.autoMove = false;
     this.walkFrame = 0; this.walkTimer = 0; this.playerDir = 's';
     this.stuckTracker = { lastX: this.player.x, lastY: this.player.y, timer: 0, isJumping: false };
 
@@ -6703,6 +7075,9 @@ class PerimScene extends Phaser.Scene {
   create() {
     // v154 — semente do mapa: o terreno desta região é sempre o mesmo (e só dela)
     rngSetup154(GameState.currentRegion);
+    // v158 — garante que as texturas de grama/decor/barranco têm a paleta DESTA
+    // região antes do bake do chão (evita os "quadrados escuros")
+    if (__temaAssado158 !== GameState.currentRegion) applyRegionTheme147(GameState.currentRegion);
     GameState.location = 'perim';
     GameState.scanTarget = null; GameState.scanCharge = 0;
     // Reset de flags de instância (a instância da cena persiste entre start/stop)
@@ -7465,7 +7840,7 @@ class PerimScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.materials, this.collectMaterial, null, this);
     // v0.9.8 — Spawn inicial proporcional ao tamanho do mapa
     const scaledMonsterCount = getScaledSpawnCount(GameState.currentRegion, 3); // design: criaturas RARAS
-    const scaledMaterialCount = getScaledSpawnCount(GameState.currentRegion, 20); // v2.9 — 10x mais itens no chão
+    const scaledMaterialCount = getScaledSpawnCount(GameState.currentRegion, 2); // v162 — 10% de 20 (itens raros para terem mercado no Leilão)
     for (let i = 0; i < scaledMonsterCount; i++) this.spawnMonster();
     for (let i = 0; i < scaledMaterialCount; i++) this.spawnMaterial();
     // Controls (apenas para UI, NÃO para movimento)
@@ -7473,11 +7848,9 @@ class PerimScene extends Phaser.Scene {
     this.wasd = this.input.keyboard.addKeys({ up: 'W', down: 'S', left: 'A', right: 'D' });
     this.input.keyboard.on('keydown-I', function() { togglePanel('inv-panel', 'btn-inv'); });
     this.input.keyboard.on('keydown-Q', function() { togglePanel('scanner-panel', 'btn-scan'); });
-    this.input.keyboard.on('keydown-P', function() {
-      GameState.autoMove = !GameState.autoMove;
-      showNotif(GameState.autoMove ? '🤖 Auto-Move ATIVADO' : '🛑 Auto-Move DESATIVADO', GameState.autoMove ? 'success' : 'warning');
-      
-    });
+    /* v161 — MAPA DE CRIATURAS: o auto-move liga SOZINHO, sempre. O jogador não
+     * liga/desliga nada (a tecla P deixou de existir). */
+    GameState.autoMove = true;
     this.walkFrame = 0; this.walkTimer = 0; this.playerDir = 's';
     this.autoState = 'wander'; // 'wander' | 'chase' | 'scan'
     this.foneArrow = this.add.graphics(); this.foneArrow.setDepth(8.5); this.foneArrow.setVisible(false); // v149 — Fone de Escuta: seta-guia do agressivo mais próximo
@@ -7536,7 +7909,7 @@ class PerimScene extends Phaser.Scene {
   }
   spawnMonster() {
     if (this.regionEnemies.length === 0) return;
-    const et = this.regionEnemies[Math.floor(Math.random() * this.regionEnemies.length)];
+    const et = sorteiaEspecie164(this.regionEnemies); // v164 — sorteio ponderado do banco (rara é rara)
     let ex, ey, tx, ty, attempts = 0;
     do {
       ex = 200 + Math.random() * (this.worldW - 400); ey = 200 + Math.random() * (this.worldH - 400);
@@ -7557,9 +7930,9 @@ class PerimScene extends Phaser.Scene {
     enemy.peaceful = !(enemy.type && enemy.type.isAggressive); // v148 — passivo = espécie sem raio de ameaça (mapas têm 2 agressivos)
     const labelY = ey - (monSprite ? monSprite.h * monScale : 64) / 2 - 6; // v1.6 — rotulo acima da cabeca
     if (enemy.peaceful) {
-      enemy.label = this.add.text(ex, labelY, et.name + ' Lv.' + enemy.level + ' ☮️', { fontSize: '9px', color: '#aaffaa', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(9).setShadow(1, 1, '#000', 1);
+      enemy.label = this.add.text(ex, labelY, rotulo164(et, enemy.level), { fontSize: '9px', color: '#aaffaa', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(9).setShadow(1, 1, '#000', 1);
     } else {
-      enemy.label = this.add.text(ex, labelY, et.name + ' Lv.' + enemy.level, { fontSize: '9px', color: '#ffaaaa', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(9).setShadow(1, 1, '#000', 1);
+      enemy.label = this.add.text(ex, labelY, rotulo164(et, enemy.level), { fontSize: '9px', color: '#ffaaaa', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(9).setShadow(1, 1, '#000', 1);
     }
     GameState.enemies.push(enemy);
   }
@@ -7811,7 +8184,7 @@ class PerimScene extends Phaser.Scene {
       for (let i = 0; i < children.length && !agg148; i++) { // v148 — fuga/stalk tem prioridade
         const e = children[i];
         if (e.hp <= 0 || !e.active) continue;
-        if (e.type && e.type.isAggressive) continue; // v148 — agressivos: só via fuga/stalk
+        if (temFugaStalk159(e.type)) continue; // v159 — só quem tem fuga/stalk (mapa com raio de ameaça); em SAFE ZONE o agressivo entra na caça e é escaneado igual aos passivos
         if (e.scanned && !mapPenalty147()) continue; // v148 — re-scan só durante penalidade
         const d = Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y);
         if (d < closestDist) { closest = e; closestDist = d; }
@@ -7830,10 +8203,13 @@ class PerimScene extends Phaser.Scene {
     else if (this.autoState === 'chase') {
       const target = this.autoTarget;
       if (!target || target.hp <= 0 || target.scanned) {
-        this.autoState = 'wander'; this.autoTarget = null;
+        this.autoState = 'wander'; this.autoTarget = null; this.__caca160 = null;
       } else {
         const dist = Phaser.Math.Distance.Between(p.x, p.y, target.x, target.y);
-        if (dist > 48) {
+        if (alvoInalcancavel160(this, target, dist, p)) { // v160 — alvo impossível: solta e volta a caçar
+          this.__caca160 = null; this.autoState = 'wander'; this.autoTarget = null;
+          showFloatText(p.x, p.y - 40, 'Alvo inalcançável — procurando outro', '#ffd27f');
+        } else if (dist > 48) {
           const angle = Phaser.Math.Angle.Between(p.x, p.y, target.x, target.y);
           vx = Math.cos(angle) * CONFIG.PLAYER_SPEED * 0.85 * spdMult;
           vy = Math.sin(angle) * CONFIG.PLAYER_SPEED * 0.85 * spdMult;
@@ -7852,7 +8228,7 @@ class PerimScene extends Phaser.Scene {
         this.cancelScan(); this.autoState = 'wander'; this.autoTarget = null;
       } else {
         const dist = Phaser.Math.Distance.Between(p.x, p.y, target.x, target.y);
-        if (dist > (GameState.scanTarget && GameState.scanTarget.type && GameState.scanTarget.type.isAggressive ? aggroRadiusOf(GameState.scanTarget.type) + 80 : CONFIG.SCAN_RANGE)) { // v148 — beirada: alcance estendido p/ agressivos
+        if (dist > (temFugaStalk159(GameState.scanTarget && GameState.scanTarget.type) ? aggroRadiusOf(GameState.scanTarget.type) + 80 : CONFIG.SCAN_RANGE)) { // v159 — beirada estendida só p/ agressivo COM raio; em SAFE ZONE valem os 3 tiles (96px) canônicos
           // Monstro saiu do alcance
           const eraBoss150 = !!(GameState.scanTarget && GameState.scanTarget.type && GameState.scanTarget.type.isBoss); // v150
           this.cancelScan();
@@ -7861,7 +8237,16 @@ class PerimScene extends Phaser.Scene {
           this.autoState = 'wander'; this.autoTarget = null;
         } else {
           // Carregando scan
-          p.setVelocity(0, 0);
+          /* v159b — NÃO ENCOSTAR: a criatura a ≤32px cancela o scan a cada 1,2s
+           * (mesmo em SAFE ZONE, onde ela não causa dano). Se o herói ficar colado,
+           * a carga reinicia para sempre e a criatura nunca é escaneada. Saída igual
+           * à da caverna (v157): recua andando SEM largar o scan. Fora desse caso o
+           * herói continua PARADO enquanto escaneia (regra canônica). */
+          const dCol159 = Phaser.Math.Distance.Between(p.x, p.y, target.x, target.y);
+          if (dCol159 < 44) {
+            const fuga159 = Phaser.Math.Angle.Between(target.x, target.y, p.x, p.y);
+            p.setVelocity(Math.cos(fuga159) * CONFIG.PLAYER_SPEED * 0.9 * spdMult, Math.sin(fuga159) * CONFIG.PLAYER_SPEED * 0.9 * spdMult);
+          } else p.setVelocity(0, 0); // design: parado enquanto escaneia
           GameState.scanCharge += delta;
           this.updateScanBar(target);
           if (GameState.scanCharge >= CONFIG.SCAN_CHARGE_TIME) {
@@ -7916,7 +8301,7 @@ class PerimScene extends Phaser.Scene {
       // Lifetime: desaparece após 20 segundos (criaturas raras — pode sumir no
       // meio de um scan; faz parte da dificuldade do idle)
       if (now - e.spawnTime > CONFIG.MONSTER_LIFETIME) {
-        e.hp = 0; e.setVisible(false); e.body.enable = false; if (e.label) e.label.destroy();
+        e.hp = 0; e.setVisible(false); if (e.body) e.body.enable = false; if (e.label) e.label.destroy();
         const poof = this.add.circle(e.x, e.y, 15, 0xaaffaa, 0.6); poof.setDepth(20);
         this.tweens.add({ targets: poof, scale: 2, alpha: 0, duration: 300, onComplete: function() { poof.destroy(); } });
         continue;
@@ -7931,8 +8316,8 @@ class PerimScene extends Phaser.Scene {
         e.wanderTimer += delta;
         if (e.wanderTimer > 1500 + Math.random() * 2500) {
           e.wanderTimer = 0;
-          e.wanderVx = (Math.random() - 0.5) * CONFIG.MONSTER_WANDER_SPEED * 2;
-          e.wanderVy = (Math.random() - 0.5) * CONFIG.MONSTER_WANDER_SPEED * 2;
+          e.wanderVx = (Math.random() - 0.5) * velAndar164(e) * 2;
+          e.wanderVy = (Math.random() - 0.5) * velAndar164(e) * 2;
         }
         evx = e.wanderVx || 0; evy = e.wanderVy || 0;
       }
@@ -7954,7 +8339,7 @@ class PerimScene extends Phaser.Scene {
         } else {
           if (!e.wanderTimer) e.wanderTimer = 0;
           e.wanderTimer += delta;
-          if (e.wanderTimer > 2000 + Math.random() * 2000) { e.wanderTimer = 0; e.wanderVx = (Math.random() - 0.5) * CONFIG.MONSTER_WANDER_SPEED; e.wanderVy = (Math.random() - 0.5) * CONFIG.MONSTER_WANDER_SPEED; }
+          if (e.wanderTimer > 2000 + Math.random() * 2000) { e.wanderTimer = 0; e.wanderVx = (Math.random() - 0.5) * velAndar164(e); e.wanderVy = (Math.random() - 0.5) * velAndar164(e); }
           evx = e.wanderVx || 0; evy = e.wanderVy || 0;
         }
       }
@@ -8142,7 +8527,7 @@ class PerimScene extends Phaser.Scene {
     if (Math.random() < 0.05) { GameState.player.fragments++; showNotif('🧩 Fragmento Drome Key!', 'success'); updateTopBar(); }
     checkLevelUp(); updateMissionProgress('scan'); updateMissionProgress('collect_bits', { amount: bits }); updateTopBar(); saveGame(true);
     this.autoState = 'wander'; this.autoTarget = null;
-    target.hp = 0; target.setVisible(false); target.body.enable = false; if (target.label) target.label.destroy();
+    target.hp = 0; target.setVisible(false); if (target.body) target.body.enable = false; if (target.label) target.label.destroy(); // v159c — alvo pode ter sido destruído no meio do scan
     const poof = this.add.circle(target.x, target.y, 15, 0xffffff, 0.6); poof.setDepth(20);
     this.tweens.add({ targets: poof, scale: 2, alpha: 0, duration: 300, onComplete: function() { poof.destroy(); } });
   }
@@ -8270,7 +8655,7 @@ class CaveScene extends Phaser.Scene {
     this.enemies = this.physics.add.group(); GameState.enemies = [];
     if (this.deepGroup) this.physics.add.collider(this.enemies, this.deepGroup); // v130 — monstros não nadam no fundo
     this.materials = this.physics.add.group();
-    for (let i = 0; i < 2 + Math.floor(Math.random() * 2); i++) this.spawnCaveMaterial();
+    for (let i = 0; i < 1; i++) this.spawnCaveMaterial(); // v162 — 10% (antes 2-3 itens logo na entrada)
     if (Math.random() < 0.35 && this.regionEnemies.length) this.spawnCaveMonster();
     this.physics.add.overlap(this.player, this.materials, this.collectCaveMaterial, null, this);
     this.monsterSpawnTimer = 0; this.materialSpawnTimer = 0;
@@ -8279,10 +8664,8 @@ class CaveScene extends Phaser.Scene {
     this.wasd = this.input.keyboard.addKeys({ up: 'W', down: 'S', left: 'A', right: 'D' });
     this.input.keyboard.on('keydown-I', function() { togglePanel('inv-panel', 'btn-inv'); });
     this.input.keyboard.on('keydown-Q', function() { togglePanel('scanner-panel', 'btn-scan'); });
-    this.input.keyboard.on('keydown-P', function() {
-      GameState.autoMove = !GameState.autoMove;
-      showNotif(GameState.autoMove ? '🤖 Auto-Move ATIVADO' : '🛑 Auto-Move DESATIVADO', GameState.autoMove ? 'success' : 'warning');
-    });
+    /* v161 — a Caverna Secreta é mapa de criaturas: auto-move sempre ligado. */
+    GameState.autoMove = true;
     this.walkFrame = 0; this.walkTimer = 0; this.playerDir = 's';
     this.autoState = 'wander'; this.autoTarget = null;
     this.scanBar = null; this.scanBarText = null; this.scanBeam = null; this.scanRingFx = null; this.scanParticles = null;
@@ -8300,7 +8683,7 @@ class CaveScene extends Phaser.Scene {
   // Monstro raro: mesmo pool da região atual
   spawnCaveMonster() {
     if (!this.regionEnemies.length) return;
-    const et = this.regionEnemies[Math.floor(Math.random() * this.regionEnemies.length)];
+    const et = sorteiaEspecie164(this.regionEnemies); // v164 — sorteio ponderado do banco (rara é rara)
     let ex, ey, tx, ty, attempts = 0;
     do {
       ex = 48 + Math.random() * (this.W - 96); ey = 48 + Math.random() * (this.H - 96);
@@ -8321,8 +8704,8 @@ class CaveScene extends Phaser.Scene {
     enemy.peaceful = !(enemy.type && enemy.type.isAggressive); // v148 — idem no Exterior
     const labelY = ey - (monSprite ? monSprite.h * monScale : 64) / 2 - 6;
     enemy.label = enemy.peaceful
-      ? this.add.text(ex, labelY, et.name + ' Lv.' + enemy.level + ' ☮️', { fontSize: '9px', color: '#aaffaa', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(9).setShadow(1, 1, '#000', 1)
-      : this.add.text(ex, labelY, et.name + ' Lv.' + enemy.level, { fontSize: '9px', color: '#ffaaaa', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(9).setShadow(1, 1, '#000', 1);
+      ? this.add.text(ex, labelY, rotulo164(et, enemy.level), { fontSize: '9px', color: '#aaffaa', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(9).setShadow(1, 1, '#000', 1)
+      : this.add.text(ex, labelY, rotulo164(et, enemy.level), { fontSize: '9px', color: '#ffaaaa', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(9).setShadow(1, 1, '#000', 1);
     GameState.enemies.push(enemy);
   }
   // Material p/ vender — 45% de chance de ser o Geodo exclusivo da caverna
@@ -8489,7 +8872,7 @@ class CaveScene extends Phaser.Scene {
     for (let i = 0; i < children.length; i++) {
       const e = children[i];
       if (e.hp <= 0 || !e.active) { if (e.label) e.label.setVisible(false); continue; }
-      if (now - e.spawnTime > 45000) { e.hp = 0; e.setVisible(false); e.body.enable = false; if (e.label) e.label.destroy(); continue; }
+      if (now - e.spawnTime > 45000) { e.hp = 0; e.setVisible(false); if (e.body) e.body.enable = false; if (e.label) e.label.destroy(); continue; }
       if (e.label) e.label.setPosition(e.x, e.y - 30);
       const dist = Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y);
       let evx = 0, evy = 0;
@@ -8497,7 +8880,7 @@ class CaveScene extends Phaser.Scene {
       if (e.peaceful) {
         if (!e.wanderTimer) e.wanderTimer = 0;
         e.wanderTimer += delta;
-        if (e.wanderTimer > 1500 + Math.random() * 2500) { e.wanderTimer = 0; e.wanderVx = (Math.random() - 0.5) * CONFIG.MONSTER_WANDER_SPEED * 2; e.wanderVy = (Math.random() - 0.5) * CONFIG.MONSTER_WANDER_SPEED * 2; }
+        if (e.wanderTimer > 1500 + Math.random() * 2500) { e.wanderTimer = 0; e.wanderVx = (Math.random() - 0.5) * velAndar164(e) * 2; e.wanderVy = (Math.random() - 0.5) * velAndar164(e) * 2; }
         evx = e.wanderVx || 0; evy = e.wanderVy || 0;
       } else {
         const ar148 = aggroRadiusOf(e.type); // v148 — raio de ameaça (0 = passivo)
@@ -8512,7 +8895,7 @@ class CaveScene extends Phaser.Scene {
         } else {
           if (!e.wanderTimer) e.wanderTimer = 0;
           e.wanderTimer += delta;
-          if (e.wanderTimer > 2000 + Math.random() * 2000) { e.wanderTimer = 0; e.wanderVx = (Math.random() - 0.5) * CONFIG.MONSTER_WANDER_SPEED; e.wanderVy = (Math.random() - 0.5) * CONFIG.MONSTER_WANDER_SPEED; }
+          if (e.wanderTimer > 2000 + Math.random() * 2000) { e.wanderTimer = 0; e.wanderVx = (Math.random() - 0.5) * velAndar164(e); e.wanderVy = (Math.random() - 0.5) * velAndar164(e); }
           evx = e.wanderVx || 0; evy = e.wanderVy || 0;
         }
       }
@@ -8550,11 +8933,14 @@ class CaveScene extends Phaser.Scene {
     }
     else if (this.autoState === 'chase') {
       const target = this.autoTarget;
-      if (!target || target.hp <= 0 || target.scanned) { this.autoState = 'wander'; this.autoTarget = null; }
+      if (!target || target.hp <= 0 || target.scanned) { this.autoState = 'wander'; this.autoTarget = null; this.__caca160 = null; }
       else {
         const dist = Phaser.Math.Distance.Between(p.x, p.y, target.x, target.y);
         const parada155 = Math.max(48, aggroRadiusOf(target.type) + 24); // v155 — agressivo: para na beirada
-        if (dist > parada155) {
+        if (alvoInalcancavel160(this, target, dist, p)) { // v160 — alvo impossível (parede da caverna): solta e volta a caçar
+          this.__caca160 = null; this.autoState = 'wander'; this.autoTarget = null;
+          showFloatText(p.x, p.y - 40, 'Alvo inalcançável — procurando outro', '#ffd27f');
+        } else if (dist > parada155) {
           const angle = Phaser.Math.Angle.Between(p.x, p.y, target.x, target.y);
           vx = Math.cos(angle) * CONFIG.PLAYER_SPEED * 0.7 * spdMult; vy = Math.sin(angle) * CONFIG.PLAYER_SPEED * 0.7 * spdMult;
         } else if (this.time.now - GameState.lastScanTime >= CONFIG.SCAN_COOLDOWN) {
@@ -8781,6 +9167,7 @@ class ExteriorScene extends Phaser.Scene {
     }
   }
   create() {
+    GameState.autoMove = false; // v161 — a Ilha dos Dromos NÃO é mapa de criaturas: o herói fica parado e você anda com WASD/joystick
     GameState.location = 'exterior'; // v151 — garante que o HUD mostre "Ilha dos Dromos" mesmo se a cena for iniciada direto
     const self = this;
     this.interactables = [];
@@ -8861,6 +9248,25 @@ class ExteriorScene extends Phaser.Scene {
       backgroundColor: 'rgba(20,24,16,0.85)', padding: { x: 6, y: 3 }
     }).setOrigin(0.5).setDepth(20).setVisible(false);
     this.interactables.push({ x: cx, y: cy - 60, hint: centralHint, action: function() { self.enterCentral(); } });
+    /* v163 — NPC MASTER: fica na praça, ao lado da entrada do Pátio Central.
+     * Fala pelo [E] (PC), pelo 👆 (celular) ou clicando nele. */
+    {
+      const mx = cx + 300, my = cy + 40;
+      self.add.ellipse(mx, my + 26, 76, 26, 0xffd54f, 0.16).setDepth(3); // pedestal
+      const glowM = self.add.image(mx, my - 8, 'glow_soft').setDepth(4).setScale(1.6).setTint(0xffe28a).setAlpha(0.5).setBlendMode(Phaser.BlendModes.ADD);
+      self.tweens.add({ targets: glowM, alpha: 0.26, duration: 1400, yoyo: true, repeat: -1 });
+      const spriteM = self.add.sprite(mx, my, 'npc_master');
+      spriteM.setDepth(7); spriteM.setScale(1.75);
+      spriteM.setInteractive({ useHandCursor: true });
+      spriteM.on('pointerdown', function() { openMasterPanel(); });
+      self.add.text(mx, my - 50, 'MASTER', { fontSize: '11px', color: '#ffd54f', fontFamily: 'monospace', fontStyle: 'bold' }).setOrigin(0.5).setDepth(9).setShadow(1, 1, '#000', 2);
+      const hintM = self.add.text(mx, my - 66, '[E] Falar com o MASTER', {
+        fontSize: '10px', color: '#ffe9b0', fontFamily: 'monospace', fontStyle: 'bold',
+        backgroundColor: 'rgba(20,24,16,0.85)', padding: { x: 5, y: 2 }
+      }).setOrigin(0.5).setDepth(20).setVisible(false);
+      self.interactables.push({ x: mx, y: my, hint: hintM, action: function() { openMasterPanel(); } });
+      self.masterNpc163 = { x: mx, y: my };
+    }
     // fontes decorativas
     [[cx - 620, cy + 170], [cx + 620, cy + 170]].forEach(function(f) {
       const ftn = self.add.image(f[0], f[1], 'ext_fountain').setDepth(4);
@@ -9094,11 +9500,8 @@ class DromeScene extends Phaser.Scene {
     this.wasd = this.input.keyboard.addKeys({ up: 'W', down: 'S', left: 'A', right: 'D' });
     this.input.keyboard.on('keydown-I', function() { togglePanel('inv-panel', 'btn-inv'); });
     this.input.keyboard.on('keydown-Q', function() { togglePanel('scanner-panel', 'btn-scan'); });
-    this.input.keyboard.on('keydown-P', function() {
-      GameState.autoMove = !GameState.autoMove;
-      showNotif(GameState.autoMove ? '🤖 Auto-Move ATIVADO' : '🛑 Auto-Move DESATIVADO', GameState.autoMove ? 'success' : 'warning');
-      
-    });
+    /* v161 — o Dromo (arena) não é mapa de criaturas: o herói não anda sozinho. */
+    GameState.autoMove = false;
     const self = this;
     this.lastAttackClick = 0;
     this.input.on('pointerdown', function(pointer) {
@@ -9160,7 +9563,7 @@ class DromeScene extends Phaser.Scene {
         enemy.body.setSize(Math.round(monSprite.w * 0.6), Math.round(monSprite.h * 0.36));
         enemy.body.setOffset(Math.round(monSprite.w * 0.2), Math.round(monSprite.h * 0.56));
       }
-      enemy.label = this.add.text(ex, ey - (monSprite ? monSprite.h : 64) * monScale / 2 - 6, et.name + ' Lv.' + enemy.level, { fontSize: '9px', color: '#ffaaaa', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(9).setShadow(1, 1, '#000', 1);
+      enemy.label = this.add.text(ex, ey - (monSprite ? monSprite.h : 64) * monScale / 2 - 6, rotulo164(et, enemy.level), { fontSize: '9px', color: '#ffaaaa', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(9).setShadow(1, 1, '#000', 1);
       enemy.setInteractive({ useHandCursor: true });
     }
     if (this.wave === 5) this.spawnBoss();
@@ -9363,7 +9766,7 @@ class DromeScene extends Phaser.Scene {
     if (enemy.hp <= 0) { this.killEnemy(enemy); } else { GameState.player.battery = Math.max(0, GameState.player.battery - CONFIG.BATTERY_DRAIN_COMBAT); updateTopBar(); }
   }
   killEnemy(enemy) {
-    enemy.hp = 0; enemy.setVisible(false); enemy.body.enable = false; if (enemy.label) enemy.label.destroy();
+    enemy.hp = 0; enemy.setVisible(false); if (enemy.body) enemy.body.enable = false; if (enemy.label) enemy.label.destroy();
     const et = enemy.type; const bits = Math.floor(et.bits[0] + Math.random() * (et.bits[1] - et.bits[0])); const xp = et.xp + Math.floor(Math.random() * 10);
     GameState.player.bits += bits; GameState.player.xp += xp;
     // Kill credit: missões de kill (por tipo e genérica), killLog e totalKills
@@ -10688,10 +11091,7 @@ function applyUiMode(mode) {
   const mobBtn = document.getElementById('opt-mode-mobile');
   if (pcBtn) pcBtn.classList.toggle('active', uiMode === 'pc');
   if (mobBtn) mobBtn.classList.toggle('active', uiMode === 'mobile');
-  const note = document.getElementById('opt-mode-note');
-  if (note) note.textContent = uiMode === 'mobile'
-    ? '📱 Joystick 360° no canto esquerdo. O botão 👆 interage com NPCs, salas e o Balconista Robô (craft/upgrade). Depósito guarda 10 slots. Nos mapas de monstros os controles somem (🤖 auto-move). Scanner e mochila no topo.'
-    : '🖥️ Movimento: WASD ou setas. Interação: tecla E. Scanner: Q · Mochila: I · Auto-move: P.';
+  // v161 — sem textos explicativos no painel: só os botões com ícone + nome
 }
 // v2.4 — d-pad 8 direções: registro das direções pressionadas -> eixos
 
@@ -10712,28 +11112,20 @@ function updateMobileActionButton() {
   }
   mobileNearestAction = nearest;
   const key = sc ? getSceneKey(sc) : '';
-  const canAuto = (key === 'PerimScene' || key === 'CaveScene');
+  // v161 — o auto-move é automático: o botão só serve para INTERAGIR (👆)
   btn.classList.remove('ready', 'on');
   if (nearest) {
     mobileActionState = 'interact';
     btn.textContent = '👆';
     btn.classList.add('ready');
-  } else if (canAuto) {
-    mobileActionState = 'auto';
-    btn.textContent = GameState.autoMove ? '⏸' : '🤖';
-    if (GameState.autoMove) btn.classList.add('on');
   } else {
     mobileActionState = 'idle';
     btn.textContent = '👆';
   }
 }
 function mobileActionTap() {
+  // v161 — só interage: o auto-move liga sozinho nos mapas de criaturas
   if (mobileActionState === 'interact' && mobileNearestAction) { mobileNearestAction.action(); return; }
-  if (mobileActionState === 'auto') {
-    GameState.autoMove = !GameState.autoMove;
-    showNotif(GameState.autoMove ? '🤖 Auto-Move ATIVADO' : '🛑 Auto-Move DESATIVADO', GameState.autoMove ? 'success' : 'warning');
-    updateMobileActionButton();
-  }
 }
 setInterval(function() { if (uiMode === 'mobile') { updateMobileControlsVisibility(); updateMobileActionButton(); } }, 350);
 // v2.4 — botões do topo respondem no PRIMEIRO toque (pointerdown no touch)
@@ -10860,19 +11252,8 @@ function pipRotulos152() {
   if (bb) bb.textContent = BG152.ligado ? '🌙 Fora da aba: SEMPRE RODANDO' : '🌙 Fora da aba: ligar modo segundo plano';
 }
 function pipAtualizarNota152(extra) {
-  const modo = pipModoSuportado152();
-  const iframe = pipEmIframe152();
-  let s = '';
-  if (extra) s += '<b>' + extra + '</b><br>';
-  if (modo === 'document') s += '✅ Pronto: seu navegador abre a janelinha como uma <b>janela própria</b> — arraste, redimensione e deixe por cima de tudo.';
-  else if (modo === 'video') s += (iframe
-    ? '⚠️ O jogo está aberto <b>dentro do site (iframe)</b>, e ali o navegador usa a janelinha de vídeo — o tamanho e o lugar são decididos por ele. Para a janela própria (arrastável), use 🪟 <b>Abrir o jogo em janela própria</b>.'
-    : '⚠️ Seu navegador usa a janelinha padrão de vídeo (o tamanho e o lugar são decididos por ele).');
-  else if (modo === 'safari') s += '⚠️ Safari: a janelinha é a de vídeo padrão (tamanho/posição definidos pelo navegador).';
-  else s += '❌ Este navegador não tem Picture-in-Picture para o canvas. Use <b>Chrome ou Edge 116+</b> no PC. O modo <b>Fora da aba</b> funciona de qualquer forma.';
-  if (iframe) s += '<br>🖼️ Detectei que o jogo está em um <b>iframe</b>: para a janelinha completa, abra o jogo em janela própria (botão acima quando aparecer) — o modo 🌙 funciona aqui mesmo.';
-  s += '<br>💡 A janelinha mostra a tela do jogo ao vivo — deixe o <b>Auto-Move (tecla P)</b> ligado para o Caçador continuar andando e escaneando sozinho.';
-  pipNota152(s);
+  /* v161 — o painel não tem mais parágrafos explicativos (só ícone + nome).
+   * Erros/avisos da janelinha continuam aparecendo como aviso no canto da tela. */
 }
 /* v153 — alternativas quando o navegador recusa a janelinha (ex.: iframe) */
 function pipOferecerAlternativas152(erro) {
@@ -11013,7 +11394,7 @@ async function pipToggle152() {
   PIP152.bgForcado = !BG152.ligado; // lembra se fui EU que liguei o segundo plano (para devolver depois)
   bgSet152(true, true);             // a janelinha só faz sentido com o jogo rodando: liga o segundo plano junto
   showNotif('📺 Janelinha ligada — ela fica por cima das outras janelas! Modo fora da aba LIGADO.', 'success');
-  if (!GameState.autoMove) showNotif('🤖 Dica: aperte P (Auto-Move) para o Caçador farmar sozinho enquanto você olha a janelinha.', 'info');
+  // v161 — a dica da tecla P morreu junto com a tecla: o auto-move é automático
   pipAtualizarNota152('Janelinha aberta. Pode trocar de janela/app: a tela continua rodando aqui dentro.');
 }
 /* cabeçalho da janelinha: mapa + status do Caçador (1x por segundo) */
@@ -11025,7 +11406,7 @@ function pipRelogio152() {
       const doc = PIP152.janela.document;
       const nome = doc.getElementById('pip152-nome'), info = doc.getElementById('pip152-info');
       if (nome) nome.textContent = placeName151();
-      if (info) info.textContent = 'Lv.' + GameState.player.lvl + ' · 🔋 ' + Math.floor(GameState.player.battery) + '% · ' + (GameState.autoMove ? '🤖 farmando' : '💤 auto-move off') + (BG152.ligado ? ' · 🌙 2º plano' : '');
+      if (info) info.textContent = 'Lv.' + GameState.player.lvl + ' · 🔋 ' + Math.floor(GameState.player.battery) + '%' + (GameState.autoMove ? ' · 🤖 farmando' : '') + (BG152.ligado ? ' · 🌙 2º plano' : ''); // v161
     } catch (e) {}
   }, 1000);
 }

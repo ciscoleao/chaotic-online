@@ -1,0 +1,456 @@
+[
+  {
+    "id": "uw_m2_01",
+    "name": "Cascudo Fuliginoso",
+    "tribe": "UnderWorld",
+    "tribeId": "uw",
+    "mapLevel": 2,
+    "level": 12,
+    "elements": [
+      "Fogo"
+    ],
+    "elementKind": "principal",
+    "tint": "#ff6a2a",
+    "isAggressive": true,
+    "isRare": false,
+    "archetype": "bruto",
+    "powerTier": "muito-forte",
+    "mugicCounters": 0,
+    "stats": {
+      "courage": 95,
+      "power": 80,
+      "wisdom": 10,
+      "speed": 55
+    },
+    "totalStats": 240,
+    "baseSpeed": 155,
+    "baseDamage": 31,
+    "rarityMult": 1,
+    "ability": {
+      "name": "Erupção de Lava",
+      "type": "dano",
+      "manaCost": 4,
+      "desc": "Erupção de Lava — Causa dano físico pesado a um alvo."
+    },
+    "rewards": {
+      "xp": 171,
+      "bits": [
+        60,
+        154
+      ]
+    },
+    "art": "bruto",
+    "desc": "Patrulha os rios de lava e ataca qualquer intruso à vista.",
+    "spawnProfile": "agressiva",
+    "spawnWeight": 26
+  },
+  {
+    "id": "uw_m2_02",
+    "name": "Sapo Neblinoso",
+    "tribe": "UnderWorld",
+    "tribeId": "uw",
+    "mapLevel": 2,
+    "level": 12,
+    "elements": [
+      "Ar",
+      "Fogo"
+    ],
+    "elementKind": "excecao",
+    "tint": "#9fd8e8",
+    "isAggressive": true,
+    "isRare": false,
+    "archetype": "bruto",
+    "powerTier": "muito-forte",
+    "mugicCounters": 0,
+    "stats": {
+      "courage": 98,
+      "power": 81,
+      "wisdom": 10,
+      "speed": 55
+    },
+    "totalStats": 244,
+    "baseSpeed": 155,
+    "baseDamage": 31,
+    "rarityMult": 1,
+    "ability": {
+      "name": "Chicote de Brasas",
+      "type": "dano",
+      "manaCost": 3,
+      "desc": "Chicote de Brasas — Causa dano físico pesado a um alvo."
+    },
+    "rewards": {
+      "xp": 171,
+      "bits": [
+        60,
+        154
+      ]
+    },
+    "art": "golem_obsidian",
+    "desc": "Patrulha os túneis de cinza e ataca qualquer intruso à vista.",
+    "spawnProfile": "agressiva",
+    "spawnWeight": 26
+  },
+  {
+    "id": "uw_m2_03",
+    "name": "Basilisco Ondeante",
+    "tribe": "UnderWorld",
+    "tribeId": "uw",
+    "mapLevel": 2,
+    "level": 12,
+    "elements": [
+      "Água"
+    ],
+    "elementKind": "excecao",
+    "tint": "#3f8fd4",
+    "isAggressive": true,
+    "isRare": true,
+    "archetype": "bruto",
+    "powerTier": "muito-forte",
+    "mugicCounters": 0,
+    "stats": {
+      "courage": 98,
+      "power": 79,
+      "wisdom": 10,
+      "speed": 54
+    },
+    "totalStats": 241,
+    "baseSpeed": 185,
+    "baseDamage": 36,
+    "rarityMult": 1.2,
+    "ability": {
+      "name": "Erupção de Lava",
+      "type": "dano",
+      "manaCost": 4,
+      "desc": "Erupção de Lava — Causa dano físico pesado a um alvo."
+    },
+    "rewards": {
+      "xp": 375,
+      "bits": [
+        131,
+        338
+      ]
+    },
+    "art": "golem_obsidian",
+    "desc": "Lendária de os túneis de cinza: poucos voltaram para contar o encontro.",
+    "spawnProfile": "rara-agressiva",
+    "spawnWeight": 12
+  },
+  {
+    "id": "uw_m2_04",
+    "name": "Aranha Ardente",
+    "tribe": "UnderWorld",
+    "tribeId": "uw",
+    "mapLevel": 2,
+    "level": 11,
+    "elements": [
+      "Fogo"
+    ],
+    "elementKind": "principal",
+    "tint": "#ff6a2a",
+    "isAggressive": false,
+    "isRare": false,
+    "archetype": "equilibrado",
+    "powerTier": "mediana",
+    "mugicCounters": 1,
+    "stats": {
+      "courage": 76,
+      "power": 46,
+      "wisdom": 48,
+      "speed": 38
+    },
+    "totalStats": 208,
+    "baseSpeed": 147,
+    "baseDamage": 18,
+    "rarityMult": 1,
+    "ability": {
+      "name": "Correntes de Magma",
+      "type": "controle",
+      "manaCost": 3,
+      "desc": "Correntes de Magma — Impede o alvo de agir por 1 turno."
+    },
+    "rewards": {
+      "xp": 148,
+      "bits": [
+        52,
+        133
+      ]
+    },
+    "art": "devorador",
+    "desc": "Vagueia por os rios de lava; prefere observar a lutar.",
+    "spawnProfile": "passiva",
+    "spawnWeight": 34
+  },
+  {
+    "id": "uw_m2_05",
+    "name": "Lacraia Mineral",
+    "tribe": "UnderWorld",
+    "tribeId": "uw",
+    "mapLevel": 2,
+    "level": 10,
+    "elements": [
+      "Terra"
+    ],
+    "elementKind": "principal",
+    "tint": "#a9803f",
+    "isAggressive": false,
+    "isRare": false,
+    "archetype": "mistico",
+    "powerTier": "fraca",
+    "mugicCounters": 2,
+    "stats": {
+      "courage": 47,
+      "power": 21,
+      "wisdom": 71,
+      "speed": 27
+    },
+    "totalStats": 166,
+    "baseSpeed": 142,
+    "baseDamage": 8,
+    "rarityMult": 1,
+    "ability": {
+      "name": "Pacto de Brasa",
+      "type": "cura",
+      "manaCost": 2,
+      "desc": "Pacto de Brasa — Restaura vida do seu lado."
+    },
+    "rewards": {
+      "xp": 127,
+      "bits": [
+        44,
+        114
+      ]
+    },
+    "art": "paradox",
+    "desc": "Vagueia por as forjas adormecidas; prefere observar a lutar.",
+    "spawnProfile": "passiva",
+    "spawnWeight": 34
+  },
+  {
+    "id": "uw_m2_06",
+    "name": "Imp Pedregoso",
+    "tribe": "UnderWorld",
+    "tribeId": "uw",
+    "mapLevel": 2,
+    "level": 11,
+    "elements": [
+      "Terra",
+      "Fogo"
+    ],
+    "elementKind": "principal",
+    "tint": "#a9803f",
+    "isAggressive": true,
+    "isRare": false,
+    "archetype": "equilibrado",
+    "powerTier": "mediana",
+    "mugicCounters": 1,
+    "stats": {
+      "courage": 61,
+      "power": 56,
+      "wisdom": 38,
+      "speed": 47
+    },
+    "totalStats": 202,
+    "baseSpeed": 151,
+    "baseDamage": 22,
+    "rarityMult": 1,
+    "ability": {
+      "name": "Correntes de Magma",
+      "type": "controle",
+      "manaCost": 3,
+      "desc": "Correntes de Magma — Impede o alvo de agir por 1 turno."
+    },
+    "rewards": {
+      "xp": 148,
+      "bits": [
+        52,
+        133
+      ]
+    },
+    "art": "devorador",
+    "desc": "Patrulha os rios de lava e ataca qualquer intruso à vista.",
+    "spawnProfile": "agressiva",
+    "spawnWeight": 26
+  },
+  {
+    "id": "uw_m2_07",
+    "name": "Diabrete Rochoso",
+    "tribe": "UnderWorld",
+    "tribeId": "uw",
+    "mapLevel": 2,
+    "level": 11,
+    "elements": [
+      "Terra",
+      "Fogo"
+    ],
+    "elementKind": "principal",
+    "tint": "#a9803f",
+    "isAggressive": false,
+    "isRare": false,
+    "archetype": "equilibrado",
+    "powerTier": "mediana",
+    "mugicCounters": 1,
+    "stats": {
+      "courage": 74,
+      "power": 46,
+      "wisdom": 47,
+      "speed": 37
+    },
+    "totalStats": 204,
+    "baseSpeed": 147,
+    "baseDamage": 18,
+    "rarityMult": 1,
+    "ability": {
+      "name": "Muralha de Obsidiana",
+      "type": "buff",
+      "manaCost": 2,
+      "desc": "Muralha de Obsidiana — Aumenta o dano do seu lado por 2 turnos."
+    },
+    "rewards": {
+      "xp": 148,
+      "bits": [
+        52,
+        133
+      ]
+    },
+    "art": "chamao",
+    "desc": "Vagueia por os rios de lava; prefere observar a lutar.",
+    "spawnProfile": "passiva",
+    "spawnWeight": 34
+  },
+  {
+    "id": "uw_m2_08",
+    "name": "Touro Férreo",
+    "tribe": "UnderWorld",
+    "tribeId": "uw",
+    "mapLevel": 2,
+    "level": 9,
+    "elements": [
+      "Terra",
+      "Fogo"
+    ],
+    "elementKind": "principal",
+    "tint": "#a9803f",
+    "isAggressive": false,
+    "isRare": false,
+    "archetype": "mistico",
+    "powerTier": "fraca",
+    "mugicCounters": 2,
+    "stats": {
+      "courage": 47,
+      "power": 22,
+      "wisdom": 71,
+      "speed": 26
+    },
+    "totalStats": 166,
+    "baseSpeed": 142,
+    "baseDamage": 8,
+    "rarityMult": 1,
+    "ability": {
+      "name": "Correntes de Magma",
+      "type": "controle",
+      "manaCost": 3,
+      "desc": "Correntes de Magma — Impede o alvo de agir por 1 turno."
+    },
+    "rewards": {
+      "xp": 108,
+      "bits": [
+        38,
+        97
+      ]
+    },
+    "art": "cronomante",
+    "desc": "Vagueia por as forjas adormecidas; prefere observar a lutar.",
+    "spawnProfile": "passiva",
+    "spawnWeight": 34
+  },
+  {
+    "id": "uw_m2_09",
+    "name": "Brutamontes Cristalino",
+    "tribe": "UnderWorld",
+    "tribeId": "uw",
+    "mapLevel": 2,
+    "level": 12,
+    "elements": [
+      "Terra"
+    ],
+    "elementKind": "principal",
+    "tint": "#a9803f",
+    "isAggressive": false,
+    "isRare": false,
+    "archetype": "equilibrado",
+    "powerTier": "mediana",
+    "mugicCounters": 1,
+    "stats": {
+      "courage": 77,
+      "power": 44,
+      "wisdom": 48,
+      "speed": 37
+    },
+    "totalStats": 206,
+    "baseSpeed": 147,
+    "baseDamage": 17,
+    "rarityMult": 1,
+    "ability": {
+      "name": "Muralha de Obsidiana",
+      "type": "buff",
+      "manaCost": 2,
+      "desc": "Muralha de Obsidiana — Aumenta o dano do seu lado por 2 turnos."
+    },
+    "rewards": {
+      "xp": 171,
+      "bits": [
+        60,
+        154
+      ]
+    },
+    "art": "flagelo",
+    "desc": "Vagueia por as forjas adormecidas; prefere observar a lutar.",
+    "spawnProfile": "passiva",
+    "spawnWeight": 34
+  },
+  {
+    "id": "uw_m2_10",
+    "name": "Bode Carbonizado",
+    "tribe": "UnderWorld",
+    "tribeId": "uw",
+    "mapLevel": 2,
+    "level": 9,
+    "elements": [
+      "Fogo"
+    ],
+    "elementKind": "principal",
+    "tint": "#ff6a2a",
+    "isAggressive": false,
+    "isRare": false,
+    "archetype": "mistico",
+    "powerTier": "fraca",
+    "mugicCounters": 2,
+    "stats": {
+      "courage": 49,
+      "power": 22,
+      "wisdom": 69,
+      "speed": 26
+    },
+    "totalStats": 166,
+    "baseSpeed": 142,
+    "baseDamage": 8,
+    "rarityMult": 1,
+    "ability": {
+      "name": "Correntes de Magma",
+      "type": "controle",
+      "manaCost": 3,
+      "desc": "Correntes de Magma — Impede o alvo de agir por 1 turno."
+    },
+    "rewards": {
+      "xp": 108,
+      "bits": [
+        38,
+        97
+      ]
+    },
+    "art": "paradox",
+    "desc": "Vagueia por os túneis de cinza; prefere observar a lutar.",
+    "spawnProfile": "passiva",
+    "spawnWeight": 34
+  }
+]

@@ -60,8 +60,9 @@ Antes de abrir para o público, troque as chaves **Turnstile** de teste pelas su
 ```
 chaotic-online/
 ├── package.json                  ← como o servidor inicia (npm start)
-├── chaotic_idleworld_v123.html   ← O JOGO (v2.23 — rio de ponta a ponta, 3 pontes só no rio,
-│                                    scan na Caverna Secreta, mapas separados, janelinha PiP)
+├── chaotic_idleworld_v123.html   ← O JOGO (v2.27 — banco de 120 criaturas integrado: cada mapa nasce
+│                                    com as criaturas da sua tribo/nível, ficha completa nas cartas;
+│                                    + v2.26/v2.25/v2.24/v2.23 e tudo o que já existia)
 ├── server/
 │   ├── server.js                 ← servidor completo (Node puro)
 │   ├── fem.json · skins.json     ← assets das skins
@@ -69,10 +70,15 @@ chaotic-online/
 ├── site/
 │   └── index.html                ← site: ▶ JOGAR abre o jogo em página própria (sem iframe)
 │                                    + botão 🪟 JANELA PRÓPRIA por personagem
+├── creatures/                    ← SISTEMA DE CRIATURAS: 120 cartas + SpawnManager + cartas.html
+│                                    (v2.27 — as 120 criaturas já estão INTEGRADAS no jogo)
+│   ├── README.md                 ← como o banco foi montado (modelo, fórmulas, lore, mapa de spawn)
+│   ├── cartas.html               ← visualizador das 120 cartas (arquivo único, abre no navegador)
+│   ├── src/ · data/ · tools/ · test/
 └── docs/
     ├── PASSO-A-PASSO.md          ← guia de hospedagem para leigos
     ├── SUPABASE.md               ← save na nuvem que sobrevive a redeploy
-    ├── MAPAS-E-SCAN.md           ← mapas + scan + rio/pontes/Caverna Secreta (v2.23)
+    ├── MAPAS-E-SCAN.md           ← mapas + scan + rio/pontes/Caverna + quadrados escuros + Safe Zone + Opções/auto-move/itens/MASTER + o banco de 120 (v2.27)
     ├── CORRECAO-NOMES-DE-MAPA.md ← o que mudou no HUD dos mapas (v2.18)
     ├── JANELINHA-PIP.md          ← janelinha flutuante + fora da aba + correção do iframe (v2.20)
     ├── patches/                  ← scripts que aplicam cada mudança (histórico reproduzível)
@@ -81,7 +87,98 @@ chaotic-online/
 
 ---
 
+## 🧬 Sistema de Criaturas (novo)
+
+Banco de **120 criaturas** (4 tribos × 30, distribuídas em 5 + 10 + 15 pelos 3 primeiros mapas de cada tribo),
+com modelo de carta (Coragem/Poder/Sabedoria/Velocidade), **contadores de mugic** inversamente proporcionais
+à força, afinidade elemental de lore e o **SpawnManager** que define o que nasce em cada mapa
+(mapa 1: 5 passivas · mapa 2: 6 passivas + 4 agressivas com 1 rara · mapa 3: 7 passivas + 8 agressivas com 2 raras —
+rara = **+20%** de velocidade e dano). Entrega validada por **146 verificações automáticas**.
+
+👉 Detalhes em [`creatures/README.md`](creatures/README.md) · cartas em [`creatures/cartas.html`](creatures/cartas.html)
+👉 **Desde a v2.27 o banco está dentro do jogo**: cada mapa nasce com as criaturas da sua tribo/nível.
+(abra o arquivo no navegador).
+
+---
+
 ## 🆕 Novidades
+
+**v2.27 — O banco de 120 criaturas está DENTRO do jogo**
+As **120 criaturas** do banco (4 tribos × 30) viraram o conteúdo de Perim: cada mapa nasce só com as
+criaturas da **sua tribo** e do **seu nível** — **m1 com 5 · m2 com 10 · m3 com 15** (o m3 tem 2 raras e
+8 agressivas). Cada criatura traz a ficha do banco: HP, ATK, **velocidade própria**, XP, Bits, arte,
+**elementos**, **habilidade**, **contadores de Mugic**, raridade e agressividade. Entrou também a região
+que faltava para o banco caber inteiro: **Miragens do Palmeiral** (Mapa 3 dos Mipedians, Lv.20 + 100% das
+Ruinas do Tempo) com as 15 criaturas mipedianas do mapa 3. O spawn é **ponderado** (passiva 34 ·
+agressiva 26 · **rara 12** — medido: 6,1% de raras), a rara aparece com **★** no rótulo e a passiva com
+☮️, e a **velocidade vem da espécie** (com teto de 175 px/s para o herói ainda alcançar; a rara +20%
+continua). Nas **cartas** (scan, roleta e Scanner) entram **Tribo · Mapa**, os **elementos do banco**,
+a **habilidade** e o **Mugic**, e a raridade da espécie vira o **piso** da carta — Rara nunca sai como
+Comum. O banner do mapa e o Portal mostram **🐾 N espécies**, e o `%` de scan do mapa é sobre as espécies
+do banco. A **Lagoa Negra M’arrillian** segue com o pool clássico (o banco não tem M’arrillians).
+Testes: **24 ✅** no banco integrado + **22 ✅** e **7 ✅** nas regressões da v2.26, e a caça medida no
+mesmo instrumento (150s no Bosque) segue na mesma faixa da versão anterior.
+→ [`docs/MAPAS-E-SCAN.md`](docs/MAPAS-E-SCAN.md) seção 10 ·
+[`docs/img/banco-120-mapa-v227.png`](docs/img/banco-120-mapa-v227.png) ·
+[`docs/img/banco-120-carta-v227.png`](docs/img/banco-120-carta-v227.png) ·
+[`docs/img/banco-120-portal-v227.png`](docs/img/banco-120-portal-v227.png) ·
+[`docs/img/banco-120-scanner-v227.png`](docs/img/banco-120-scanner-v227.png)
+
+**v2.26 — Opções limpas, Auto-Move automático, itens raros e o MASTER da Ilha dos Dromos**
+Quatro pedidos seus, quatro entregas. **(1) Auto-Move automático:** a tecla **P saiu do jogo** (e o
+botão 🤖/⏸ do celular virou só 👆 de interação) — *"a pessoa não pode controlar quando pode estar em
+auto move, essa função é exclusiva para mapas de criaturas"*. Agora quem decide é o mapa: **ligado**
+nos 5 mapas de criaturas (Bosque Verdejante, Cavernas de Brasas, Túneis do Monte Pillar, Oásis
+Enfumaçado, Lagoa Negra) e na **Caverna Secreta**; **desligado** no Pátio Central, na **Ilha dos
+Dromos** e no **Dromo (arena)** — lá o controle é 100% seu. **(2) Painel de Opções limpo:** saíram os
+textos explicativos, cada opção ficou **só com o ícone e o nome** (10 botões, de PC/Celular a Deslogar);
+erro da janelinha continua avisando, mas como aviso rápido na tela. **(3) Itens a 10%:** item agora é
+item — nasce **2 por mapa** com **teto 6** (antes 20 e 60) e **1 na Caverna Secreta** (antes 3). É isso
+que dá **mercado no Leilão**. **(4) NPC MASTER na Ilha dos Dromos:** um NPC dourado com **[E] Falar com
+o MASTER** (funciona no toque e no clique) e **um botão para cada coisa** — **+1 LV**, **+1000 Bits**,
+**+1 Scan aleatório** (creditado na região certa da espécie), **+1 Equipamento de batalha** e
+**+1 Mugic** (respeitando o limite de 100 cartas). Testes: **22 ✅** no painel/auto-move/MASTER +
+**7 ✅** nos itens e nas regressões do v2.25 (aranha agressiva em SAFE ZONE escaneada, Caverna em
+1517ms). → [`docs/MAPAS-E-SCAN.md`](docs/MAPAS-E-SCAN.md) seção 9 ·
+[`docs/img/opcoes-limpo-v226.png`](docs/img/opcoes-limpo-v226.png) ·
+[`docs/img/npc-master-v226.png`](docs/img/npc-master-v226.png) ·
+[`docs/img/itens-raros-v226.png`](docs/img/itens-raros-v226.png)
+
+**v2.25 — o herói vai atrás e escaneia QUALQUER criatura (inclusive em SAFE ZONE)**
+**"Passei pela aranha quase do lado e meu personagem passou reto, não foi atrás dela e nem escaneou ela."**
+A Safe Zone (mapa 1 de cada tribo) zera o raio de ameaça — correto, lá nada te persegue — mas o
+auto-move usava esse **mesmo zero** para **descartar os agressivos da caça**: nos 4 mapas 1 uma
+Aranha Gigante era invisível para o herói (ele chegava a **58px** dela sem fazer nada). Agora o zero
+desliga **só a fuga/stalk**: criatura a **≤160px → o herói vai atrás**; a **≤96px → ele PARA e
+escaneia (3s)**. E se a criatura **encostar** (≤32px ela cancela o scan a cada 1,2s), o herói **recua
+andando sem largar o scan** — sem isso a carga reiniciava para sempre e o bicho nunca era escaneado.
+Fuga/stalk nos mapas perigosos, carga de 3s, alvo de 96px, detecção de 160px, RARA a 50% de
+velocidade e a Caverna 2x seguem **iguais**. De quebra, uma **blindagem**: quatro pontos faziam
+`corpo.enable = false` sem conferir se o corpo existia — se a criatura fosse destruída no meio de um
+scan, o erro acontecia **dentro do update da cena** (congelamento num jogo idle). Agora o scan
+cancela e o herói volta a andar. E um **segundo caminho do mesmo bug** (v160): a perseguição não
+tinha desistência e as criaturas não colidem com casas (o herói colide) — o herói podia ficar empurrando
+uma parede para sempre ignorando uma Aranha a 87px. Agora ele larga o alvo inalcançável (preso ~2,4 s
+sem sair do lugar, ou alvo além de 300 px) e volta a caçar quem estiver perto. Testes: 19 cenários no
+Chrome (8 de regra + caverna + janelinha + 2 naturais com a criatura andando) e jogo livre de 210 s —
+tudo verde.
+→ [`docs/MAPAS-E-SCAN.md`](docs/MAPAS-E-SCAN.md) seção 8 · comparativo em
+[`docs/img/comparativo-aranha-v225.png`](docs/img/comparativo-aranha-v225.png)
+
+**v2.24 — fim dos quadrados escuros no mapa**
+**"Meu mapa tá diferente da imagem que você mandou, cheio de quadrados escuros."** A **grama decorada**
+(pedra, cogumelo, tufo e flor — **25% dos tiles de grama**) e os **barrancos da margem** também são
+desenhados com a paleta da tribo, mas só a **grama lisa** era re-assada ao trocar de mapa. Quem estava
+num mapa escuro (Cavernas de Brasas, `#4a3230`) e ia para o Bosque Verdejante via a grama verde coberta
+de manchas quase pretas — e as manchas do print eram **exatamente** a paleta das Cavernas de Brasas.
+Agora **toda troca de mapa re-assa tudo o que depende do tema** (grama lisa, as 12 texturas de grama
+decorada e os barrancos) e a cena do mapa confere o tema antes de assar o chão. Medido no Chrome, no
+mesmo enquadramento do print: os pixels da paleta errada caíram de **11,0% para 0,1%** (o resto são tons
+do tronco) e os 5 mapas ficaram com grama + 12 decoradas + barranco na paleta certa. Nenhuma regra de
+jogo mudou (scan, rio, pontes e caverna iguais).
+→ [`docs/MAPAS-E-SCAN.md`](docs/MAPAS-E-SCAN.md) seção 7
+
+![Bosque Verdejante sem os quadrados escuros](docs/img/mapa-bosque-limpo-v224.png)
 
 **v2.23 — o rio de ponta a ponta + 3 pontes (só no rio) + scan com a criatura colada**
 **(1) "Criou pontes mal feitas, quebrou o rio."** A v2.22 também transformava em travessia **toda coluna
@@ -182,7 +279,7 @@ de entrada, título do minimapa e aviso de Fast Travel — tudo a partir de uma 
 
 | Ação | Tecla / onde |
 |---|---|
-| Auto-Move (farmar sozinho) | **P** |
+| Auto-Move (farmar sozinho) | automático — liga sozinho nos mapas de criaturas e na Caverna Secreta; no Pátio, na Ilha e no Dromo quem anda é você |
 | Inventário · Scanner · Chat | **I** · **Q** · **TAB** |
 | Modo Foto (HUD limpo) | ⚙️ Opções |
 | Trocar mapa (Fast Travel) | Portal / Pátio Central |
