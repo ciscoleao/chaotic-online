@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chaotic.idleWorld v2.31 — Ícone de TERRA virou montanha ⛰️</title>
+<title>Chaotic.idleWorld v2.33 — FORJA-7 nova: os 3 fragmentos da Drome Key 🔑</title>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js" onerror="document.write('<script src=https://unpkg.com/phaser@3.60.0/dist/phaser.min.js onerror=document.write(&quot;<script src=https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js><\/script>&quot;)><\/script>')"></script>
 <script>
 window.addEventListener('load', function() {
@@ -868,6 +868,129 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
 .c167-qbar { height: 9px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.35); background: rgba(0,0,0,0.45); display: flex; gap: 2px; padding: 1px; }
 .c167-status { font-size: 9px; font-weight: 800; color: #fff; letter-spacing: 0.3px; white-space: nowrap; }
 .c167-code { background: rgba(0,0,0,0.45); border: 2px solid #ffaa44; border-radius: 8px; padding: 6px 10px; text-align: center; font-size: 15px; font-weight: 800; color: #ffd700; font-family: monospace; letter-spacing: 3px; text-shadow: 0 1px 3px rgba(0,0,0,0.6); position: relative; z-index: 2; }
+/* ============================================================
+   v169 — COSTURA-11 (mesa holográfica). Só o painel de UPGRADE usa estas
+   classes: o painel do FORJA-7 (craft de chave) continua no layout antigo.
+   ============================================================ */
+#clerk-panel.ck169 { background: transparent; border: none; box-shadow: none; width: min(960px, 97vw); max-height: 94vh; overflow: visible; padding: 0; }
+.ck169-aura { position: absolute; left: 50%; top: 50%; width: 300px; height: 300px; transform: translate(-50%, -50%); opacity: 0.95; pointer-events: none; }
+.ck169-aura-seg { transform-origin: 120px 120px; animation: ck169spin 18s linear infinite; }
+.ck169-aura-seg2 { transform-origin: 120px 120px; animation: ck169spin 24s linear infinite reverse; }
+@keyframes ck169spin { to { transform: rotate(360deg); } }
+.ck169-cir { position: absolute; width: 54px; height: 54px; border: 2px solid rgba(126,240,180,0.45); opacity: 0.75; pointer-events: none; }
+.ck169-cir::after { content: ''; position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #9ef07a; box-shadow: 0 0 10px rgba(158,240,122,0.9); }
+.ck169-cir.c1 { left: 8px; top: 8px; border-right: none; border-bottom: none; border-top-left-radius: 14px; }
+.ck169-cir.c1::after { right: 2px; bottom: 6px; }
+.ck169-cir.c2 { right: 8px; top: 8px; border-left: none; border-bottom: none; border-top-right-radius: 14px; }
+.ck169-cir.c2::after { left: 2px; bottom: 6px; }
+.ck169-cir.c3 { left: 8px; bottom: 8px; border-right: none; border-top: none; border-bottom-left-radius: 14px; }
+.ck169-cir.c3::after { right: 2px; top: 6px; }
+.ck169-cir.c4 { right: 8px; bottom: 8px; border-left: none; border-top: none; border-bottom-right-radius: 14px; }
+.ck169-cir.c4::after { left: 2px; top: 6px; }
+.ck169-bench { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 10px -18px 0; padding: 7px 18px 9px; background: linear-gradient(180deg, rgba(24,44,52,0.9), rgba(12,24,30,0.95)); border-top: 1px solid rgba(96,226,245,0.25); }
+.ck169-plate { font-size: 9.5px; font-weight: 800; letter-spacing: 2px; color: #9fd8e6; text-transform: uppercase; text-shadow: 0 0 8px rgba(96,226,245,0.45); }
+.ck169-bench-led { width: 7px; height: 7px; border-radius: 50%; background: #9ef07a; box-shadow: 0 0 9px rgba(158,240,122,0.9); animation: ck169led 1.6s ease-in-out infinite; }
+@keyframes ck169led { 50% { opacity: 0.35; } }
+body.mobile-ui.ck-open #gc-panel { display: none; } /* v169 — o painel do COSTURA manda */
+.ck-tier169 { font-size: 8.5px; letter-spacing: 0.6px; color: #7fd8ea; border: 1px solid rgba(127,216,234,0.35); border-radius: 5px; padding: 1px 5px; margin-left: 6px; white-space: nowrap; }
+.ck169-shell { position: relative; overflow: auto; max-height: 92vh; padding: 16px 18px 0; background: linear-gradient(165deg, #0d2230, #071620 55%, #061019); clip-path: polygon(30px 0, calc(100% - 30px) 0, 100% 30px, 100% calc(100% - 30px), calc(100% - 30px) 100%, 30px 100%, 0 calc(100% - 30px), 0 30px); box-shadow: 0 0 44px rgba(0,0,0,0.8), inset 0 0 90px rgba(20,120,150,0.22); }
+.ck169-shell::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(180deg, rgba(140,240,255,0.045) 0 1px, transparent 1px 4px); mix-blend-mode: screen; }
+.ck169-shell::before { content: ''; position: absolute; inset: 3px; pointer-events: none; border: 2px solid rgba(96,226,245,0.55); clip-path: polygon(28px 0, calc(100% - 28px) 0, 100% 28px, 100% calc(100% - 28px), calc(100% - 28px) 100%, 28px 100%, 0 calc(100% - 28px), 0 28px); box-shadow: inset 0 0 40px rgba(70,220,240,0.12); }
+.ck169-top { display: flex; align-items: flex-start; gap: 14px; position: relative; z-index: 3; }
+.ck169-av { width: 76px; height: 76px; flex-shrink: 0; border-radius: 50%; border: 3px solid rgba(96,226,245,0.75); background: radial-gradient(circle at 38% 30%, #123a4a, #061219); display: flex; align-items: center; justify-content: center; font-size: 38px; box-shadow: 0 0 22px rgba(80,220,240,0.45), inset 0 0 18px rgba(80,220,240,0.25); animation: ck169Pulse 2.6s ease-in-out infinite; }
+@keyframes ck169Pulse { 0%,100% { box-shadow: 0 0 18px rgba(80,220,240,0.35), inset 0 0 16px rgba(80,220,240,0.2); } 50% { box-shadow: 0 0 30px rgba(80,220,240,0.6), inset 0 0 22px rgba(80,220,240,0.3); } }
+.ck169-title { font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: 800; color: #8ef3ff; letter-spacing: 1px; text-shadow: 0 0 12px rgba(96,226,245,0.5); }
+.ck169-title span { font-size: 11px; opacity: 0.8; margin-left: 6px; }
+.ck169-sub { font-size: 12px; color: #e6fbff; margin-top: 4px; letter-spacing: 0.5px; }
+.ck169-sub b { color: #ffd54f; }
+.ck169-note { font-size: 10.5px; color: #a9d8e4; line-height: 1.5; margin-top: 5px; max-width: 620px; font-style: italic; }
+.ck169-x { margin-left: auto; width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(96,226,245,0.5); background: rgba(8,26,34,0.8); color: #9fe8f5; font-size: 14px; cursor: pointer; }
+.ck169-x:hover { border-color: #8ef3ff; color: #fff; }
+.ck169-stage { position: relative; display: grid; grid-template-columns: 1fr 190px 1fr; gap: 8px; align-items: center; margin: 12px 0 0; padding-bottom: 8px; z-index: 3; }
+.ck169-wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.ck169-col { display: flex; flex-direction: column; gap: 7px; }
+.ck169-slot { display: flex; align-items: center; gap: 8px; background: rgba(7,26,34,0.78); border: 1px solid rgba(96,226,245,0.5); border-radius: 10px; padding: 5px 8px; box-shadow: inset 0 0 14px rgba(60,200,230,0.12); }
+.ck169-slot.no { border-color: rgba(224,110,130,0.5); }
+.ck169-slot.ok { border-color: rgba(140,240,170,0.55); }
+.ck169-ico { width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px; border: 1px solid rgba(96,226,245,0.55); background: rgba(3,16,22,0.9); display: flex; align-items: center; justify-content: center; font-size: 15px; }
+.ck169-mid { flex: 1; min-width: 0; }
+.ck169-bottom .ck169-sname { font-size: 9px; }
+.ck169-bottom .ck169-num { min-width: 34px; font-size: 9.5px; }
+.ck169-bottom .ck169-ico { width: 24px; height: 24px; font-size: 12px; }
+.ck169-sname { font-size: 10px; color: #e2f8ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+.ck169-bar { height: 8px; border-radius: 4px; background: rgba(3,14,20,0.95); border: 1px solid rgba(96,226,245,0.3); overflow: hidden; }
+.ck169-bar i { display: block; height: 100%; background: linear-gradient(180deg, #9ef07a, #45b144); transition: width 0.25s; }
+.ck169-slot.no .ck169-bar i { background: linear-gradient(180deg, #8fd8f0, #367f9e); }
+.ck169-num { font-size: 10.5px; font-weight: 800; font-family: monospace; color: #8ff0a8; min-width: 42px; text-align: right; }
+.ck169-slot.no .ck169-num { color: #ff9aa6; }
+.ck169-pack { position: relative; display: flex; align-items: center; justify-content: center; }
+.ck169-pack svg { filter: drop-shadow(0 0 12px rgba(96,226,245,0.5)); animation: ck169Float 3.4s ease-in-out infinite; }
+@keyframes ck169Float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.ck169-bottom { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; margin: 2px 0 10px; position: relative; z-index: 3; }
+.ck169-desk { display: flex; align-items: center; gap: 12px; margin: 4px -18px 0; padding: 10px 18px 12px; background: linear-gradient(180deg, #12313c, #071720); border-top: 2px solid rgba(96,226,245,0.4); position: sticky; bottom: 0; z-index: 6; }
+.ck169-arm { width: 74px; height: 46px; flex-shrink: 0; }
+.ck169-desk-mid { flex: 1; text-align: center; }
+.ck169-badge { display: inline-block; font-size: 10px; letter-spacing: 1px; color: #bff6ff; border: 1px solid rgba(96,226,245,0.5); border-radius: 20px; padding: 3px 12px; margin-bottom: 7px; background: rgba(8,30,40,0.7); }
+.ck169-go { border: 2px solid #56e0f5; border-radius: 10px; background: linear-gradient(180deg, #0e5a6a, #083740); color: #ccf8ff; font-weight: 800; font-size: 13px; letter-spacing: 1px; padding: 10px 26px; cursor: pointer; box-shadow: 0 0 20px rgba(80,220,240,0.35); }
+.ck169-go:hover:not(:disabled) { background: linear-gradient(180deg, #12768c, #0a4c5c); color: #fff; }
+.ck169-go:disabled { filter: grayscale(0.85); opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+.ck169-max { color: #9ef07a; font-size: 12px; font-weight: 800; letter-spacing: 1px; }
+.ck169-tip { font-size: 10px; color: #9fd8e4; margin-top: 6px; }
+@media (max-width: 720px) {
+  .ck169-bottom { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ck169-stage { grid-template-columns: 1fr; }
+  .ck169-pack { display: none; }
+  .ck169-col.right { order: 2; }
+}
+.ck170-shell { position: relative; overflow: auto; max-height: 92vh; padding: 16px 18px 0; background: radial-gradient(120% 100% at 50% 0%, #13261d 0%, #0a1410 45%, #060d0b 100%); border: 2px solid rgba(126,200,80,0.55); border-radius: 16px; box-shadow: 0 0 44px rgba(0,0,0,0.65), inset 0 0 60px rgba(126,200,80,0.06); }
+.ck170-shell::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(180deg, rgba(158,240,122,0.04) 0 1px, transparent 1px 4px); mix-blend-mode: screen; }
+.ck170-shell::before { content: ''; position: absolute; inset: 3px; border-radius: 13px; border: 1px solid rgba(126,200,80,0.18); pointer-events: none; }
+#clerk-panel.ck170 { background: transparent; border: none; box-shadow: none; width: min(940px, 97vw); max-height: 94vh; overflow: visible; padding: 0; }
+.ck170-top { display: flex; align-items: center; gap: 14px; padding-top: 4px; }
+.ck170-av { width: 62px; height: 62px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; font-size: 30px; border: 2px solid rgba(126,200,80,0.85); background: radial-gradient(circle at 50% 30%, #1b3326, #0a1610); box-shadow: 0 0 18px rgba(126,200,80,0.45); }
+.ck170-title { font-size: 19px; font-weight: 900; color: #eaf9e2; letter-spacing: .5px; }
+.ck170-title span { font-size: 10px; color: #9ef07a; font-weight: 700; margin-left: 4px; }
+.ck170-sub { font-size: 10px; color: #cfe8c0; letter-spacing: 1px; margin-top: 2px; }
+.ck170-note { font-size: 10.5px; color: #b6d8c4; font-style: italic; line-height: 1.5; margin-top: 5px; max-width: 620px; }
+.ck170-stage { display: grid; grid-template-columns: 88px 1fr 320px; gap: 12px; align-items: center; margin: 12px 0 6px; position: relative; z-index: 3; }
+.ck170-left { display: flex; flex-direction: column; gap: 8px; }
+.ck170-tile { position: relative; width: 74px; height: 74px; border-radius: 12px; display: grid; place-items: center; font-size: 25px; background: linear-gradient(180deg, #16302a, #0c1a15); border: 1px solid rgba(126,200,80,0.32); }
+.ck170-tile span { position: absolute; bottom: 3px; right: 6px; font-size: 9px; color: #9ef07a; font-weight: 700; }
+.ck170-tile.ok { border-color: #9ef07a; box-shadow: 0 0 14px rgba(158,240,122,0.35); }
+.ck170-art { position: relative; display: grid; place-items: center; min-height: 200px; }
+.ck170-key { width: min(100%, 340px); filter: drop-shadow(0 0 12px rgba(126,200,80,0.35)); animation: ck170float 4.5s ease-in-out infinite; }
+@keyframes ck170float { 50% { transform: translateY(-5px); } }
+.ck170-halo { position: absolute; width: 250px; height: 250px; border-radius: 50%; background: radial-gradient(circle, rgba(126,200,80,0.20), transparent 65%); }
+.ck170-art-cap { position: absolute; bottom: 4px; font-size: 9px; letter-spacing: 3px; color: rgba(158,240,122,0.75); font-weight: 800; }
+.ck170-right { display: flex; flex-direction: column; gap: 7px; }
+.ck170-row { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 10px; background: linear-gradient(180deg, #14231b, #0b1310); border: 1px solid rgba(126,200,80,0.3); }
+.ck170-row.no { border-color: rgba(224,92,92,0.5); }
+.ck170-row.ok { border-color: rgba(158,240,122,0.8); }
+.ck170-ico { width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px; display: grid; place-items: center; font-size: 15px; background: #0d1a14; border: 1px solid rgba(126,200,80,0.3); }
+.ck170-mid { flex: 1; min-width: 0; }
+.ck170-tag { font-size: 8.5px; color: #8fbf9f; letter-spacing: .4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ck170-name { font-size: 10.5px; color: #e6f5e0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ck170-bar { height: 5px; border-radius: 3px; background: #0a1410; margin-top: 4px; overflow: hidden; }
+.ck170-bar i { display: block; height: 100%; background: linear-gradient(90deg, #4fae4a, #9ef07a); }
+.ck170-row.no .ck170-bar i { background: linear-gradient(90deg, #2a6a8a, #53c8e8); }
+.ck170-num { font-size: 11px; font-weight: 800; color: #ff9aa8; min-width: 42px; text-align: right; }
+.ck170-row.ok .ck170-num { color: #9ef07a; }
+.ck170-cost { text-align: center; font-size: 10.5px; color: #cfe8c0; margin: 6px 0 2px; position: relative; z-index: 3; }
+.ck170-cost b { color: #f0d98a; }
+.ck170-desk { position: sticky; bottom: 0; z-index: 6; margin: 8px -18px 0; padding: 10px 18px 12px; background: linear-gradient(180deg, #14291f, #07130e); border-top: 2px solid rgba(126,200,80,0.4); text-align: center; }
+.ck170-go { width: min(430px, 100%); padding: 11px 16px; border-radius: 10px; border: 1px solid rgba(158,240,122,0.85); background: linear-gradient(180deg, #33783a, #1a4a22); color: #eafff0; font-size: 13px; font-weight: 800; letter-spacing: .5px; cursor: pointer; box-shadow: 0 0 16px rgba(126,200,80,0.25); }
+.ck170-go:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.ck170-tip { font-size: 10px; color: #a9c8b4; margin-top: 5px; }
+.ck170-alt { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 9px; }
+.ck170-go2 { padding: 7px 11px; border-radius: 9px; border: 1px solid rgba(126,200,80,0.35); background: #0d1a14; color: #cfe8c0; font-size: 10px; cursor: pointer; }
+.ck170-go2:disabled { opacity: .45; cursor: not-allowed; }
+@media (max-width: 760px) {
+  .ck170-stage { grid-template-columns: 1fr; }
+  .ck170-left { flex-direction: row; justify-content: center; }
+  .ck170-tile { width: 58px; height: 58px; font-size: 21px; }
+  .ck170-art { min-height: 150px; }
+  .ck170-title { font-size: 16px; }
+}
 </style>
 </head>
 <body>
@@ -1099,6 +1222,34 @@ body.mobile-ui #scanner-real { max-width: 94vw; }
 </div>
 <script>
 
+// ============================================================
+// CHAOTIC.IDLEWORLD v2.33 — CHANGELOG (v170 FORJA-7 nova)
+// - v170 — A DROME KEY PASSOU A SER FORJADA COM OS 3 FRAGMENTOS:
+//   🧭 Fragmento da Exploração ×1 + ⚔️ Fragmento de Batalha ×5 +
+//   ⚙️ Fragmento do Tempo ×7 + 💠 400 bits.
+//   · 🧭 Exploração — 1 por mapa que chega a 100% de escaneamento (na 1ª vez);
+//   · ⚔️ Batalha — 1 por vitória (Dromo de mestre, PVP ou Arena do Chefe);
+//   · ⚙️ Tempo — 1 a cada 10 minutos de jogo (com o jogo fechado conta até 3).
+// - v170 — PAINEL DA FORJA-7 REPAGINADO (estilo da referência do autor): a CHAVE
+//   no centro brilhando, os 3 fragmentos em cartões com contador x/y, o custo de
+//   400 bits, o botão "Forjar Drome Key" e a bancada holográfica verde.
+//   O caminho antigo (🧩 5 fragmentos do scan) continua como botão secundário.
+// ============================================================
+// CHAOTIC.IDLEWORLD v2.32 — CHANGELOG (v169 Materiais por nível + Costura nova)
+// - v169 — MATERIAIS POR NÍVEL: 15 materiais em 3 tiers de 5. Os mapas de NÍVEL 1
+//   das tribos só dropam o tier 1; os de NÍVEL 2 só o tier 2; os de NÍVEL 3 (e a
+//   Lagoa Negra) só o tier 3. O tier 3 são 5 materiais NOVOS (Gema Estelar,
+//   Escama Brilhante de LeViathã, Essência de Fogo de Vulcano, Núcleo Pulsante de
+//   Reator e Penas de Fênix Prismática). A Drome paga materiais do tier 3.
+// - v169 — CUSTO DO UPGRADE DA MOCHILA: nível 1 = 5 tipos ×10 · nível 2 = 5 ×20 ·
+//   nível 3 = 10 ×10 · nível 4 = 10 ×20 · nível 5 = 15 ×10 (antes: 1 unidade de
+//   cada um dos 10 materiais em todo upgrade).
+// - v169 — PAINEL DO COSTURA-11 REPAGINADO (mesa holográfica): mochila em
+//   wireframe com as conexões, cartões de material com barra de progresso,
+//   braços robóticos e console no rodapé, com o nível, os slots e os bits.
+// - v169 — FORJA-7 (Drome Key): a receita continua a MESMA (cristal 2 · dente 1 ·
+//   retalho 1), mas cada linha agora mostra de qual nível de mapa vem o material
+//   (MAPAS 1 / MAPAS 2 / MAPAS 3), igual ao painel do COSTURA.
 // ============================================================
 // CHAOTIC.IDLEWORLD v2.31 — CHANGELOG (v168 Terra = montanha ⛰️)
 // - v168 — O ELEMENTO TERRA TROCOU DE ÍCONE: 🌍 (planeta) -> ⛰️ (montanha),
@@ -2462,7 +2613,7 @@ const NPCS_DATA = [
 
 let GameState = {
   player: {
-    name: 'Caçador', x: 800, y: 600, hp: 100, maxHp: 100, lvl: 1, xp: 0, xpToNext: 100, bits: 0, atk: 10, def: 2, spd: 0, battery: 100, pilhas: 15, materials: { sucata: 0, circuito: 0, cristal: 0 }, equipped: { weapon: null, armor: null, boots: null, helm: null }, inventory: [], scannedCards: [], fragments: 0, dromeKeys: 0, totalKills: 0, scannedEnemies: 0, visitedRegions: [], backpackLvl: 0, storage: [] },
+    name: 'Caçador', x: 800, y: 600, hp: 100, maxHp: 100, lvl: 1, xp: 0, xpToNext: 100, bits: 0, atk: 10, def: 2, spd: 0, battery: 100, pilhas: 15, materials: { sucata: 0, circuito: 0, cristal: 0 }, equipped: { weapon: null, armor: null, boots: null, helm: null }, inventory: [], scannedCards: [], fragments: 0, dromeKeys: 0, fragExp169: 0, fragBat169: 0, fragTempo169: 0, playMs169: 0, lastSeen169: 0, totalKills: 0, scannedEnemies: 0, visitedRegions: [], backpackLvl: 0, storage: [] },
   currentRegion: 'ow_grove', currentQuadrant: { qx: 0, qy: 0 }, // v147 — início: Safe Zone do OverWorld
   enemies: [], items: [], landmarks: [],
   dailyMissions: [], lastDailyReset: null, killLog: {}, explored: {},
@@ -2502,7 +2653,7 @@ function showScanCardFromInventory(card) {
 }
 
 function saveGame(silent) {
-  const data = { player: GameState.player, currentRegion: GameState.currentRegion, currentQuadrant: GameState.currentQuadrant, dailyMissions: GameState.dailyMissions, lastDailyReset: GameState.lastDailyReset, killLog: GameState.killLog, explored: GameState.explored, location: GameState.location, market: GameState.market, dromoWins: GameState.dromoWins, pvpWins: GameState.pvpWins || 0, mapScan: GameState.mapScan, mapPenalty: GameState.mapPenalty, gadgets: GameState.gadgets, gadgetEquip: GameState.gadgetEquip, bossArenaWins: GameState.bossArenaWins || {} }; // v147/v148/v150 — progressão, gadgets e Arena
+  const data = { player: GameState.player, currentRegion: GameState.currentRegion, currentQuadrant: GameState.currentQuadrant, dailyMissions: GameState.dailyMissions, lastDailyReset: GameState.lastDailyReset, killLog: GameState.killLog, explored: GameState.explored, location: GameState.location, market: GameState.market, dromoWins: GameState.dromoWins, pvpWins: GameState.pvpWins || 0, mapScan: GameState.mapScan, mapPenalty: GameState.mapPenalty, gadgets: GameState.gadgets, gadgetEquip: GameState.gadgetEquip, bossArenaWins: GameState.bossArenaWins || {}, map100169: GameState.map100169 || {} }; // v170 — mapas já 100% // v147/v148/v150 — progressão, gadgets e Arena
   try { localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(data)); } catch (e) {}
   if (!silent) showNotif('💾 Jogo salvo!', 'info');
 }
@@ -2559,7 +2710,7 @@ function loadGame() {
     }
     p.equipped = cleanEquipped;
     // NaN guards em campos numericos
-    const numDefaults = { hp: 100, maxHp: 100, lvl: 1, xp: 0, xpToNext: 100, bits: 0, atk: 10, def: 2, spd: 0, battery: 100, pilhas: CONFIG.START_PILHAS, fragments: 0, dromeKeys: 0, totalKills: 0, scannedEnemies: 0 };
+    const numDefaults = { hp: 100, maxHp: 100, lvl: 1, xp: 0, xpToNext: 100, bits: 0, atk: 10, def: 2, spd: 0, battery: 100, pilhas: CONFIG.START_PILHAS, fragments: 0, dromeKeys: 0, fragExp169: 0, fragBat169: 0, fragTempo169: 0, playMs169: 0, lastSeen169: 0, totalKills: 0, scannedEnemies: 0 };
     for (const k in numDefaults) { if (typeof p[k] !== 'number' || !isFinite(p[k]) || isNaN(p[k])) p[k] = numDefaults[k]; }
     p.lvl = Math.max(1, Math.floor(p.lvl));
     p.maxHp = Math.max(1, p.maxHp);
@@ -2574,9 +2725,15 @@ function loadGame() {
     }
     p.fragments = Math.max(0, Math.floor(p.fragments));
     p.dromeKeys = Math.max(0, Math.floor(p.dromeKeys));
+    p.fragExp169 = Math.max(0, Math.floor(p.fragExp169 || 0)); // v170 — os 3 fragmentos da FORJA
+    p.fragBat169 = Math.max(0, Math.floor(p.fragBat169 || 0));
+    p.fragTempo169 = Math.max(0, Math.floor(p.fragTempo169 || 0));
+    p.playMs169 = Math.max(0, Math.floor(p.playMs169 || 0));
+    p.lastSeen169 = Math.max(0, Math.floor(p.lastSeen169 || 0));
     GameState.currentRegion = typeof data.currentRegion === 'string' ? data.currentRegion : 'ow_grove';
   GameState.mapScan = (data.mapScan && typeof data.mapScan === 'object') ? data.mapScan : {}; // v147 — progressão de mapas
   GameState.mapPenalty = (data.mapPenalty && typeof data.mapPenalty === 'object') ? data.mapPenalty : {}; // v148 — penalidades do auto-port
+    GameState.map100169 = (data.map100169 && typeof data.map100169 === 'object') ? data.map100169 : {}; // v170 — mapas já 100%
   GameState.gadgets = (data.gadgets && typeof data.gadgets === 'object') ? data.gadgets : { manto: true, botas: true }; // v148 — gadgets do Scanner
   GameState.gadgetEquip = (['manto', 'botas', 'fone', 'nado'].indexOf(data.gadgetEquip) >= 0) ? data.gadgetEquip : null; // v148/v149 — validação dos 4 gadgets
   GameState.bossArenaWins = (data.bossArenaWins && typeof data.bossArenaWins === 'object') ? data.bossArenaWins : {}; // v150
@@ -3687,18 +3844,39 @@ function ahHtmlHist() {
 // ============================================================
 // v2.9 — OS 10 MATERIAIS DE CHÃO + MOCHILA COM SLOTS + DEPÓSITO
 // ============================================================
+/* v169 — MATERIAIS POR NÍVEL DO MAPA (3 tiers de 5 tipos)
+ * tier 1 → mapas de NÍVEL 1 das 4 tribos (Bosque, Cavernas de Brasas, Túneis do
+ *          Monte Pillar, Oásis) · tier 2 → mapas de NÍVEL 2 · tier 3 → mapas de
+ *          NÍVEL 3 (e a Lagoa Negra). O upgrade usa: 5×10 · 5×20 · 10×10 ·
+ *          10×20 · 15×10 (níveis 1 a 5 da mochila). */
 const GROUND_MATS = [
-  { id: 'dractyl', name: 'Couro Escamoso de Dractyl', icon: '🟫', tex: 'gmat_dractyl', weight: 8, desc: 'Um material resistente ao calor e muito leve, ideal para formar a base e o corpo principal da mochila (inspirado nas criaturas aladas do Submundo).' },
-  { id: 'teia', name: 'Teia Reforçada de Mandiblor', icon: '🕸️', tex: 'gmat_teia', weight: 10, desc: 'Fios extremamente grossos e pegajosos extraídos dos insetos Danians, perfeitos para serem usados como linha de costura indestrutível.' },
-  { id: 'cipo', name: 'Cipó da Floresta da Vida', icon: '🌿', tex: 'gmat_cipo', weight: 12, desc: 'Uma corda natural verde e vibrante do Outro Mundo (OverWorld), excelente para trançar e criar as alças principais que vão nos ombros.' },
-  { id: 'dente', name: 'Dente Lascado de um Magmon', icon: '🦷', tex: 'gmat_dente', weight: 9, desc: 'Um pedaço pontiagudo e avermelhado de rocha vulcânica, usado como um botão rústico ou fivela para fechar a aba principal da mochila.' },
-  { id: 'fio', name: 'Fio da Túnica de Najarin', icon: '🧵', tex: 'gmat_fio', weight: 6, desc: 'Um item de raridade mágica. Usar este fio místico na costura interna concede um pequeno efeito de expansão de espaço, permitindo guardar mais itens do que o tamanho da mochila aparenta.' },
-  { id: 'musgo', name: 'Musgo do Abismo Prexxor', icon: '🍃', tex: 'gmat_musgo', weight: 11, desc: 'Um musgo espesso e macio retirado de um dos lugares mais perigosos de Perim, servindo como o acolchoamento perfeito para as alças não machucarem os ombros do jogador.' },
-  { id: 'cristal', name: 'Fragmento de Cristal do Monte Pillar', icon: '💠', tex: 'gmat_cristal', weight: 8, desc: 'Um pequeno cristal brilhante da montanha Danian que pode ser lapidado e usado como um fecho magnético ou zíper para os bolsos menores.' },
-  { id: 'garra', name: 'Garra Caída de um Mipediano', icon: '🪝', tex: 'gmat_garra', weight: 7, desc: 'Uma garra afiada e levemente translúcida (devido aos poderes de invisibilidade da tribo), usada como um gancho externo na mochila para pendurar cantis ou cordas.' },
-  { id: 'retalho', name: 'Retalho da Capa de Chaor', icon: '🌑', tex: 'gmat_retalho', weight: 5, desc: 'Um tecido escuro, imponente e quase impossível de rasgar. Exige coragem para ser obtido e serve para reforçar o fundo da mochila contra quedas e desgaste.' },
-  { id: 'pena', name: 'Pena de um Phelpor', icon: '🪶', tex: 'gmat_pena', weight: 9, desc: 'Uma pena colorida e macia usada como um enfeite de zíper ou amuleto da sorte pendurado na lateral da mochila.' },
+  // ---------- TIER 1 — MAPAS DE NÍVEL 1 ----------
+  { id: 'dractyl', name: 'Couro Escamoso de Dractyl', icon: '🟫', tex: 'gmat_dractyl', tier: 1, weight: 10, desc: 'Um material resistente ao calor e muito leve, ideal para formar a base e o corpo principal da mochila (inspirado nas criaturas aladas do Submundo).' },
+  { id: 'teia', name: 'Teia Reforçada de Mandiblor', icon: '🕸️', tex: 'gmat_teia', tier: 1, weight: 12, desc: 'Fios extremamente grossos e pegajosos extraídos dos insetos Danians, perfeitos para serem usados como linha de costura indestrutível.' },
+  { id: 'cipo', name: 'Cipó da Floresta da Vida', icon: '🌿', tex: 'gmat_cipo', tier: 1, weight: 14, desc: 'Uma corda natural verde e vibrante do Outro Mundo (OverWorld), excelente para trançar e criar as alças principais que vão nos ombros.' },
+  { id: 'dente', name: 'Dente Lascado de um Magmon', icon: '🦷', tex: 'gmat_dente', tier: 1, weight: 10, desc: 'Um pedaço pontiagudo e avermelhado de rocha vulcânica, usado como um botão rústico ou fivela para fechar a aba principal da mochila.' },
+  { id: 'garra', name: 'Garra Caída de um Mipediano', icon: '🪝', tex: 'gmat_garra', tier: 1, weight: 9, desc: 'Uma garra afiada e levemente translúcida (devido aos poderes de invisibilidade da tribo), usada como um gancho externo na mochila para pendurar cantis ou cordas.' },
+  // ---------- TIER 2 — MAPAS DE NÍVEL 2 ----------
+  { id: 'cristal', name: 'Fragmento de Cristal do Monte Pillar', icon: '💠', tex: 'gmat_cristal', tier: 2, weight: 11, desc: 'Um pequeno cristal brilhante da montanha Danian que pode ser lapidado e usado como um fecho magnético ou zíper para os bolsos menores.' },
+  { id: 'fio', name: 'Fio da Túnica de Najarin', icon: '🧵', tex: 'gmat_fio', tier: 2, weight: 9, desc: 'Um item de raridade mágica. Usar este fio místico na costura interna concede um pequeno efeito de expansão de espaço, permitindo guardar mais itens do que o tamanho da mochila aparenta.' },
+  { id: 'musgo', name: 'Musgo do Abismo Prexxor', icon: '🍃', tex: 'gmat_musgo', tier: 2, weight: 12, desc: 'Um musgo espesso e macio retirado de um dos lugares mais perigosos de Perim, servindo como o acolchoamento perfeito para as alças não machucarem os ombros do jogador.' },
+  { id: 'retalho', name: 'Retalho da Capa de Chaor', icon: '🌑', tex: 'gmat_retalho', tier: 2, weight: 8, desc: 'Um tecido escuro, imponente e quase impossível de rasgar. Exige coragem para ser obtido e serve para reforçar o fundo da mochila contra quedas e desgaste.' },
+  { id: 'pena', name: 'Pena de um Phelpor', icon: '🪶', tex: 'gmat_pena', tier: 2, weight: 10, desc: 'Uma pena colorida e macia usada como um enfeite de zíper ou amuleto da sorte pendurado na lateral da mochila.' },
+  // ---------- TIER 3 — MAPAS DE NÍVEL 3 (novos) ----------
+  { id: 'gema', name: 'Gema Estelar', icon: '💎', tex: 'gmat_gema', tier: 3, weight: 10, desc: 'Uma gema que concentra a luz das estrelas de Perim. Serve de núcleo de energia para os bolsos maiores da mochila.' },
+  { id: 'leviatha', name: 'Escama Brilhante de LeViathã', icon: '🐉', tex: 'gmat_leviatha', tier: 3, weight: 12, desc: 'Escama de uma das feras ancestrais das profundezas. Flexível como tecido e mais dura que aço — perfeita para o forro da mochila.' },
+  { id: 'vulcano', name: 'Essência de Fogo de Vulcano', icon: '🔥', tex: 'gmat_vulcano', tier: 3, weight: 11, desc: 'Uma brasa líquida colhida no coração de um vulcão de Perim: a costura que leva esta essência nunca se rompe.' },
+  { id: 'reator', name: 'Núcleo Pulsante de Reator', icon: '⚙️', tex: 'gmat_reator', tier: 3, weight: 9, desc: 'Um núcleo que pulsa como um coração mecânico. É ele que faz os bolsos extras “respirarem” e caberem mais itens.' },
+  { id: 'fenix', name: 'Penas de Fênix Prismática', icon: '🪶', tex: 'gmat_fenix', tier: 3, weight: 8, desc: 'Penas que refletem todas as cores de Perim e se regeneram sozinhas — o toque final do Robô COSTURA-11.' },
 ];
+function matsDoTier169(t) { return GROUND_MATS.filter(function (m) { return m.tier === t; }); }
+function tierDaRegiao169(regionId) {
+  const r = REGIONS.find(function (x) { return x.id === regionId; });
+  const lv = r ? r.mapLevel : 1;
+  if (lv >= 3) return 3;
+  if (lv === 2) return 2;
+  return 1;
+}
 function getGroundMat(id) { return GROUND_MATS.find(function(m) { return m.id === id; }) || GROUND_MATS[0]; }
 function makeMatItem(matId, qty) {
   const gm = getGroundMat(matId);
@@ -3761,11 +3939,14 @@ function removeMats(list) {
   updateInventoryUI();
   return true;
 }
-function rollGroundMat() {
-  const total = GROUND_MATS.reduce(function(a, m) { return a + m.weight; }, 0);
+function rollGroundMat(regionId) {
+  // v169 — o material do chão é do TIER da região (mapa 1 → tier 1, etc.)
+  const reg = regionId || GameState.currentRegion;
+  const pool = matsDoTier169(tierDaRegiao169(reg));
+  const total = pool.reduce(function(a, m) { return a + m.weight; }, 0);
   let r = Math.random() * total;
-  for (let i = 0; i < GROUND_MATS.length; i++) { r -= GROUND_MATS[i].weight; if (r <= 0) return GROUND_MATS[i]; }
-  return GROUND_MATS[0];
+  for (let i = 0; i < pool.length; i++) { r -= pool[i].weight; if (r <= 0) return pool[i]; }
+  return pool[0];
 }
 // ---- DEPÓSITO (10 slots) ----
 function getStorage() {
@@ -3837,8 +4018,24 @@ const KEY_RECIPE = [
   { matId: 'dente', qty: 1 },
   { matId: 'retalho', qty: 1 },
 ];
-function upgradeCost() {
-  return GROUND_MATS.map(function(m) { return { matId: m.id, qty: 1 }; });
+function upgradeCost(lvlForcado) {
+  // v169 — custo por nível da mochila: 5 tipos ×10 · 5 ×20 · 10 ×10 · 10 ×20 · 15 ×10
+  const lvl = (typeof lvlForcado === 'number') ? lvlForcado : (GameState.player.backpackLvl || 0);
+  const tabela = [
+    { tiers: [1], q: 10 }, { tiers: [1], q: 20 }, { tiers: [1, 2], q: 10 },
+    { tiers: [1, 2], q: 20 }, { tiers: [1, 2, 3], q: 10 },
+  ];
+  const t = tabela[Math.max(0, Math.min(4, lvl))];
+  let out = [];
+  for (let i = 0; i < t.tiers.length; i++) {
+    const mats = matsDoTier169(t.tiers[i]);
+    for (let j = 0; j < mats.length; j++) out.push({ matId: mats[j].id, qty: t.q });
+  }
+  return out;
+}
+function upgradeMatsDoNivel169(lvlForcado) { // quais TIERS o próximo upgrade pede (para a tela)
+  const lvl = (typeof lvlForcado === 'number') ? lvlForcado : (GameState.player.backpackLvl || 0);
+  return [[1], [1], [1, 2], [1, 2], [1, 2, 3]][Math.max(0, Math.min(4, lvl))];
 }
 function upgradeBits() { const lvl = GameState.player.backpackLvl || 0; return 250 * (lvl + 1); }
 let clerkMode = 'craft';
@@ -3846,63 +4043,265 @@ function openClerkPanel(mode) {
   clerkMode = (mode === 'upgrade') ? 'upgrade' : 'craft';
   const el = document.getElementById('clerk-panel');
   if (el) el.classList.add('open');
+  if (document.body) document.body.classList.add('ck-open'); // v169 — no celular o chat sai da frente
   clerkRender();
 }
 function closeClerkPanel() {
   const el = document.getElementById('clerk-panel');
   if (el) el.classList.remove('open');
+  if (document.body) document.body.classList.remove('ck-open'); // v169
 }
 function clerkRender() {
   const el = document.getElementById('clerk-panel');
   if (!el) return;
+  if (clerkMode !== 'upgrade') el.classList.remove('ck169'); // v169 — só o painel do COSTURA usa o layout holográfico
+  if (clerkMode !== 'craft') el.classList.remove('ck170'); // v170 — só o painel da FORJA usa o layout da chave
   const p = GameState.player;
   const lvl = p.backpackLvl || 0;
   let head, body = '';
   if (clerkMode === 'upgrade') {
-    const canUp = lvl < 5 && upgradeCost().every(function(r) { return countMat(r.matId) >= r.qty; }) && p.bits >= upgradeBits();
-    let upHtml = '';
-    if (lvl >= 5) upHtml = '<div class="shop-info" style="color:#7ec850;">✓ Mochila no upgrade máximo (+10 slots)!</div>';
-    else {
-      for (let i = 0; i < GROUND_MATS.length; i++) {
-        const gm = GROUND_MATS[i];
-        upHtml += '<div class="ck-row ' + (countMat(gm.id) >= 1 ? 'ok' : 'no') + '"><span>' + gm.icon + '</span><span style="flex:1">' + gm.name + '</span><b style="color:' + (countMat(gm.id) >= 1 ? '#7ec850' : '#ff8fa3') + '">' + countMat(gm.id) + '/1</b></div>';
+    /* v169 — PAINEL NOVO (mesa holográfica da referência do autor) */
+    el.classList.add('ck169');
+    const maxed = lvl >= 5;
+    const custo = upgradeCost(lvl);                 // tiers + quantidades do PRÓXIMO upgrade
+    const tiers = upgradeMatsDoNivel169(lvl);
+    const temTudo = custo.every(function (r) { return countMat(r.matId) >= r.qty; });
+    const canUp = !maxed && temTudo && p.bits >= upgradeBits();
+    const qNow = maxed ? 0 : custo[0].qty;
+    const nomesTier = function (tt) { return tt.join(' + '); };
+    const rotuloTier = function (t) {
+      return t === 1 ? 'MAPAS 1' : t === 2 ? 'MAPAS 2' : 'MAPAS 3';
+    };
+    // cartões de material (esquerda / direita) + fios de conexão
+    let esq = '', dir = '', baixo = '', fios = '';
+    const total = custo.length;
+    const faixa = total > 10 ? 3 : 2;                 // v169 — com 15 materiais: 5 em cima/5 nos lados/5 embaixo
+    const meio = Math.ceil(total / faixa);
+    const nEsq = meio, nDir = Math.min(meio, total - meio), nBaixo = Math.max(0, total - meio - nDir);
+    const linhas = Math.max(nEsq, nDir, 1);
+    // v169 — a altura do desenho acompanha a quantidade de cartões (nível 5 = 15)
+    const altSVG = Math.max(300, 34 + linhas * 48);
+    const passo = linhas > 1 ? (altSVG - 68) / (linhas - 1) : 0;
+    const yDe = function (i) { return Math.round(34 + i * passo); };
+    for (let i = 0; i < total; i++) {
+      const r = custo[i];
+      const gm = getGroundMat(r.matId);
+      const tem = countMat(r.matId);
+      const pct = Math.max(0, Math.min(100, Math.round((tem / r.qty) * 100)));
+      const card = '<div class="ck169-slot ' + (tem >= r.qty ? 'ok' : 'no') + '">'
+        + '<div class="ck169-ico">' + gm.icon + '</div>'
+        + '<div class="ck169-mid"><div class="ck169-sname">' + gm.name + '</div>'
+        + '<div class="ck169-bar"><i style="width:' + pct + '%"></i></div></div>'
+        + '<div class="ck169-num">' + tem + '/' + r.qty + '</div></div>';
+      const fio = function (d) {
+        return '<path d="' + d + '" fill="none" stroke="rgba(96,226,245,0.18)" stroke-width="7"/>'
+             + '<path d="' + d + '" fill="none" stroke="rgba(140,240,255,0.75)" stroke-width="2.2"/>';
+      };
+      if (i >= meio + nDir) { baixo += card; }          // fila de baixo (nível máximo)
+      else if (i < meio) {   // lado esquerdo: sai do cartão e vai em LEQUE até a mochila
+        esq += card;
+        const y1 = yDe(i), y2 = Math.round(altSVG / 2 + (i - (nEsq - 1) / 2) * 16);
+        fios += fio('M 232 ' + y1 + ' C 305 ' + y1 + ', 335 ' + y2 + ', 396 ' + y2);
+      } else {          // lado direito: sai da mochila e vai em LEQUE até o cartão
+        const j = i - meio;
+        dir += card;
+        const y1 = yDe(j), y2 = Math.round(altSVG / 2 + (j - (nDir - 1) / 2) * 16);
+        fios += fio('M 668 ' + y1 + ' C 595 ' + y1 + ', 565 ' + y2 + ', 504 ' + y2);
       }
     }
-    head = '<div class="dp-head"><div class="dp-avatar" style="color:#53a7e8">🤖</div>'
-      + '<div><div class="dp-name" style="color:#53a7e8">Robô COSTURA-11</div><div class="dp-title">Unidade de Costura do Pátio — Upgrade de Mochila</div></div>'
-      + '<button class="ah-close" style="margin-left:auto;" onclick="closeClerkPanel()">✕</button></div>'
-      + '<div class="dp-lore">“Costuro bolsos extras em qualquer mochila! Traga 1 unidade de cada material de Perim. Aceito da mochila OU do Depósito.”</div>'
-      + '<div class="dp-sec">🎒 UPGRADE DA MOCHILA — nível ' + lvl + '/5 · slots ' + getBackpackMax() + '</div>'
-      + '<div class="ah-sub" style="margin-bottom:6px;">Cada upgrade: +2 slots · 1 unidade de cada material + 💠 ' + upgradeBits() + ' bits</div>'
-      + upHtml
-      + (lvl < 5 ? '<button class="ck-go up" ' + (canUp ? '' : 'disabled') + ' onclick="upgradeBackpack()">🧵 FAZER UPGRADE (+2 slots · 💠 ' + upgradeBits() + ')</button>' : '');
+    const auraSvg = '<svg class="ck169-aura" viewBox="0 0 240 240">'
+      + '<circle cx="120" cy="120" r="112" fill="none" stroke="rgba(96,226,245,0.30)" stroke-width="1.6" stroke-dasharray="6 8"/>'
+      + '<circle cx="120" cy="120" r="96" fill="none" stroke="rgba(140,240,255,0.20)" stroke-width="1.1" />'
+      + '<g class="ck169-aura-seg">'
+      +   '<path d="M120 16 a104 104 0 0 1 74 30" fill="none" stroke="rgba(140,240,255,0.85)" stroke-width="2.6" stroke-linecap="round"/>'
+      +   '<path d="M120 224 a104 104 0 0 1 -74 -30" fill="none" stroke="rgba(140,240,255,0.85)" stroke-width="2.6" stroke-linecap="round"/>'
+      + '</g>'
+      + '<g class="ck169-aura-seg2">'
+      +   '<path d="M46 90 a104 104 0 0 1 22 -44" fill="none" stroke="rgba(126,240,180,0.6)" stroke-width="2" stroke-linecap="round"/>'
+      +   '<path d="M194 150 a104 104 0 0 1 -22 44" fill="none" stroke="rgba(126,240,180,0.6)" stroke-width="2" stroke-linecap="round"/>'
+      + '</g>'
+      + '<circle cx="120" cy="14" r="3.4" fill="#8ef3ff"/><circle cx="120" cy="226" r="3.4" fill="#8ef3ff"/>'
+      + '<circle cx="24" cy="120" r="2.6" fill="rgba(126,240,180,0.9)"/><circle cx="216" cy="120" r="2.6" fill="rgba(126,240,180,0.9)"/>'
+      + '</svg>';
+    const packSvg = '<svg width="176" height="186" viewBox="0 0 176 186">'
+      + '<g fill="rgba(96,226,245,0.10)" stroke="#8ef3ff" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">'
+      + '<rect x="42" y="42" width="92" height="118" rx="12"/>'          // corpo
+      + '<path d="M42 74 q46 -34 92 0" fill="rgba(96,226,245,0.16)"/>'  // aba
+      + '<rect x="60" y="86" width="56" height="34" rx="7"/>'           // bolso central
+      + '<rect x="70" y="126" width="36" height="22" rx="6"/>'          // bolso baixo
+      + '<path d="M70 42 q-14 -26 -22 -30"/>'                           // alça esquerda
+      + '<path d="M106 42 q14 -26 22 -30"/>'                            // alça direita
+      + '<path d="M52 60 q-16 4 -18 22"/>'                              // bolso lateral esq
+      + '<path d="M124 60 q16 4 18 22"/>'                               // bolso lateral dir
+      + '<circle cx="88" cy="103" r="4" fill="#8ef3ff" stroke="none"/>'
+      + '<path d="M46 70 q42 -30 84 0" fill="none" stroke="rgba(140,240,255,0.5)" stroke-width="1.6" stroke-dasharray="4 4"/>'
+      + '<path d="M48 96 q-10 6 -8 24 M128 96 q10 6 8 24" fill="none" stroke="rgba(140,240,255,0.45)" stroke-width="1.6" stroke-dasharray="3 4"/>'
+      + '<circle cx="66" cy="80" r="2.4" fill="#8ef3ff" stroke="none"/><circle cx="110" cy="80" r="2.4" fill="#8ef3ff" stroke="none"/>'
+      + '</g></svg>';
+    const armSvg = '<svg viewBox="0 0 74 46" width="74" height="46"><g stroke="#4fd0e8" stroke-width="3" fill="none" stroke-linecap="round">'
+      + '<path d="M6 42 L18 26 L34 30"/><path d="M34 30 L48 16"/><path d="M48 16 L62 22"/></g>'
+      + '<path d="M62 22 L70 16 M62 22 L71 27" fill="none" stroke="#ff7ad9" stroke-width="2.6" stroke-linecap="round"/><circle cx="62" cy="22" r="4.2" fill="#ff9ae2" stroke="none"/><circle cx="6" cy="42" r="5" fill="rgba(96,226,245,0.35)" stroke="#4fd0e8" stroke-width="2"/></svg>';
+    const circuitos = '<div class="ck169-cir c1"></div><div class="ck169-cir c2"></div><div class="ck169-cir c3"></div><div class="ck169-cir c4"></div>';
+    body = '<div class="ck169-shell">' + circuitos
+      + '<div class="ck169-top">'
+      +   '<div class="ck169-av">🤖</div>'
+      +   '<div style="flex:1">'
+      +     '<div class="ck169-title">ROBÔ COSTURA-11 <span>v.3</span></div>'
+      +     '<div class="ck169-sub">🎒 UPGRADE DA MOCHILA — nível <b>' + lvl + '/5</b> · slots <b>' + getBackpackMax() + '</b></div>'
+      +     '<div class="ck169-note">“Costuro bolsos extras em qualquer mochila! Traga os materiais do nível certo de Perim — ' + (maxed ? 'os mapas de nível 3' : tiers.length === 1 ? 'os mapas de nível 1' : tiers.length === 2 ? 'os mapas de nível 1 e 2' : 'os mapas de nível 1, 2 e 3') + ' têm tudo o que eu preciso. Aceito da mochila OU do Depósito.”</div>'
+      +   '</div>'
+      +   '<button class="ck169-x" onclick="closeClerkPanel()">✕</button>'
+      + '</div>'
+      + '<div class="ck169-stage">'
+      +   '<svg class="ck169-wires" viewBox="0 0 900 ' + altSVG + '" preserveAspectRatio="none">' + fios + '</svg>'
+      +   '<div class="ck169-col left">' + esq + '</div>'
+      +   '<div class="ck169-pack">' + auraSvg + packSvg + '</div>'
+      +   '<div class="ck169-col right">' + dir + '</div>'
+      + '</div>'
+      + (baixo ? '<div class="ck169-bottom">' + baixo + '</div>' : '')
+      + '<div class="ck169-desk"><div class="ck169-arm">' + armSvg + '</div>'
+      +   '<div class="ck169-desk-mid">'
+      +     '<div class="ck169-badge">' + (maxed ? 'NÍVEL MÁXIMO — TODOS OS BOLSOS COSTURADOS · 💠 ' + upgradeBits() + ' bits (níveis já pagos)' : 'UPGRADE ' + (lvl + 1) + '/5 — ' + custo.length + ' TIPOS DE ' + qNow + ' · ' + rotuloTier(tiers[0]) + (tiers.length > 1 ? ' + ' + rotuloTier(tiers[tiers.length - 1]) : '') + ' · 💠 ' + upgradeBits() + ' bits') + '</div><br>'
+      +     (maxed
+              ? '<span class="ck169-max">✓ MOCHILA NO MÁXIMO — ' + getBackpackMax() + ' slots</span><div class="ck169-tip">O COSTURA-11 já costurou todos os bolsos possíveis. Bom proveito, Caçador!</div>'
+              : '<button class="ck169-go" ' + (canUp ? '' : 'disabled') + ' onclick="upgradeBackpack()">🧵 FAZER UPGRADE (+2 slots)</button>'
+                + '<div class="ck169-tip">' + (temTudo ? (p.bits >= upgradeBits() ? 'Materiais ok! É só apertar.' : 'Faltam 💠 ' + (upgradeBits() - p.bits) + ' bits.') : 'Faltam materiais — os cartões em vermelho mostram quanto.') + '</div>')
+      +   '</div><div class="ck169-arm">' + armSvg + '</div></div>'
+      + '<div class="ck169-bench"><span class="ck169-plate">ROBÔ COSTURA-11 · v.3</span><span class="ck169-bench-led"></span></div>'
+      + '</div>';
+    head = '';
   } else {
-    const canKeyMats = KEY_RECIPE.every(function(r) { return countMat(r.matId) >= r.qty; }) && p.bits >= 400;
+    /* v170 — PAINEL NOVO DA FORJA-7 (a chave no centro + os 3 fragmentos) */
+    el.classList.add('ck170');
     const canKeyFrag = p.fragments >= CONFIG.FRAGMENTS_PER_KEY;
-    let recipeHtml = '';
-    for (let i = 0; i < KEY_RECIPE.length; i++) {
-      const r = KEY_RECIPE[i];
-      const gm = getGroundMat(r.matId);
-      recipeHtml += '<div class="ck-row ' + (countMat(r.matId) >= r.qty ? 'ok' : 'no') + '"><span>' + gm.icon + '</span><span style="flex:1">' + gm.name + '</span><b style="color:' + (countMat(r.matId) >= r.qty ? '#7ec850' : '#ff8fa3') + '">' + countMat(r.matId) + '/' + r.qty + '</b></div>';
-    }
-    head = '<div class="dp-head"><div class="dp-avatar" style="color:#7ec850">🤖</div>'
-      + '<div><div class="dp-name" style="color:#7ec850">Robô FORJA-7</div><div class="dp-title">Unidade de Artesanato do Pátio — Craft de Drome Key</div></div>'
-      + '<button class="ah-close" style="margin-left:auto;" onclick="closeClerkPanel()">✕</button></div>'
-      + '<div class="dp-lore">“Bip-bop. Forjo chaves do Drome com materiais de Perim. Aceito da sua mochila OU do Depósito.”</div>'
-      + '<div class="dp-sec">🔑 CRAFT: DROME KEY (você tem ' + p.dromeKeys + ')</div>'
-      + recipeHtml
-      + '<div class="ah-sub" style="margin:6px 0;">Custo adicional: 💠 400 bits</div>'
-      + '<button class="ck-go key" ' + (canKeyMats ? '' : 'disabled') + ' onclick="craftKeyClerk()">🔨 Forjar Drome Key (materiais + 400 bits)</button>'
-      + '<button class="ck-go key" style="margin-top:6px;" ' + (canKeyFrag ? '' : 'disabled') + ' onclick="tryAssembleDromeKey()">🧩 Montar chave com ' + CONFIG.FRAGMENTS_PER_KEY + ' fragmentos (' + p.fragments + '/' + CONFIG.FRAGMENTS_PER_KEY + ')</button>'
-      + '<div class="dp-sec">🌀 CÂMARA DO DROME</div>'
-      + '<button class="ck-go drome" ' + (p.dromeKeys > 0 ? '' : 'disabled') + ' onclick="closeClerkPanel(); enterDrome();">⚔️ Entrar na Drome (1 🔑)</button>';
+    const terminou = fragsOk170();
+    const podeForjar = terminou && p.bits >= 400;
+    const chaveSvg = '<svg class="ck170-key" viewBox="0 0 340 180" aria-label="Drome Key">'
+      + '<defs>'
+      +   '<linearGradient id="kAco" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9f0f6"/><stop offset="0.55" stop-color="#9aa8b8"/><stop offset="1" stop-color="#4c5866"/></linearGradient>'
+      +   '<linearGradient id="kRosa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9ec8"/><stop offset="0.5" stop-color="#e0526a"/><stop offset="1" stop-color="#7d1f3a"/></linearGradient>'
+      +   '<linearGradient id="kOuro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9ac"/><stop offset="0.45" stop-color="#e6b757"/><stop offset="1" stop-color="#8a5a1e"/></linearGradient>'
+      +   '<linearGradient id="kCristal" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="0.45" stop-color="#cdf0ff"/><stop offset="1" stop-color="#63b7d6"/></linearGradient>'
+      +   '<filter id="kGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+      + '</defs>'
+      + '<g filter="url(#kGlow)">'
+      +   '<path d="M20 84 q0 -6 6 -7 l28 -3 v32 l-28 -3 q-6 -1 -6 -7 z" fill="#3b2a1c" stroke="#20150d" stroke-width="1.2"/>'
+      +   '<path d="M52 50 q-30 40 0 80 q18 -9 30 -22 v-36 q-12 -13 -30 -22 z" fill="url(#kAco)" stroke="#2f3a46" stroke-width="1.2"/>'
+      +   '<path d="M94 56 q-26 34 0 68 q16 -8 26 -19 v-30 q-10 -11 -26 -19 z" fill="url(#kRosa)" stroke="#6d1d33" stroke-width="1.2"/>'
+      +   '<circle cx="120" cy="90" r="9" fill="#d8ad4e" stroke="#7a5518" stroke-width="1.2"/>'
+      +   '<circle cx="120" cy="90" r="3.4" fill="#3a2c10"/>'
+      +   '<rect x="118" y="79" width="104" height="22" rx="9" fill="#c9a24a" stroke="#7a5518" stroke-width="1.2"/>'
+      +   '<rect x="118" y="83" width="104" height="6" rx="3" fill="rgba(255,255,255,0.35)"/>'
+      +   '<g fill="#d8ad4e" stroke="#7a5518" stroke-width="1">'
+      +     '<rect x="152" y="52" width="12" height="18" rx="3"/><rect x="152" y="110" width="12" height="18" rx="3"/>'
+      +     '<rect x="128" y="66" width="12" height="16" rx="3" transform="rotate(-52 134 74)"/><rect x="176" y="98" width="12" height="16" rx="3" transform="rotate(-52 182 106)"/>'
+      +   '</g>'
+      +   '<circle cx="170" cy="90" r="30" fill="#e0b757" stroke="#8a5a1e" stroke-width="1.4"/>'
+      +   '<circle cx="170" cy="90" r="19" fill="#f6d98a"/>'
+      +   '<circle cx="170" cy="90" r="8" fill="#0d1a14"/>'
+      +   '<g fill="#ef6f8e" stroke="#7d1f3a" stroke-width="1">'
+      +     '<rect x="228" y="60" width="10" height="16" rx="3" transform="rotate(18 233 68)"/><rect x="228" y="104" width="10" height="16" rx="3" transform="rotate(-18 233 112)"/>'
+      +     '<rect x="248" y="52" width="10" height="16" rx="3" transform="rotate(34 253 60)"/><rect x="248" y="112" width="10" height="16" rx="3" transform="rotate(-34 253 120)"/>'
+      +   '</g>'
+      +   '<circle cx="248" cy="90" r="22" fill="#ef6f8e" stroke="#7d1f3a" stroke-width="1.4"/>'
+      +   '<circle cx="248" cy="90" r="11" fill="#0d1a14" opacity="0.75"/>'
+      +   '<path d="M272 52 l34 -8 l34 22 l-10 46 l-36 10 l-24 -26 z" fill="url(#kCristal)" stroke="rgba(255,255,255,0.75)" stroke-width="1.4"/>'
+      +   '<path d="M272 52 l34 30 l-10 40 M306 82 l34 -16 M296 122 l34 -16" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.2"/>'
+      +   '<path d="M282 60 l22 22 l-6 26" fill="none" stroke="rgba(126,240,180,0.75)" stroke-width="1.6"/>'
+      +   '<circle cx="60" cy="46" r="3" fill="#bffcf0"/><circle cx="120" cy="132" r="2.6" fill="#bffcf0"/><circle cx="316" cy="44" r="2.8" fill="#bffcf0"/>'
+      + '</g>'
+      + '</svg>';
+    const tiles = KEY_FRAGS170.map(function(f) {
+      const tem = fragCount170(f.id);
+      return '<div class="ck170-tile ' + (tem >= f.qty ? 'ok' : '') + '" title="' + f.nome + ' — ' + f.de + '">' + f.icon + '<span>' + tem + '/' + f.qty + '</span></div>';
+    }).join('');
+    const cartoes = KEY_FRAGS170.map(function(f) {
+      const tem = fragCount170(f.id), pct = Math.max(0, Math.min(100, Math.round((tem / f.qty) * 100)));
+      return '<div class="ck170-row ' + (tem >= f.qty ? 'ok' : 'no') + '">'
+        + '<div class="ck170-ico">' + f.icon + '</div>'
+        + '<div class="ck170-mid"><div class="ck170-tag">' + f.tag + ' · ' + f.de + '</div>'
+        + '<div class="ck170-name">' + f.nome + '</div>'
+        + '<div class="ck170-bar"><i style="width:' + pct + '%"></i></div></div>'
+        + '<div class="ck170-num">' + tem + '/' + f.qty + '</div></div>';
+    }).join('');
+    body = '<div class="ck170-shell">'
+      + '<div class="ck169-cir c1"></div><div class="ck169-cir c2"></div><div class="ck169-cir c3"></div><div class="ck169-cir c4"></div>'
+      + '<div class="ck170-top">'
+      +   '<div class="ck170-av">🤖</div>'
+      +   '<div style="flex:1">'
+      +     '<div class="ck170-title">Robô FORJA-7 <span>v.3</span></div>'
+      +     '<div class="ck170-sub">🔨 UNIDADE DE ARTESANATO DO PÁTIO — CRAFT DE DROME KEY · você tem ' + p.dromeKeys + ' 🔑</div>'
+      +     '<div class="ck170-note">“Bip-bop, Forjo chaves do Drome com materiais de Perim. Aceito da sua mochila OU do Depósito.”</div>'
+      +   '</div>'
+      +   '<button class="ck169-x" onclick="closeClerkPanel()">✕</button>'
+      + '</div>'
+      + '<div class="ck170-stage">'
+      +   '<div class="ck170-left">' + tiles + '</div>'
+      +   '<div class="ck170-art"><div class="ck170-halo"></div>' + chaveSvg + '<div class="ck170-art-cap">DROME KEY</div></div>'
+      +   '<div class="ck170-right">' + cartoes + '</div>'
+      + '</div>'
+      + '<div class="ck170-cost">Custo adicional: <b>💠 400 bits</b> · você tem <b>💠 ' + fmtBits(p.bits) + '</b></div>'
+      + '<div class="ck170-desk">'
+      +   '<button class="ck170-go" ' + (podeForjar ? '' : 'disabled') + ' onclick="craftKeyClerk()">🛠 Forjar Drome Key</button>'
+      +   '<div class="ck170-tip">' + (podeForjar ? 'Tudo pronto, Caçador! É só apertar.' : (!terminou ? 'Faltam fragmentos — os cartões em vermelho mostram quanto.' : 'Faltam 💠 ' + fmtBits(400 - p.bits) + ' bits.')) + '</div>'
+      +   '<div class="ck170-alt">'
+      +     '<button class="ck170-go2" ' + (canKeyFrag ? '' : 'disabled') + ' onclick="tryAssembleDromeKey()">🧩 Montar com ' + CONFIG.FRAGMENTS_PER_KEY + ' fragmentos do scan (' + p.fragments + '/' + CONFIG.FRAGMENTS_PER_KEY + ')</button>'
+      +     '<button class="ck170-go2 drome" ' + (p.dromeKeys > 0 ? '' : 'disabled') + ' onclick="closeClerkPanel(); enterDrome();">🌀 Entrar na Drome (1 🔑)</button>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="ck169-bench"><span class="ck169-plate">ROBÔ FORJA-7 · v.3</span><span class="ck169-bench-led"></span></div>'
+      + '</div>';
+    head = '';
   }
   el.innerHTML = head + body;
 }
+/* ===== v170 — OS 3 FRAGMENTOS DA DROME KEY (painel novo da FORJA-7) =====
+ * A receita da chave passou a ser: 🧭 Exploração ×1 + ⚔️ Batalha ×5 +
+ * ⚙️ Tempo ×7 + 💠 400 bits. Cada um vem de um lugar diferente do jogo. */
+const KEY_FRAGS170 = [
+  { id: 'exp', qty: 1, icon: '🧭', tag: 'Exploração', nome: 'Fragmento da Exploração', de: 'Mapa com 100% de escaneamento' },
+  { id: 'bat', qty: 5, icon: '⚔️', tag: 'Batalha', nome: 'Fragmento de Batalha', de: '1 por vitória (Dromo, PVP, Arena do Chefe)' },
+  { id: 'tempo', qty: 7, icon: '⚙️', tag: 'Tempo', nome: 'Fragmento do Tempo', de: '1 a cada 10 minutos de jogo' },
+];
+function fragCampo170(id) { return id === 'exp' ? 'fragExp169' : id === 'bat' ? 'fragBat169' : 'fragTempo169'; }
+function fragCount170(id) { const p = GameState.player; return Math.max(0, Math.floor(p[fragCampo170(id)] || 0)); }
+function fragsOk170() { return KEY_FRAGS170.every(function(f) { return fragCount170(f.id) >= f.qty; }); }
+function addFrag170(id, n, silencioso) {
+  const p = GameState.player; const campo = fragCampo170(id);
+  const q = (n || 1);
+  p[campo] = fragCount170(id) + q;
+  const def = KEY_FRAGS170.find(function(f) { return f.id === id; });
+  if (!silencioso && def) showNotif(def.icon + ' ' + def.nome + ' +' + q + ' (' + p[campo] + '/' + def.qty + ')', 'success');
+  updateTopBar();
+  return p[campo];
+}
+// ⚙️ TEMPO: 1 fragmento a cada 10 minutos; com o jogo fechado conta até 3 por ausência
+const TEMPO_MS170 = 10 * 60 * 1000, TEMPO_OFFLINE_MAX170 = 3;
+function tickTempo170() {
+  const p = GameState.player; if (!p) return;
+  const agora = Date.now();
+  const ultimo = p.lastSeen169 || agora;
+  const delta = agora - ultimo;
+  p.lastSeen169 = agora;
+  if (delta > 60000) { // ausência de verdade (fechou/recarregou)
+    const off = Math.min(TEMPO_OFFLINE_MAX170, Math.floor(delta / TEMPO_MS170));
+    if (off > 0) { addFrag170('tempo', off); showNotif('⚙️ Tempo com o jogo fechado: +' + off + ' Fragmento(s) do Tempo', 'info'); }
+    return;
+  }
+  p.playMs169 = Math.max(0, Math.floor(p.playMs169 || 0)) + Math.min(Math.max(delta, 0), 5000);
+  while (p.playMs169 >= TEMPO_MS170) { p.playMs169 -= TEMPO_MS170; addFrag170('tempo', 1); }
+}
+setInterval(tickTempo170, 3000);
+
 function craftKeyClerk() {
   const p = GameState.player;
   if (p.bits < 400) { showNotif('💠 Bits insuficientes (400)!', 'warning'); return; }
-  if (!removeMats(KEY_RECIPE)) { showNotif('Materiais insuficientes!', 'warning'); clerkRender(); return; }
+  if (!fragsOk170()) {
+    showNotif('Fragmentos insuficientes! Falta: ' + KEY_FRAGS170.filter(function(f) { return fragCount170(f.id) < f.qty; })
+      .map(function(f) { return f.icon + ' ' + (f.qty - fragCount170(f.id)); }).join(' · '), 'warning');
+    clerkRender(); return;
+  }
+  KEY_FRAGS170.forEach(function(f) { p[fragCampo170(f.id)] = fragCount170(f.id) - f.qty; });
   p.bits -= 400;
   p.dromeKeys++;
   showNotif('🔨 Drome Key forjada! Você tem ' + p.dromeKeys + ' 🔑', 'success');
@@ -3913,7 +4312,7 @@ function upgradeBackpack() {
   const lvl = p.backpackLvl || 0;
   if (lvl >= 5) { showNotif('Upgrade máximo atingido!', 'info'); return; }
   if (p.bits < upgradeBits()) { showNotif('💠 Bits insuficientes (' + upgradeBits() + ')!', 'warning'); return; }
-  if (!removeMats(upgradeCost())) { showNotif('Materiais insuficientes! Colete os 10 itens em Perim.', 'warning'); clerkRender(); return; }
+  if (!removeMats(upgradeCost())) { showNotif('Materiais insuficientes! Colete os itens nos mapas do nível certo de Perim.', 'warning'); clerkRender(); return; } // v169
   p.bits -= upgradeBits();
   p.backpackLvl = lvl + 1;
   showNotif('🎒 Mochila melhorada! Agora ' + getBackpackMax() + ' slots (+' + (2 * p.backpackLvl) + ' do upgrade).', 'success');
@@ -4162,7 +4561,8 @@ window.addEventListener('message', function(ev) {
         p.bits += bits; p.xp += xp;
         GameState.pvpWins = (GameState.pvpWins || 0) + 1;
         checkLevelUp(); updateTopBar(); saveGame(true);
-        showNotif('⚔️ VITÓRIA PVP! +💠' + fmtBits(bits) + ' · +' + xp + ' XP · Vitórias PVP: ' + GameState.pvpWins, 'success');
+        addFrag170('bat', 1, true); // v170 — vitória no PVP dá Fragmento de Batalha
+        showNotif('⚔️ VITÓRIA PVP! +💠' + fmtBits(bits) + ' · +' + xp + ' XP · ⚔️ Fragmento de Batalha +1 · Vitórias PVP: ' + GameState.pvpWins, 'success');
       } else {
         p.bits += 60; p.xp += 25;
         checkLevelUp(); updateTopBar(); saveGame(true);
@@ -4180,10 +4580,10 @@ window.addEventListener('message', function(ev) {
         const firstB150 = !GameState.bossArenaWins[mapB150];
         GameState.bossArenaWins[mapB150] = (GameState.bossArenaWins[mapB150] || 0) + 1;
         const bitsB150 = firstB150 ? 800 : 300, xpB150 = firstB150 ? 200 : 90;
-        pB150.bits += bitsB150; pB150.xp += xpB150; pB150.fragments++;
+        pB150.bits += bitsB150; pB150.xp += xpB150; pB150.fragments++; addFrag170('bat', 1, true); // v170 — Fragmento de Batalha
         checkLevelUp(); updateTopBar(); saveGame(true);
         updateMissionProgress('arena_win'); // v150 — missão do Clã
-        showNotif((firstB150 ? '👑 PRIMEIRA VITÓRIA NA ARENA! ' : '👑 Vitória na Arena! ') + (bdB150 ? bdB150.name : 'Chefe') + ' derrotado: +💠' + fmtBits(bitsB150) + ' · +' + xpB150 + ' XP · 🧩 Fragmento!', 'success');
+        showNotif((firstB150 ? '👑 PRIMEIRA VITÓRIA NA ARENA! ' : '👑 Vitória na Arena! ') + (bdB150 ? bdB150.name : 'Chefe') + ' derrotado: +💠' + fmtBits(bitsB150) + ' · +' + xpB150 + ' XP · 🧩 Fragmento · ⚔️ Fragmento de Batalha!', 'success');
       } else {
         pB150.bits += 60; pB150.xp += 25;
         checkLevelUp(); updateTopBar(); saveGame(true);
@@ -4206,7 +4606,8 @@ window.addEventListener('message', function(ev) {
         msg += ' 🎵 Mugic: ' + md.name + '!';
       }
       checkLevelUp(); updateTopBar(); saveGame(true);
-      showNotif(msg, 'success');
+      addFrag170('bat', 1, true); // v170 — vitória no Dromo dá Fragmento de Batalha
+      showNotif(msg + ' · ⚔️ Fragmento de Batalha +1', 'success');
     } else if (m) {
       showNotif('💀 Derrota para ' + m.nome + '. Fortaleça seus Scans e volte!', 'warning');
     }
@@ -4547,6 +4948,7 @@ function updateDromeUI() {
   let html = '<div class="drome-panel"><h4>🔑 Drome Key</h4><p style="font-size:10px;color:#6a7a50;">Colete 5 fragmentos para forjar uma chave. Use-a para entrar na Drome.</p><div class="fragments-row">';
   for (let i = 0; i < CONFIG.FRAGMENTS_PER_KEY; i++) html += '<div class="frag-slot ' + (i < p.fragments ? 'filled' : '') + '">' + (i < p.fragments ? '🧩' : '') + '</div>';
   html += '</div><div class="drome-status">' + p.fragments + '/' + CONFIG.FRAGMENTS_PER_KEY + ' fragmentos | ' + p.dromeKeys + ' chave(s)</div>';
+  html += '<div class="drome-status" style="font-size:9.5px;">🧭 ' + fragCount170('exp') + '/1 · ⚔️ ' + fragCount170('bat') + '/5 · ⚙️ ' + fragCount170('tempo') + '/7 (FORJA-7)</div>'; // v170
   html += '<button class="drome-btn" ' + (canAssemble ? '' : 'disabled') + ' onclick="tryAssembleDromeKey()">Forjar Drome Key</button>';
   html += '<button class="drome-enter-btn" ' + (canEnter ? '' : 'disabled') + ' onclick="enterDrome()">🌀 Entrar na Drome (1 🔑)</button>';
   html += '<p style="font-size:9px;color:#8a6a5a;margin-top:8px;">A Drome possui 5 waves e um Guardiao. Drops garantidos de itens raros+!</p></div>';
@@ -5722,6 +6124,11 @@ function drawEnergyCell(ctx) {
         ctx.fillStyle = dark; ctx.beginPath(); ctx.arc(22, 24, 2.5, 0, 7); ctx.fill();
       }
     }
+    function drawGMatGema(ctx) { drawGroundMat(ctx, '#7fe9ff', '#3f6fc4', 'cristal'); }
+    function drawGMatLeviatha(ctx) { drawGroundMat(ctx, '#4fd8c8', '#1f7a72', 'couro'); }
+    function drawGMatVulcano(ctx) { drawGroundMat(ctx, '#ff8a3a', '#c8451a', 'dente'); }
+    function drawGMatReator(ctx) { drawGroundMat(ctx, '#e07fff', '#7a2fa8', 'fio'); }
+    function drawGMatFenix(ctx) { drawGroundMat(ctx, '#ffb3d1', '#e05c8a', 'pena'); }
     function drawGMatDractyl(ctx) { drawGroundMat(ctx, '#b5713d', '#8a4f28', 'couro'); }
     function drawGMatTeia(ctx) { drawGroundMat(ctx, '#e8e4d8', '#b8b2a0', 'teia'); }
     function drawGMatCipo(ctx) { drawGroundMat(ctx, '#4fae5c', '#2f7a3c', 'cipo'); }
@@ -6012,6 +6419,11 @@ class BootScene extends Phaser.Scene {
     createTextureFromCanvas(this, 'energy_cell', drawEnergyCell, 32, 32);
     createTextureFromCanvas(this, 'mat_sucata', drawMatSucata, 32, 32);
     // v2.9 — 10 materiais novos de chão
+    createTextureFromCanvas(this, 'gmat_gema', drawGMatGema, 32, 32);
+    createTextureFromCanvas(this, 'gmat_leviatha', drawGMatLeviatha, 32, 32);
+    createTextureFromCanvas(this, 'gmat_vulcano', drawGMatVulcano, 32, 32);
+    createTextureFromCanvas(this, 'gmat_reator', drawGMatReator, 32, 32);
+    createTextureFromCanvas(this, 'gmat_fenix', drawGMatFenix, 32, 32);
     createTextureFromCanvas(this, 'gmat_dractyl', drawGMatDractyl, 32, 32);
     createTextureFromCanvas(this, 'gmat_teia', drawGMatTeia, 32, 32);
     createTextureFromCanvas(this, 'gmat_cipo', drawGMatCipo, 32, 32);
@@ -8190,7 +8602,7 @@ class PerimScene extends Phaser.Scene {
   spawnMaterial() {
     // v2.9 — 55% dos itens do chão são os 10 NOVOS materiais (aleatórios, ponderados)
     if (Math.random() < 0.55) {
-      const gm = rollGroundMat();
+      const gm = rollGroundMat((this.region && this.region.id) || GameState.currentRegion); // v169 — tier do mapa
       let mx2, my2, tx2, ty2, att2 = 0;
       do {
         mx2 = 100 + Math.random() * (this.worldW - 200); my2 = 100 + Math.random() * (this.worldH - 200);
@@ -8755,13 +9167,17 @@ class PerimScene extends Phaser.Scene {
       const ws147 = worldToScreen(this, target.x, target.y);
       showFloatText(ws147.x, ws147.y - 115, '📑 Mapa: ' + pct147 + '%', '#8be2ff');
       const reg147 = REGIONS.find(function(x) { return x.id === GameState.currentRegion; });
-      if (pct147 >= 100) showNotif('🗺️ ESCANEAMENTO 100% em ' + (reg147 ? reg147.name : 'mapa') + '! O próximo mapa da tribo libera ao atingir o nível.', 'success');
+      if (pct147 >= 100) {
+        showNotif('🗺️ ESCANEAMENTO 100% em ' + (reg147 ? reg147.name : 'mapa') + '! O próximo mapa da tribo libera ao atingir o nível.', 'success');
+        if (!GameState.map100169) GameState.map100169 = {};
+        if (!GameState.map100169[GameState.currentRegion]) { GameState.map100169[GameState.currentRegion] = 1; addFrag170('exp', 1); } // v170 — 1º 100% do mapa dá o Fragmento da Exploração
+      }
     }
     spawnMapBoss149(GameState.currentRegion); // v149 — 100% desperta o Chefe da tribo
     updateMissionProgress('kill', { enemy: target.type.name });
     // v2.9 — drops do scan são MATERIAIS (nada de equipamento no chão)
     if (Math.random() < 0.6) {
-      const gm = rollGroundMat();
+      const gm = rollGroundMat(GameState.currentRegion); // v169 — tier do mapa
       const qty = 1 + Math.floor(Math.random() * 2);
       if (addItemToBackpack(makeMatItem(gm.id, qty))) showFloatText(screenPos.x, screenPos.y - 95, gm.icon + ' +' + qty + ' ' + gm.name, '#9fe870');
     }
@@ -9861,7 +10277,7 @@ class DromeScene extends Phaser.Scene {
     this.completed = true;
     // v2.9 — recompensas da Drome: materiais raros do chão (equipamento só via scan)
     const rewards = [];
-    for (let ri = 0; ri < 5; ri++) { const gm = rollGroundMat(); rewards.push(makeMatItem(gm.id, 1 + Math.floor(Math.random() * 2))); }
+    for (let ri = 0; ri < 5; ri++) { const gm = rollGroundMat('mp_mirage'); rewards.push(makeMatItem(gm.id, 1 + Math.floor(Math.random() * 2))); } // v169 — a Drome paga materiais do tier 3
     for (let i = 0; i < rewards.length; i++) {
       if (!addItemToBackpack(rewards[i])) { showNotif('🎒 Mochila cheia! Recompensa perdida.', 'warning'); break; }
     }

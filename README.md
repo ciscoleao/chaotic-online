@@ -79,7 +79,8 @@ chaotic-online/
 └── docs/
     ├── PASSO-A-PASSO.md          ← guia de hospedagem para leigos
     ├── SUPABASE.md               ← save na nuvem que sobrevive a redeploy
-    ├── MAPAS-E-SCAN.md           ← mapas + scan + rio/pontes/Caverna + quadrados escuros + Safe Zone + Opções/auto-move/itens/MASTER + o banco de 120 (v2.27) + batalha e Coleção das 120 (v2.28) + o banco no jogo inteiro (v2.29) + a carta nova e a qualidade em 50 pontos (v2.30) + Terra = ⛰️ (v2.31)
+    ├── MAPAS-E-SCAN.md           ← mapas + scan + rio/pontes/Caverna + quadrados escuros + Safe Zone + Opções/auto-move/itens/MASTER + o banco de 120 (v2.27) + batalha e Coleção das 120 (v2.28) + o banco no jogo inteiro (v2.29) + a carta nova e a qualidade em 50 pontos (v2.30) + Terra = ⛰️ (v2.31) + materiais por nível e COSTURA-11 nova (v2.32) + a FORJA-7 com os 3 fragmentos (v2.33)
+    ├── QUALIDADES-E-RARIDADES.md ← qualidades/raridades (escala 50) + os 15 materiais por nível, o custo do upgrade (v2.32) e os 3 fragmentos da Drome Key (v2.33)
     ├── CORRECAO-NOMES-DE-MAPA.md ← o que mudou no HUD dos mapas (v2.18)
     ├── JANELINHA-PIP.md          ← janelinha flutuante + fora da aba + correção do iframe (v2.20)
     ├── patches/                  ← scripts que aplicam cada mudança (histórico reproduzível)
@@ -106,6 +107,34 @@ rara = **+20%** de velocidade e dano). Entrega validada por **146 verificações
 ---
 
 ## 🆕 Novidades
+
+**v2.33 — FORJA-7 nova: os 3 fragmentos da Drome Key 🔑**
+A **Drome Key** agora é forjada com **3 fragmentos diferentes**: **🧭 Fragmento da Exploração ×1** (o primeiro
+100% de escaneamento de um mapa), **⚔️ Fragmento de Batalha ×5** (1 por vitória: Dromo, PVP ou Arena do
+Chefe) e **⚙️ Fragmento do Tempo ×7** (1 a cada 10 minutos de jogo; com o jogo fechado conta até 3 por
+ausência) + **💠 400 bits**. O painel do **Robô FORJA-7** foi repaginado como o do COSTURA, na cor verde da
+forja: **a chave no centro** desenhada em SVG, os **3 fragmentos em cartões** com contador e barra, os tiles
+laterais, os circuitos nos cantos e a bancada com plaquinha. O caminho antigo (**🧩 5 fragmentos do scan**)
+continua valendo como botão secundário. Testes: **21 ✅** novos + **26 ✅ · 19 ✅ · 12 ✅ · 13 ✅ · 26 ✅ ·
+17 ✅ · 16 ✅ · 24 ✅ · 3 ✅ · 22 ✅ · 7 ✅ · 2 ✅** de regressão, com **0 erros de página**.
+→ [`docs/MAPAS-E-SCAN.md`](docs/MAPAS-E-SCAN.md) seção 16 ·
+[`docs/img/forja-pronta-v233.png`](docs/img/forja-pronta-v233.png)
+
+**v2.32 — Materiais por nível + a COSTURA-11 holográfica**
+Os materiais agora têm **nível**: são **15 tipos em 3 tiers de 5** — os **mapas de nível 1** das tribos só
+dropam o **tier 1** (Couro de Dractyl, Teia de Mandiblor, Cipó da Floresta da Vida, Dente de Magmon,
+Garra Mipediana), os **mapas de nível 2** só o **tier 2** (Cristal do Monte Pillar, Fio de Najarin, Musgo
+Prexxor, Retalho de Chaor, Pena de Phelpor) e os **mapas de nível 3** (e a Lagoa Negra) só o **tier 3**,
+com **5 materiais novos** (Gema Estelar, Escama de LeViathã, Essência de Fogo de Vulcano, Núcleo Pulsante
+de Reator, Penas de Fênix Prismática). O **upgrade da mochila** passou a pedir
+**5 ×10 → 5 ×20 → 10 ×10 → 10 ×20 → 15 ×10** (antes era 1 de cada material sempre) e o painel do
+**ROBÔ COSTURA-11** foi repaginado como **mesa holográfica**: mochila em wireframe com fios de luz para
+cada material, cartões com **barra de progresso**, braços robóticos e console no rodapé (e o FORJA-7 agora mostra o nível de mapa de cada material da receita). Testes: **27 ✅ · 19 ✅ (ponta a ponta) · 12 ✅ (fluxo do jogador, com celular)**
+novos + **13 ✅ · 26 ✅ · 17 ✅ · 16 ✅ · 2 ✅ · 24 ✅ · 3 ✅ · 22 ✅ · 7 ✅ · 146 OK** de regressão, com
+**0 erros de página**.
+→ [`docs/MAPAS-E-SCAN.md`](docs/MAPAS-E-SCAN.md) seção 15 ·
+[`docs/img/costura-nv1-v232.png`](docs/img/costura-nv1-v232.png) ·
+[`docs/img/costura-max-v232.png`](docs/img/costura-max-v232.png)
 
 **v2.31 — O elemento TERRA virou montanha ⛰️**
 O ícone do elemento **Terra** deixou de ser o planeta **🌍** (que confundia na carta) e passou a ser

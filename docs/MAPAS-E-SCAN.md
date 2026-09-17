@@ -1,9 +1,20 @@
 # 🗺️ Mapas separados de verdade + scan consertado + pontes, Caverna Secreta, o fim dos quadrados escuros e o herói indo atrás da criatura
 
-**Chaotic.IdleWorld · v2.31** · aplicado em `chaotic_idleworld_v123.html`
+**Chaotic.IdleWorld · v2.33** · aplicado em `chaotic_idleworld_v123.html`
 (continua com o mesmo nome do arquivo — é só substituir o antigo)
 
-> 🔝 **Última rodada (v2.31):** o ícone do elemento **TERRA** deixou de ser o planeta **🌍** e virou
+> 🔝 **Última rodada (v2.33):** a **FORJA-7** (o robô que forja a chave do Drome) ganhou o **painel novo** e a
+> **receita nova**: a Drome Key agora é feita com **🧭 Fragmento da Exploração ×1 + ⚔️ Fragmento de Batalha ×5 +
+> ⚙️ Fragmento do Tempo ×7 + 💠 400 bits**. Cada fragmento vem de um lugar diferente do jogo (100% de um mapa ·
+> vitória em batalha · tempo jogado). Detalhes na **seção 16**.
+>
+> 📜 Rodada anterior (v2.32): os os **materiais agora têm NÍVEL**: 15 tipos em 3 tiers de 5 — os mapas
+> de **nível 1** só dropam o tier 1, os de **nível 2** só o tier 2 e os de **nível 3** (e a Lagoa Negra) só o
+> tier 3 (com 5 materiais **novos**), e o **upgrade da mochila** passou a pedir
+> **5×10 · 5×20 · 10×10 · 10×20 · 15×10**. O painel do **COSTURA-11** virou uma **mesa holográfica** com a
+> mochila em wireframe, cartões com barra de progresso e os braços robóticos. Detalhes na **seção 15**.
+>
+> 📜 Rodada anterior (v2.31): o ícone do elemento **TERRA** deixou de ser o planeta **🌍** e virou
 > **⛰️ montanha** (na carta, no Scanner e na Coleção) — era o que causava a dúvida no print do Texugo
 > Escaldado. Detalhes na **seção 14**.
 >
@@ -996,12 +1007,178 @@ Prints desta rodada: `carta-terra-montanha-v231.png` (a carta do Texugo Escaldad
 
 ---
 
-## 15. Arquivos
+## 15. v2.32 — Materiais por nível + a COSTURA-11 holográfica
+
+### 15.1 O que você pediu (com as 4 imagens de referência)
+
+1. *"Reduzir os tipos de material para 5, mas a quantidade para 10 de cada… os 5 tipos exclusivos dos mapas
+   de lvl 1 de todas as tribos; upg2 = 20 dos mesmos; upg3 = 10 itens exclusivos do mapa 2 (10 de cada);
+   upg4 = os mesmos com 20; upg5 = 15 itens exclusivos do mapa 3 com 10 de cada."*
+2. *"Mudar a estética da COSTURA-UPGRADE"* — no estilo das imagens (mesa holográfica, mochila em wireframe
+   com as conexões, cartões de material e a bancada com braços robóticos).
+
+### 15.2 Os 15 MATERIAIS em 3 NÍVEIS (tiers) de 5
+
+| Tier | Onde dropa | Materiais |
+|---|---|---|
+| **1** | mapas de **nível 1** das 4 tribos (Bosque Verdejante, Cavernas de Brasas, Túneis do Monte Pillar, Oásis Enfumaçado) | Couro Escamoso de Dractyl 🟫 · Teia Reforçada de Mandiblor 🕸️ · Cipó da Floresta da Vida 🌿 · Dente Lascado de um Magmon 🦷 · Garra Caída de um Mipediano 🪝 |
+| **2** | mapas de **nível 2** (Prado Verde, Caverna de Lava, Pântano Nebuloso, Ruínas do Tempo) | Fragmento de Cristal do Monte Pillar 💠 · Fio da Túnica de Najarin 🧵 · Musgo do Abismo Prexxor 🍃 · Retalho da Capa de Chaor 🌑 · Pena de um Phelpor 🪶 |
+| **3** | mapas de **nível 3** (Floresta Sombria, Picos de Cinza, Borda do Vazio, Miragens do Palmeiral) **e a Lagoa Negra** | **Gema Estelar 💎** · **Escama Brilhante de LeViathã 🐉** · **Essência de Fogo de Vulcano 🔥** · **Núcleo Pulsante de Reator ⚙️** · **Penas de Fênix Prismática 🪶** *(os 5 novos)* |
+
+- O material que nasce no chão **é sempre do tier do mapa** (medido: 2.000 sorteios por mapa, 0 fora do
+  tier) — inclusive nos drops do scan e na recompensa da Drome (que paga **tier 3**).
+- A Caverna Secreta (fora do jogo de mapas por nível) ficou no tier 1.
+
+### 15.3 O CUSTO DO UPGRADE DA MOCHILA (do jeito que você definiu)
+
+| Upgrade | Materiais | Quantidade de cada | Bits | Slots |
+|---|---|---|---|---|
+| **1** | os **5** do nível 1 | **10** | 250 | 5 → 7 |
+| **2** | os **5** do nível 1 | **20** | 500 | 7 → 9 |
+| **3** | os **10** dos níveis 1 + 2 | **10** | 750 | 9 → 11 |
+| **4** | os **10** dos níveis 1 + 2 | **20** | 1.000 | 11 → 13 |
+| **5** | os **15** dos níveis 1 + 2 + 3 | **10** | 1.250 | 13 → 15 |
+
+(Antes: 1 unidade de cada um dos 10 materiais em **todos** os upgrades — era por isso que o painel ficava
+uma lista longa e "sem graça".)
+
+### 15.4 O PAINEL NOVO (mesma função, cara nova)
+
+- **Mesa holográfica** com cantos cortados, borda de neon, **scanlines** e **circuitos verdes nos 4 cantos**
+  (com nós que piscam), como nas imagens de referência;
+- **anel holográfico** atrás da mochila: dois círculos com arcos girando devagar (um no sentido contrário do
+  outro), igual às referências;
+- **mochila em wireframe** no centro, flutuando, com fios de luz que saem de **cada material** até ela
+  (no nível máximo são 15 conexões: 5 de cada lado + **5 na fila de baixo**);
+- **cartão por material**: ícone, nome e **barra de progresso** `x/10` (verde quando completo, azul quando
+  falta, vermelho no número);
+- **cabeçalho** com o robô, `ROBÔ COSTURA-11 v.3`, o nível, os slots e a fala dele;
+- **bancada** no rodapé com **2 braços robóticos de garras rosas**, a plaquinha `ROBÔ COSTURA-11 · v.3` com o
+  LED verde ligado, o selo do próximo upgrade
+  (`UPGRADE 3/5 — 10 TIPOS DE 10 · MAPAS 1 + MAPAS 2 · 💠 750 bits`) e o botão **🧵 FAZER UPGRADE**;
+- **no celular** o rodapé é uma **barra fixa** (o conteúdo rola por trás) e o **CHAT sai da frente** enquanto
+  o painel está aberto — nos 15 cartões nada fica escondido;
+- no **nível máximo** aparece `✓ MOCHILA NO MÁXIMO — 15 slots` no lugar do botão (e o selo do rodapé
+  vira `NÍVEL MÁXIMO — TODOS OS BOLSOS COSTURADOS · 💠 1.250 bits (níveis já pagos)`);
+- o painel do **FORJA-7** (craft da Drome Key) continua no layout antigo — mudou só o do COSTURA-11.
+
+### 15.5 Provas (Chrome real, no jogo servido pelo `server.js`)
+
+- **`test_v232_costura.js` — 27 ✅ · 0 ❌**: os 15 materiais com 5 por tier e textura própria; o tier de
+  cada mapa (mapas 1 → tier 1, mapas 2 → tier 2, mapas 3 + Lagoa Negra → tier 3) e **2.000 sorteios por
+  mapa sem nenhum material do tier errado**; o custo dos 5 upgrades conferido um por um
+  (`5×10 · 5×20 · 10×10 · 10×20 · 15×10`); o painel com 5 / 10 / 15 cartões conforme o nível, mochila em
+  wireframe, 2 braços, selo do upgrade, botão e o selo de máximo; **o upgrade funcionando de verdade**
+  (nível 0→1, slots 5→7, os 10 de cada consumidos, e o nível 2 **travando** sem os 20); a Drome pagando
+  tier 3; **o FORJA-7 intacto (mesmo painel, mesma receita) e agora com a etiqueta de nível em cada
+  material da receita**; e os materiais novos entrando na mochila.
+- **`test_v232_fluxo.js` — 12 ✅ · 0 ❌ (o fluxo do jogador)**: o herói **anda até o balcão no Pátio
+  Central e o painel abre pelo `[E]`** (sem chamar função), **clique de mouse de verdade no botão**
+  (nível 0→1, slots 5→7, −250 bits, os 10 de cada consumidos e o painel se redesenhando no nível 1),
+  **coletar material do chão passando por cima** (tier 3 na Borda do Vazio), o aviso de "mochila
+  melhorada" — e o painel **no celular** (390×844, modo mobile): cabe na tela, não vaza para o lado, os 15
+  cartões em blocos de 2, o **rodapé fixo** com o selo/botão sempre visível (o conteúdo rola por trás) e o
+  **CHAT saindo da frente** enquanto o painel está aberto (e voltando ao fechar).
+- **`test_v232_e2e.js` — 19 ✅ · 0 ❌ (a prova "no jogo de verdade")**: em **3 sessões de Chrome** ele viaja
+  pelos mapas e mede o **spawn real**: Bosque, Túneis Danian (nível 1) → só tier 1; Prado (nível 2) → só
+  tier 2; Floresta Sombria e Borda do Vazio (nível 3) → só tier 3, **30 spawns por mapa, 0 errado** e os 5
+  tipos de cada nível aparecendo. Depois: **o drop do scan em 6 mapas (6 scans cada, 36 unidades ganhas,
+  0 do tier errado)**; os **bloqueios do botão** (9 de 10 trava; sem bits trava e o aviso cobra os bits;
+  faltando 1 material o aviso cobra o material); **o Depósito pagando o upgrade** (mochila vazia, tudo no
+  Depósito, nível 0→1 e os 10 de cada consumidos); e **os 5 upgrades em sequência** — 50/100/100/200/150
+  unidades cobradas e consumidas, **sem tocar em nenhum material fora da lista**, terminando em **nível 5
+  com 15 slots**, 15 cartões, selo de máximo e sem botão.
+- **Regressões na mesma build**: `test_v231_montanha.js` **13 ✅** · `test_v230_carta.js` **26 ✅** ·
+  `test_v229_banco_total.js` **17 ✅** · `test_v228_batalha.js` **16 ✅** · `test_v229_drome.js` **2 ✅** ·
+  `test_v227_banco.js` **24 ✅** · `test_v227_portal.js` **3 ✅** · `test_v226.js` **22 ✅** ·
+  `test_v226_itens.js` **7 ✅** · **0 erros de página** em todos (o banco de 120 criaturas é coberto pelo
+  `test_v229_banco_total.js` e pelo `test_v227_banco.js`).
+
+Prints desta rodada: `costura-celular-v232.png` (o painel no celular, 15 cartões, rodapé fixo) ·
+`costura-nv1-v232.png` (upgrade 1: 5 materiais ×10) · `costura-nv3-v232.png`
+(upgrade 3: 10 materiais, tiers 1 + 2) · `costura-max-v232.png` (nível máximo: 15 materiais, 5 + 5 + 5, com
+os fios em leque e o selo `✓ MOCHILA NO MÁXIMO — 15 slots`) · `materiais-no-mapa-v232.png` (os sprites
+novos no chão do Bosque Verdejante, ao lado do herói).
+
+### 15.6 O FORJA-7 fala a mesma língua
+
+A receita do FORJA-7 (craft da Drome Key) **não mudou de custo** — continua `cristal 2 · dente 1 ·
+retalho 1` + 400 bits —, mas cada linha agora mostra **de que nível de mapa vem o material**
+(`MAPAS 1` / `MAPAS 2` / `MAPAS 3`), igual ao painel do COSTURA-11. O painel do FORJA continua no layout
+antigo (não recebeu a mesa holográfica).
+
+### 15.7 O que NÃO mudou (de propósito)
+
+- O **COSTURA-11 continua aceitando material da mochila OU do Depósito**, os **+2 slots por upgrade** e os
+  **bits** por nível (250/500/750/1.000/1.250).
+- O **FORJA-7** (craft de Drome Key) e o resto do jogo (scan 3s/96px/160px, criaturas, carta nova com a
+  qualidade em 50 pontos, Terra ⛰️, banco de 120 no jogo inteiro, Coleção, batalha, itens a 10%).
+- **Materiais antigos que você já tinha** continuam valendo: os 10 primeiros materiais são exatamente os
+  mesmos, só organizados em tiers 1 e 2.
+
+---
+
+## 16. v2.33 — A FORJA-7 nova: os 3 fragmentos da Drome Key 🔑
+
+### 16.1 O que mudou
+
+A **Drome Key** (a chave que abre a Drome) deixou de ser feita de material + fragmentos soltos e passou a ser
+forjada com **3 fragmentos diferentes**, um de cada canto do jogo — e a FORJA-7 ganhou o painel da sua
+referência (print `image-1`):
+
+| Fragmento | Quanto | De onde vem |
+|---|---|---|
+| 🧭 **Fragmento da Exploração** | **×1** | o **primeiro 100% de escaneamento** de um mapa (cada mapa dá 1; repetir o mesmo mapa não dá) |
+| ⚔️ **Fragmento de Batalha** | **×5** | **1 por vitória**: Dromo de mestre, PVP online ou Arena do Chefe |
+| ⚙️ **Fragmento do Tempo** | **×7** | **1 a cada 10 minutos de jogo** (com o jogo fechado, conta até **3** por ausência) |
+
+Custo adicional: **💠 400 bits** (como na referência).
+
+### 16.2 O painel novo (mesma cara do COSTURA, na cor da FORJA)
+
+- **A chave do Drome no centro**, desenhada em SVG (cristal + engrenagem + lâminas + cabo), com halo e brilho;
+- **os 3 fragmentos em cartões** com o ícone, a **origem escrita** ("1 por vitória", "mapa 100%…", "10 min de
+  jogo"), o **contador x/qtd** e **barra de progresso** (verde cheio, azul faltando, número vermelho);
+- **os 3 tiles laterais** com o total de cada fragmento, iguais aos da referência;
+- **bancada holográfica verde**, com os circuitos nos 4 cantos, a plaquinha `ROBÔ FORJA-7 · v.3` e o LED;
+- o rodapé é **fixo** (não sai da tela, nem no celular): o botão **🛠 Forjar Drome Key** só libera com os
+  **3 fragmentos + 400 bits**, e o aviso diz o que falta;
+- abaixo ficam os caminhos secundários: **🧩 montar com os 5 fragmentos do scan** (o caminho antigo continua
+  valendo) e **🌀 entrar na Drome** (com 1 chave).
+
+### 16.3 O que NÃO mudou
+
+- O **COSTURA-11** (upgrade da mochila) está exatamente igual — a mudança foi só na FORJA;
+- os **fragmentos antigos 🧩 do scan** continuam existindo e ainda montam uma chave (botão secundário);
+- os **400 bits**, o preço e a Câmara do Drome seguem iguais — a Câmara até **mostra os 3 fragmentos novos**
+  junto do contador de chaves.
+
+### 16.4 Provas
+
+- **`test_v233_forja.js` — 21 ✅ · 0 ❌**: a receita (🧭1 · ⚔️5 · ⚙️7), o painel (chave, halo, tiles, 3 cartões
+  com os contadores, circuitos, plaquinha, custo, avisos), os **bloqueios** (faltando fragmento trava ·
+  sem 400 bits trava), as **3 fontes** medidas no jogo (vitória no Dromo, no PVP e na Arena do Chefe ·
+  mapa 80%→100% dá 1 🧭 e repetir não dá · 10 min de jogo dão 1 ⚙️ · 1h com o jogo fechado dá 3 ⚙️),
+  o **forjar de verdade** (clique → chave +1, −400 bits, fragmentos zerados, painel redesenhado, botão da
+  Drome libera) e o **save/reload** (os 3 contadores, o relógio e os mapas 100% voltam).
+- Regressões na mesma build: `test_v232_costura.js` **26 ✅** · `test_v232_e2e.js` **19 ✅** ·
+  `test_v232_fluxo.js` **12 ✅** · `test_v231_montanha.js` **13 ✅** · `test_v230_carta.js` **26 ✅** ·
+  `test_v229_banco_total.js` **17 ✅** · `test_v228_batalha.js` **16 ✅** · `test_v227_banco.js` **24 ✅** ·
+  `test_v227_portal.js` **3 ✅** · `test_v226.js` **22 ✅** · `test_v226_itens.js` **7 ✅** ·
+  `test_v229_drome.js` **2 ✅** · **0 erros de página**.
+
+Prints desta rodada: `forja-faltando-v233.png` (faltando 1 de batalha e 1 de tempo) ·
+`forja-pronta-v233.png` (tudo pronto, botão verde liberado).
+
+---
+
+## 17. Arquivos
 
 | Arquivo | O que é |
 |---|---|
-| `chaotic_idleworld_v123.html` | **o jogo com tudo** (v2.31: carta nova, qualidade em 50 pontos e Terra ⛰️, com a v2.30/v2.29/v2.28/v2.27/v2.26/v2.25/v2.24/v2.23 e tudo o que já existia) |
+| `chaotic_idleworld_v123.html` | **o jogo com tudo** (v2.33: FORJA-7 nova com os 3 fragmentos, com a v2.32 dos materiais por nível + COSTURA-11 nova, com a v2.31/v2.30/v2.29/v2.28/v2.27/v2.26/v2.25/v2.24/v2.23 e tudo o que já existia) |
 | `LEIA-ME-MAPAS-E-SCAN.md` | este guia |
+| `QUALIDADES-E-RARIDADES.md` | qualidades/raridades (escala 50) **e a seção 7 nova: os 15 materiais por nível + o custo do upgrade da mochila** |
 | `LEIA-ME-JANELINHA-PIP.md` | guia da janelinha flutuante / modo fora da aba (v2.20) |
 | `LEIA-ME-CORRECAO-NOMES-DE-MAPA.md` | guia dos nomes de mapa (v2.18) |
 | `patch_mapas_separados.py` | script que aplica esta mudança (histórico reproduzível) |
@@ -1021,12 +1198,16 @@ Prints desta rodada: `carta-terra-montanha-v231.png` (a carta do Texugo Escaldad
 | `patch_banco_total_166.py` | script da v2.29 (v166): o banco de 120 vira a fonte de criaturas do jogo inteiro (Roleta, Leilão, Drome, duelos, MASTER, códigos, decks dos 7 Mestres) + a faixa do banco no Portal |
 | `patch_carta_e_iv50_167.py` | script da v2.30 (v167): carta de scan refeita (captura + Scanner) e escala de qualidade em 50 pontos com pesos (60/25/10/4,9/0,1) |
 | `patch_elemento_terra_168.py` | script da v2.31 (v168): o elemento TERRA troca o ícone 🌍 (planeta) por ⛰️ (montanha) na carta, no Scanner e na Coleção |
+| `patch_costura_169.py` | script da v2.32 (v169): materiais divididos em 3 níveis (15 tipos), custo do upgrade 5×10/5×20/10×10/10×20/15×10 e o painel holográfico do COSTURA-11 |
+| `patch_forja_170.py` | script da v2.33 (v170): a Drome Key passa a ser forjada com os 3 fragmentos (🧭×1 · ⚔️×5 · ⚙️×7), as 3 fontes de fragmento e o painel novo da FORJA-7 |
+| `test_v233_forja.js` | prova da v2.33: a receita, o painel, os bloqueios, as 3 fontes de fragmento, o forjar e o save/reload (21 ✅) |
+| `test_v232_costura.js` / `test_v232_e2e.js` / `test_v232_fluxo.js` | provas da v2.32: o painel, o custo e a forja (27 ✅) · o jogo de verdade ponta a ponta — spawn nos mapas, drop do scan, Depósito e os 5 upgrades (19 ✅) · o fluxo do jogador com [E], clique e celular (12 ✅) |
 
 ### Publicar
 Suba o `chaotic_idleworld_v123.html` por cima do antigo no GitHub/Render (o `server.js` busca
 esse nome exato) e faça o deploy. **Só o jogo mudou** — o `site/index.html` e o servidor continuam
 iguais aos da v2.20. Depois de subir, abra o jogo com Ctrl+F5 (ou aba anônima) para o navegador
-não usar a versão antiga do arquivo. O título interno passa a mostrar **v2.31**.
+não usar a versão antiga do arquivo. O título interno passa a mostrar **v2.33**.
 
 > ℹ️ Se você já tinha jogado antes, o **progresso é preservado** (save no navegador + conta).
 > O que muda é o desenho dos mapas a partir de agora — e o fato de cada mapa ter criaturas próprias.
