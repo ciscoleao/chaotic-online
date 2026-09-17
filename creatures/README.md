@@ -2,6 +2,20 @@
 > ✅ **Integrado no jogo na v2.27 (v164).** As 120 criaturas deste banco agora nascem nos mapas de Perim
 > (pools por tribo e nível, spawn ponderado, velocidade por espécie, ficha nas cartas) — veja
 > `docs/MAPAS-E-SCAN.md` seção 10 no pacote do jogo. O `patch_banco_120.py` é o script que fez a integração.
+>
+> ✅ **E desde a v2.28 (v165) o banco também vale na BATALHA e na COLEÇÃO.** Na arena (Dromo e PVP) o
+> **elemento** da espécie escolhe o arquétipo de luta e a vida/dano/velocidade saem da ficha; e o painel
+> **COLEÇÃO** (no acervo do Scanner) lista as 120 com progresso x/120 e filtro Escaneadas/Faltando —
+> veja `docs/MAPAS-E-SCAN.md` seção 11. Script: `patch_banco_batalha_165.py`.
+>
+> ✅ **Na v2.29 (v166) o banco virou a fonte de TODA criatura do jogo**: a Roleta, o Leilão (ofertas e
+> pedidos), o MASTER, os duelos aleatórios, as ondas da Drome, os códigos promocionais e os **decks dos
+> 7 Mestres do Código** passaram a sortear só as 120 — e o Portal de Viagem mostra o progresso do banco.
+> Veja `docs/MAPAS-E-SCAN.md` seção 12. Script: `patch_banco_total_166.py`.
+>
+> 🎴 **Na v2.30 (v167) as cartas ficaram no formato novo** (nome, raridade, 4 status, círculos de elemento
+> com a tribo no meio, mugic e código) e a **qualidade passou para 0–50 com pesos** (Fraco 60% · Médio 25%
+> · Bom 10% · Excelente 4,9% · Perfeito 0,1%). Script: `patch_carta_e_iv50_167.py`.
 
 
 Banco de **120 criaturas** (4 tribos × 30, distribuídas em 3 mapas por tribo), o **modelo de dados da carta**,

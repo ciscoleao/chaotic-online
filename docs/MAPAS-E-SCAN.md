@@ -1,9 +1,33 @@
 # 🗺️ Mapas separados de verdade + scan consertado + pontes, Caverna Secreta, o fim dos quadrados escuros e o herói indo atrás da criatura
 
-**Chaotic.IdleWorld · v2.25** · aplicado em `chaotic_idleworld_v123.html`
+**Chaotic.IdleWorld · v2.31** · aplicado em `chaotic_idleworld_v123.html`
 (continua com o mesmo nome do arquivo — é só substituir o antigo)
 
-> 🔝 **Última rodada (v2.25):** o herói **VAI ATRÁS E ESCANEIA QUALQUER CRIATURA**, inclusive as
+> 🔝 **Última rodada (v2.31):** o ícone do elemento **TERRA** deixou de ser o planeta **🌍** e virou
+> **⛰️ montanha** (na carta, no Scanner e na Coleção) — era o que causava a dúvida no print do Texugo
+> Escaldado. Detalhes na **seção 14**.
+>
+> 📜 Rodada anterior (v2.30): a **carta de scan foi refeita** (na captura e no Scanner):
+> só **nome, raridade, os 4 status, os círculos de elemento com a tribo no meio**, o **Mugic** e o
+> **código** — sem textos soltos nem habilidade — e a **qualidade virou escala de 50 pontos** com pesos
+> (**Fraco 60% · Médio 25% · Bom 10% · Excelente 4,9% · Perfeito 0,1%**). Detalhes na **seção 13**.
+>
+> 📜 Rodada anterior (v2.29): o **banco de 120** virou **a fonte de criaturas do jogo
+> inteiro** — a **Roleta**, o **Leilão** (ofertas e pedidos), o **MASTER**, os **duelos**, a **Drome**,
+> os **códigos** e os **decks dos 7 Mestres do Código** passaram a sortear só as 120 (nada mais de
+> monstro antigo aparecendo), e o **Portal de Viagem** ganhou a faixa “🧬 Banco de 120 criaturas —
+> X/120 escaneadas” que abre a Coleção. Detalhes na **seção 12**.
+>
+> 📜 Rodada anterior (v2.28): o **banco de 120 criaturas** entrou na **BATALHA** (o **elemento** da
+> espécie decide o arquétipo de luta e **vida/dano/velocidade** saem da ficha dela — Dromo e PVP) e
+> nasceu a **COLEÇÃO das 120** dentro do jogo: um botão no **acervo do Scanner** abre o painel com
+> **Todas + as 4 tribos** (30 cada), progresso **x/120**, filtro **Escaneadas/Faltando** e a ficha
+> completa de cada espécie. Detalhes na **seção 11**.
+>
+> 📜 Rodada anterior (v2.27): o banco de 120 virou **o conteúdo de Perim** — pools por tribo/mapa,
+> spawn ponderado, velocidade por espécie, ficha nas cartas e o mapa 3 dos Mipedians (seção 10).
+>
+> 📜 Rodada anterior (v2.25): o herói **VAI ATRÁS E ESCANEIA QUALQUER CRIATURA**, inclusive as
 > **agressivas dentro do mapa 1 SAFE ZONE**. No seu print do Bosque Verdejante ele passou quase colado
 > numa **Aranha Gigante Lv.6** e não fez nada: a Safe Zone zera o raio de ameaça (correto — lá nada te
 > persegue), mas o auto-move usava esse mesmo zero para **descartar** os agressivos da caça. Agora o
@@ -680,11 +704,303 @@ Leilão/Dromo.
 
 ---
 
-## 11. Arquivos
+## 11. v2.28 — O banco de 120 na BATALHA + a COLEÇÃO das 120 dentro do jogo
+
+### 11.1 O pedido
+
+*"Pode integrar o banco de 120 criaturas."* — o banco já nascia nos mapas desde a v2.27; agora ele
+fecha o ciclo **em todos os lugares em que a criatura aparece**:
+
+1. **na BATALHA** (Dromo contra os 7 Mestres do Código e **PVP** contra outros jogadores);
+2. na **COLEÇÃO** — as 120 fichas viram um **álbum jogável dentro do jogo**.
+
+### 11.2 O ELEMENTO da criatura decide como ela luta
+
+Cada espécie do banco tem **elementos** (Fogo 🔥, Água 💧, Terra 🌍, Ar 🌪️). Ao entrar na arena, o
+elemento escolhe **um dos 6 arquétipos de luta** que o jogo já tinha — em vez de a arena sortear um
+arquétipo qualquer:
+
+| Elemento da espécie | Arquétipo na arena | Como ele briga |
+|---|---|---|
+| 🔥 Fogo | **Pyrodonte** | briga na frente, dano físico alto |
+| 💧 Água | **Aquarion** | controle/velocidade (espécie **RARA** vira **Noctumbra**, o controle pesado) |
+| 🌍 Terra | **Terramole** | tanque, vida alta (criatura **mística** vira **Sibilora**) |
+| 🌪️ Ar | **Voltrax** | dano em área, mágico |
+
+E os atributos deixam de ser sorteados: **saem da própria ficha do banco**.
+
+```
+   vida da arena ..... 0,85 + (HP da ficha   - 30) / 220     (piso 0,85 · teto 1,35)
+   dano da arena ..... 0,85 + (ATK da ficha  -  5) / 100     (piso 0,85 · teto 1,35)
+   velocidade ........ 0,90 + (vel da ficha  - 124) / 400    (piso 0,90 · teto 1,20)
+```
+
+A calibragem foi feita nas **faixas reais do banco** (HP 30–152 · ATK 5–49 · velocidade 124–225), e não
+na média das cartas — foi assim que os multiplicadores deixaram de cair todos no piso. Exemplo medido:
+
+```
+   Falcão Carbonizado [Fogo] → Pyrodonte    HP 379 (base 330)   ·   fís 38 (base 34)
+   multiplicadores reais medidos:  0,95–1,15 em vida  ·  0,91–1,12 em dano
+```
+
+- O **duelo leva a ficha consigo**: o jogo de batalha recebe `banco` no payload e mostra
+  **“Habilidade de carta (banco): …”** na descrição da criatura, junto de **tribo**, **raridade** e
+  **Mugic** — os Code Masters continuam com os decks que já tinham.
+- O **Scan clássico** (as criaturas antigas, inclusive os M’arrillians) continua funcionando pelo
+  mesmo caminho de antes — nada foi removido.
+
+### 11.3 A COLEÇÃO das 120 dentro do jogo
+
+No **acervo do Scanner** apareceu um botão novo que abre o painel **COLEÇÃO**:
+
+| O que tem | Como é |
+|---|---|
+| **Abas** | **Todas** + as 4 tribos (OverWorld, UnderWorld, Danian, Mipedian) — **30 espécies** por tribo |
+| **Progresso** | **x/30** em cada tribo e **x/120** no total (as **✓** vêm do seu scan real, por mapa) |
+| **Filtro** | **Todas · Escaneadas · Faltando** — dá para caçar exatamente o que falta |
+| **Cada espécie** | arte da carta · nível · **elementos** · **passiva ou agressiva** · **Mugic** · **em qual mapa do jogo ela vive** · **habilidade** · ✓ (se você já escaneou) |
+
+- Só existe a **✓** quando a espécie está registrada no seu banco de scans (**o mesmo contador** que
+  conta o `%` dos mapas) — o álbum é honesto: não “desbloqueia” nada sozinho.
+- Medido no jogo rodando: as **120** espécies são listadas, **30** por tribo, **3/120** marcadas com a
+  mesma conta de scans, filtro “Faltando” mostrando **117**, e o painel **fecha** sem travar nada.
+
+### 11.4 Provas (Chrome real, no jogo servido pelo `server.js`)
+
+- **`test_v228_batalha.js` — 16 ✅ · 0 ❌**: o elemento do banco escolhendo o arquétipo; os
+  multiplicadores de vida/dano/velocidade dentro das faixas; o **Falcão Carbonizado [Fogo] → Pyrodonte**
+  com **HP 379** e **fís 38**; o payload do Dromo **e** o do PVP levando a ficha; a arena (iframe real do
+  Dromo) com **5 scans** de elementos fogo/terra/ar, mostrando a **habilidade do banco** na descrição e
+  os Code Masters com o deck intacto; e as **120** abrindo no painel de Coleção (com as provas da seção
+  11.3).
+- **Regressões verdes na mesma build**: `test_v227_banco.js` **24 ✅** (pools 5/10/15, peso da rara,
+  velocidade por espécie, carta com ficha, MASTER, Caverna, Portal) · `test_v226.js` **22 ✅** ·
+  `test_v226_itens.js` **7 ✅** · `test_v227_portal.js` **3 ✅** · `test_banco.js` **146 OK** ·
+  **0 erros de página** em todos.
+
+Prints desta rodada: `colecao-120-v228.png` (a **Coleção das 120** aberta no jogo, com 5 espécies já
+escaneadas em verde) · `colecao-120-mipedian-v228.png` (a aba **Mipedian**, com *Miragens do Palmeiral*) ·
+`batalha-banco-v228.png` (a **Sala de Preparação** do Dromo: os Scans do jogador com o **elemento** de
+cada espécie — Terra, Ar, Fogo, Água — e a **Habilidade de carta (banco)** na ficha).
+
+### 11.5 O que NÃO mudou (de propósito)
+
+- O **scan**: 3s de carga, alvo a ≤**96px**, perseguição a ≤**160px**, o herói **para** para escanear, a
+  criatura RARA perde **50% da velocidade** (pode escapar e o scan falhar), **vida de 20s**, Caverna 2x
+  com o recuo de 44px. O jogo continua **difícil de propósito**.
+- Os **pools por mapa** (5/10/15), o **Mapa 3 dos Mipedians**, os **itens a 10%**, o **auto-move
+  automático**, o **MASTER**, o rio de ponta a ponta com **3 pontes** e o fim dos quadrados escuros.
+- O **servidor, o `server.js` e o site** — nada mudou neles. Só o jogo (`chaotic_idleworld_v123.html`).
+
+---
+
+## 12. v2.29 — O banco de 120 no jogo INTEIRO (Roleta, Leilão, Drome, Mestres)
+
+### 12.1 O pedido
+
+*"Pode integrar o banco de 120 criaturas."* — a v2.27 pôs as 120 **nos mapas** e a v2.28 **na batalha e
+na Coleção**. Faltavam os sistemas que ainda sorteavam o **elenco antigo** do jogo. Agora **toda
+criatura que aparece em qualquer lugar vem das 120 do banco**.
+
+### 12.2 O que mudou (v166)
+
+| Sistema | Antes | Agora |
+|---|---|---|
+| 🎰 **Roleta** — a lista "Monstros na Roleta" | o elenco antigo **+** as 120 | **só as 120 do banco** (com *Tribo · M1/M2/M3* e ★ na rara) |
+| 💠 **Leilão** — ofertas de Scan | qualquer criatura do jogo | **só as 120** (preço por nível e raridade do banco) |
+| 💠 **Leilão** — a lista de "pedidos" de criatura | todo o elenco (~50 nomes) | **só as 120** |
+| 💠 **MASTER** — +1 Scan aleatório | qualquer criatura | **só as 120** (e continua creditando o mapa da espécie) |
+| ⚔️ **Duelos aleatórios do Dromo** | qualquer criatura | **só as 120**, no nível compatível com o seu |
+| 🌀 **Drome** (arena de ondas) | qualquer criatura | **só as 120** |
+| 🎁 **Códigos promocionais** (+N Scans) | qualquer criatura | **só as 120** |
+
+E os **7 Mestres do Código** deixaram de lutar com monstros antigos — cada um agora tem um **deck do
+banco** da sua tribo:
+
+| Mestre | Nível base | Deck (banco) |
+|---|---|---|
+| **Crellan** | 10 | Falcão Carbonizado · Tartaruga Flamejante · Texugo Escaldado *(OverWorld m2)* |
+| **Hotekk** | 18 | Píton Tempestuosa · Feneco Célere · Verme-da-areia Pedregoso *(Mipedian m2 — os ancestrais)* |
+| **Amzen** | 26 | Sapo Neblinoso · Cascudo Fuliginoso · Basilisco Ondeante *(UnderWorld m2)* |
+| **Oron** | 34 | Feneco Pedregoso · Gênio Fluido · Jerboa Trovejante *(Mipedian m3)* |
+| **Tirasis** | 42 | Javali Titânico · Castor Granítico · Cervo Vulcânico *(OverWorld m3)* |
+| **Imthor** | 52 | Lagarta Titânica · Broca Tempestuosa · Centopeia Terrosa *(Danian m3 — as feras)* |
+| **Chirrul** | 62 | **Lagartixa Férrea (★ RARA)** · Imp Flamejante · Gafanhoto Etéreo *(mapa 3 das tribos)* |
+
+### 12.3 O banco agora aparece no Portal
+
+No topo do **Portal de Viagem** entrou a faixa
+**“🧬 Banco de 120 criaturas — X/120 escaneadas · abrir a Coleção 📖”** — um clique abre o painel da
+Coleção (o mesmo da v2.28), então dá para conferir o banco sem procurar no Scanner.
+
+### 12.4 Provas (Chrome real, no jogo servido pelo `server.js`)
+
+- **`test_v229_banco_total.js` — 17 ✅ · 0 ❌**: as 120 na lista da Roleta (nenhum nome fora do banco);
+  **300 ofertas** do Leilão sorteadas (todas com a ficha do banco); a lista de pedidos com
+  **120 opções** do banco; **30** scans do MASTER (todos do banco e creditando o mapa certo);
+  **80 duelos** aleatórios (só banco); os **7 decks** dos Mestres conferidos um por um; a faixa do
+  Portal com o progresso (25/120 na medição) e abrindo a Coleção; e as regressões (Lagoa Negra com as
+  6 M’arrillian clássicas; os 12 mapas do banco em 5/10/15).
+- **`test_v229_drome.js` — 2 ✅ · 0 ❌**: entrando na Drome de verdade (com 1 Drome Key) — a onda 1/5
+  nasceu com **Jerboa Trovejante, Carneiro Mineral, Basilisco Férreo e Caracol Vulcânico** (4/4 do banco).
+- **Regressões na mesma build**: `test_v228_batalha.js` **16 ✅** · `test_v227_banco.js` **24 ✅** ·
+  `test_v227_portal.js` **3 ✅** · `test_v226.js` **22 ✅** · `test_v226_itens.js` **7 ✅** ·
+  `test_banco.js` **146 OK** · **0 erros de página**.
+
+Prints desta rodada: `portal-banco-v229.png` (a faixa do banco no Portal) · `roleta-120-v229.png`
+("Monstros na Roleta — as 120 do banco") · `leilao-banco-v229.png` (o Leilão vendendo scans do banco) ·
+`drome-banco-v229.png` (a Drome com a onda do banco).
+
+### 12.5 O que NÃO mudou (de propósito)
+
+- A **Lagoa Negra M’arrillian** segue com o **pool clássico** — o banco não tem criaturas M’arrillian
+  (e essa é a tribo daquele mapa).
+- As **cartas que você já tinha no inventário continuam aí** — nada é apagado; a regra nova vale para
+  tudo o que for **sorteado** de agora em diante.
+- O **scan** (3s · 96px · 160px · o herói para · rara −50%), a **vida de 20s**, os **pools 5/10/15**, a
+  **batalha com a ficha do banco**, a **Coleção**, os **itens a 10%**, o **auto-move automático**, o
+  **MASTER**, o rio de ponta a ponta com 3 pontes e o servidor/site.
+
+---
+
+## 13. v2.30 — A CARTA DE SCAN NOVA + a qualidade em 50 pontos
+
+### 13.1 O pedido (com a carta de referência em anexo)
+
+1. *"Preciso que você refatore o componente visual da carta seguindo estas regras: apague 'OverWorld • Mapa
+   2 • Passiva', 'Água • Mugic: 2' e a habilidade — a carta não deve ter textos explicativos soltos; só o
+   nome, a raridade, os números dos status, o mugic e o código."*
+2. *"Os 4 círculos centrais: o elemento em um dos círculos (2 elementos = 2 círculos) e o símbolo da tribo
+   no meio."*
+3. *"O teto dos atributos não é mais 31 e sim 50"* — com os pesos por faixa
+   (Fraco 60% · Médio 25% · Bom 10% · Excelente 4,9% · Perfeito 0,1%).
+
+### 13.2 A CARTA NOVA (a da captura e a do Scanner — um só componente)
+
+| O que SAIU | O que FICOU |
+|---|---|
+| o bloco `OverWorld · Mapa 2 · Passiva` | **Nome** (topo, à esquerda) |
+| o texto de elementos e `Água · Mugic: 2` | **Raridade** (topo, à direita, na cor da raridade) |
+| a habilidade inventada (`Seiva Curativa`) e a linha "Habilidade" do painel | **4 caixas de status**: ❤️ vida · ⚔️ poder · 🎯 (IV **Estratégia**) · 🛡️ (IV **Vitalidade**) |
+| os elementos em texto | **4 círculos centrais**: os **elementos** (1 ou 2 — os outros ficam vazios) em volta do **símbolo da tribo** no meio |
+| — | **caixinha de Mugic** (🎵 + contador) |
+| — | **QUALIDADE DO SCAN: X%** com a barrinha de 10 blocos |
+| — | **STATUS: FRACO/MEDIO/BOM/EXCELENTE/PERFEITO** (na cor da faixa) |
+| — | **CÓDIGO de 12 letras** na base (como sempre) |
+
+- A raridade (o "RARO"/"ÉPICO"/"LENDÁRIO" do canto) continua sendo **a da carta** — a espécie RARA do banco
+  segue valendo como **piso** (nunca sai abaixo de Raro).
+- O **símbolo da tribo** no círculo do meio: 🌲 OverWorld · 🌋 UnderWorld · 🐝 Danian · 🏜️ Mipedian ·
+  🌊 M'arrillian (e 🌀 para o que vier sem ficha do banco).
+- A mesma carta abre em **três lugares**: na **captura** (ao completar o scan), no **acervo do Scanner**
+  (clicando na miniatura) e ela é a referência do componente — não existe mais carta com layout antigo.
+
+### 13.3 A ESCALA DE 50 PONTOS COM PESOS
+
+`generateCreatureScan()` foi reescrita: em vez de sortear 4 números de 0 a 31 (média ≈ 15), ela **sorteia
+a faixa primeiro (Weighted Random)** e depois gera os 4 atributos **dentro** dela, cada atributo de
+**0 a 50**:
+
+| Faixa | Média dos 4 IVs | Vira a raridade | Chance (pedido) | **Medido (120.000 scans)** |
+|---|---|---|---|---|
+| **FRACO** | 0 a 12 | Comum | 60,0% | **59,83%** |
+| **MÉDIO** | 13 a 22 | Incomum | 25,0% | **25,15%** |
+| **BOM** | 23 a 35 | Raro | 10,0% | **9,98%** |
+| **EXCELENTE** | 36 a 45 | Épico | 4,9% | **4,95%** |
+| **PERFEITO** | 46 a 50 | Lendário | 0,1% | **0,09%** |
+
+- O **padrão das cartas mudou de figura**: agora **6 em cada 10 scans saem FRACO** — "Perfeito" é
+  **1 em 1.000** (antes era 1 em 576). O teto de 50 pontos dá espaço para os atributos altos existirem de
+  verdade quando a faixa é boa.
+- O **STATUS** da carta é exatamente a faixa: a mesma função que sorteia também classifica (0 divergências
+  medidas em 3.000 cartas), e o **%** mostrado é `média ÷ 50`.
+- A **Roleta**, o **Leilão** e tudo o que gera carta de criatura usam **a mesma escala** (medido: 40.000
+  cartas → 59,6% / 25,1% / 10,1% / 5,1% / 0,1%, 0 fora de faixa).
+- O painel do **Scanner** (barras STR/DEX/VIT/INT) também passou a medir em 50, e a antiga linha
+  "Habilidade" saiu de lá.
+
+### 13.4 Provas (Chrome real, no jogo servido pelo `server.js`)
+
+- **`test_v230_carta.js` — 26 ✅ · 0 ❌**: a distribuição por peso (5 faixas, tolerância apertada);
+  todos os IVs em 0–50; a média sempre dentro da faixa sorteada; a carta sem `Mapa/Passiva`, sem
+  elementos em texto, sem Mugic em texto e sem a habilidade; os 4 status; os círculos dos elementos com a
+  tribo no meio (conferido numa espécie de **2 elementos**: 🌍 💧 + 🌲); a caixinha de Mugic; QUALIDADE +
+  STATUS + RARIDADE + CÓDIGO; a carta guardada no acervo; a carta do **Scanner** com o mesmo componente; e
+  as regressões (IVs 0–50 nas criaturas do mapa, Roleta/Leilão com STATUS, save preservando 1–4 elementos).
+- **Regressões na mesma build**: `test_v228_batalha.js` **16 ✅** · `test_v229_banco_total.js` **17 ✅** ·
+  `test_v229_drome.js` **2 ✅** · `test_v227_banco.js` **24 ✅** · `test_v227_portal.js` **3 ✅** ·
+  `test_v226.js` **22 ✅** · `test_v226_itens.js` **7 ✅** · `test_banco.js` **146 OK** · **0 erros de página**.
+
+Prints desta rodada: `carta-scan-v230.png` (a carta da captura: Pato Gélido, RARO, 47/11/23/40, 💧 +
+🌲, Mugic 2, QUALIDADE 64% · BOM) · `carta-rara-v230.png` (uma **ÉPICO**, com QUALIDADE 84% · EXCELENTE) ·
+`carta-scanner-v230.png` (a mesma carta aberta no acervo do Scanner).
+
+> ℹ️ **Cartas antigas** (de antes desta versão) continuam abrindo normalmente: o **STATUS** delas é
+> recalculado pelas faixas novas na hora de exibir, e os elementos já salvos são mantidos.
+
+### 13.5 O que NÃO mudou (de propósito)
+
+- As **raridades** e o que elas valem (Comum ×1,0 · Incomum ×1,3 · Raro ×1,7 · Épico ×2,3 · Lendário ×3,0
+  nos atributos; ×1/×1,6/×2,6/×4,5/×9 no preço do Leilão).
+- Os **pisos** da v164 (espécie RARA ★ → no mínimo Raro; muito-forte → no mínimo Incomum; Chefe →
+  Lendária), o **scan** (3s · 96px · 160px · o herói para · rara −50%), a **vida de 20s**, os pools
+  5/10/15, a **batalha** com a ficha do banco, a **Coleção** e o banco como fonte de criatura do jogo
+  inteiro (v2.29) — só o **número do IV** das cartas mudou de escala.
+
+---
+
+## 14. v2.31 — O elemento TERRA virou MONTANHA ⛰️
+
+### 14.1 O pedido
+
+*"Poderia mudar o ícone de planeta terra para uma montanha se possível."* — Sim. O 🌍 (planeta) foi o
+ícone do elemento **Terra** desde o começo, e realmente confundia (parecia "mundo/globo" e não "terra").
+Foi trocado por **⛰️ (montanha)**.
+
+### 14.2 Onde mudou
+
+| Lugar | Antes | Agora |
+|---|---|---|
+| Círculos da **carta de scan** (captura e Scanner) | 🌍 | **⛰️** |
+| **Painel do Scanner** (linha "Elementos") | 🌍 Terra | **⛰️ Terra** |
+| **Coleção das 120** (ficha de cada espécie) | 🌍 | **⛰️** |
+| Cartas **clássicas** (Lagoa Negra etc.), que sorteiam o emoji de uma lista | 🌍 | **⛰️** |
+| **Cartas antigas salvas** com o 🌍 no save | 🌍 | convertidas para **⛰️** na hora de exibir |
+
+Os outros três elementos **não mudaram**: 🔥 **Fogo** · 💧 **Água** · 🌪️ **Ar**.
+
+> ℹ️ O símbolo do meio da carta continua sendo a **tribo** (🌲 OverWorld · 🌋 UnderWorld · 🐝 Danian ·
+> 🏜️ Mipedian · 🌊 M'arrillian) — ele não é um elemento.
+
+### 14.3 Provas (Chrome real, no jogo servido pelo `server.js`)
+
+- **`test_v231_montanha.js` — 13 ✅ · 0 ❌**: o mapa de elementos e o tradutor devolvendo ⛰️ para Terra;
+  🔥/💧/🌪️ intactos; a carta do **Texugo Escaldado** (Fogo + Terra, o caso do seu print) com os círculos
+  **🔥 ⛰️** e **zero** planetas; a tribo 🌲 no meio; a **carta antiga** do save (gravada com 🌍) exibindo
+  ⛰️; o acervo do Scanner sem planeta; **4.000** sorteios de elementos clássicos com 0 planetas; e o painel
+  do Scanner mostrando **⛰️ Terra**.
+- **Regressões na mesma build**: `test_v230_carta.js` **26 ✅** · `test_v228_batalha.js` **16 ✅** ·
+  `test_v229_banco_total.js` **17 ✅** · `test_v229_drome.js` **2 ✅** · `test_v227_banco.js` **24 ✅** ·
+  `test_v227_portal.js` **3 ✅** · `test_v226.js` **22 ✅** · `test_v226_itens.js` **7 ✅** ·
+  `test_banco.js` **146 OK** · **0 erros de página**.
+
+Prints desta rodada: `carta-terra-montanha-v231.png` (a carta do Texugo Escaldado com 🔥 + ⛰️) ·
+`carta-terra-pura-v231.png` (uma criatura só de Terra, com um único círculo cheio).
+
+### 14.4 O que NÃO mudou (de propósito)
+
+- Os **nomes** dos elementos na ficha do banco (continuam "Terra", "Água", "Fogo", "Ar") — mudou só o
+  **desenho** do Terra na carta.
+- A carta nova (nome, raridade, 4 status, círculos, mugic, qualidade/status e código), a escala de **50
+  pontos com pesos**, as raridades e os pisos, o scan, a batalha e a Coleção.
+
+---
+
+## 15. Arquivos
 
 | Arquivo | O que é |
 |---|---|
-| `chaotic_idleworld_v123.html` | **o jogo com tudo** (v2.27: banco de 120 criaturas integrado + v2.26/v2.25/v2.24/v2.23 e tudo o que já existia) |
+| `chaotic_idleworld_v123.html` | **o jogo com tudo** (v2.31: carta nova, qualidade em 50 pontos e Terra ⛰️, com a v2.30/v2.29/v2.28/v2.27/v2.26/v2.25/v2.24/v2.23 e tudo o que já existia) |
 | `LEIA-ME-MAPAS-E-SCAN.md` | este guia |
 | `LEIA-ME-JANELINHA-PIP.md` | guia da janelinha flutuante / modo fora da aba (v2.20) |
 | `LEIA-ME-CORRECAO-NOMES-DE-MAPA.md` | guia dos nomes de mapa (v2.18) |
@@ -701,12 +1017,16 @@ Leilão/Dromo.
 | `patch_itens_10.py` | script da v2.26 (v162): itens do mapa a 10% (nasce com 2, teto 6, caverna 1) |
 | `patch_master_dromos.py` | script da v2.26 (v163): o NPC MASTER da Ilha dos Dromos com os 5 botões |
 | `patch_banco_120.py` | script da v2.27 (v164): integra o banco de 120 criaturas (pools por tribo/mapa, spawn ponderado, velocidade por espécie, ficha nas cartas e o Mapa 3 dos Mipedians) |
+| `patch_banco_batalha_165.py` | script da v2.28 (v165): leva o banco para a BATALHA (elemento → arquétipo, vida/dano/velocidade pela ficha) e planta a COLEÇÃO das 120 no acervo do Scanner |
+| `patch_banco_total_166.py` | script da v2.29 (v166): o banco de 120 vira a fonte de criaturas do jogo inteiro (Roleta, Leilão, Drome, duelos, MASTER, códigos, decks dos 7 Mestres) + a faixa do banco no Portal |
+| `patch_carta_e_iv50_167.py` | script da v2.30 (v167): carta de scan refeita (captura + Scanner) e escala de qualidade em 50 pontos com pesos (60/25/10/4,9/0,1) |
+| `patch_elemento_terra_168.py` | script da v2.31 (v168): o elemento TERRA troca o ícone 🌍 (planeta) por ⛰️ (montanha) na carta, no Scanner e na Coleção |
 
 ### Publicar
 Suba o `chaotic_idleworld_v123.html` por cima do antigo no GitHub/Render (o `server.js` busca
 esse nome exato) e faça o deploy. **Só o jogo mudou** — o `site/index.html` e o servidor continuam
 iguais aos da v2.20. Depois de subir, abra o jogo com Ctrl+F5 (ou aba anônima) para o navegador
-não usar a versão antiga do arquivo. O título interno passa a mostrar **v2.27**.
+não usar a versão antiga do arquivo. O título interno passa a mostrar **v2.31**.
 
 > ℹ️ Se você já tinha jogado antes, o **progresso é preservado** (save no navegador + conta).
 > O que muda é o desenho dos mapas a partir de agora — e o fato de cada mapa ter criaturas próprias.
