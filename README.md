@@ -108,6 +108,19 @@ rara = **+20%** de velocidade e dano). Entrega validada por **146 verificações
 
 ## 🆕 Novidades
 
+**v2.35 — Presença rápida: menos delay vendo gente online ⚡**
+Ver outros jogadores tinha MUITO delay (posição enviada 1× a cada 2s + render perseguindo
+amostra velha). Agora, **sem mudar o servidor**: beat adaptativo (**650ms** andando · 2400ms parado),
+poll 1500ms, **predição** de movimento entre updates e beat imediato ao trocar de mapa/voltar à aba.
+Simulação: erro de perseguição 221px → **53px**. Teste: **23 ✅** (`node docs/patches/test_v235_presence.js`).
+
+**v2.34 — Clique vs. arrasto: o Portal de Viagem voltou a viajar 🖱️**
+A v2.31 (painéis móveis) tinha transformado o painel **inteiro** em alça de arrasto nos painéis sem
+`h1-h4` (Portal, Missões, Scanner...): clicar num mapa só "puxava" o painel e o `travelTo()` nunca
+disparava. Agora o arrasto é **só pelo cabeçalho**, só após **mover 7px**, e o conteúdo **rola no celular**.
+Teste novo: **24 ✅** (`node docs/patches/test_v234_painel.js`).
+→ [`docs/MAPAS-E-SCAN.md`](docs/MAPAS-E-SCAN.md) seção 17
+
 **v2.33 — FORJA-7 nova: os 3 fragmentos da Drome Key 🔑**
 A **Drome Key** agora é forjada com **3 fragmentos diferentes**: **🧭 Fragmento da Exploração ×1** (o primeiro
 100% de escaneamento de um mapa), **⚔️ Fragmento de Batalha ×5** (1 por vitória: Dromo, PVP ou Arena do

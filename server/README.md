@@ -749,3 +749,23 @@ ON/OFF (HUD, moldura, pose, retorno). Regressão test4–test30 100%
 verde (test28/test30 atualizados p/ 5 abas/5 chefes; test10 ganhou
 cleanup do mock:8905 — mock órfão entre execuções mentia a 3c).
 Screenshots: v150_lagoa_negra, v150_foto, v150_arena.
+
+## ⚡ v172 — presença rápida (só cliente, servidor intacto)
+
+Queixa: "ver as pessoas online tem MUITO delay". Causas no cliente: beat de
+posição a cada 2000ms + poll de chat/roster a cada 2500ms + render perseguindo
+a última amostra parada (lerp 0.16 @110ms). O servidor não tem rate limit em
+`POST /api/presence` nem no `GET /api/chat`, então aceleramos só o jogo:
+
+- **Beat adaptativo**: andando/trocou de mapa = 650ms · parado = 2400ms
+  (economiza bateria/dados) · erro de rede = 2500ms (backoff);
+- **Poll 2500ms → 1500ms** (chat + roster chegam antes);
+- **Travas** `gcBeatFly172`/`gcPollFly172`: request lento não empilha;
+- **Predição** (`predPos172`, dead reckoning): projeta onde o remoto está
+  entre updates (velocidade das últimas amostras, capa 420px/s, máx 1.2s);
+  o sprite persegue a previsão (0.28 perto · 0.45 longe) em vez da amostra;
+- **Snap em teleporte** (>550px) e **beat imediato** ao trocar de mapa
+  (`travelTo` → `gcBeatSoon()`) e ao voltar pra aba (`visibilitychange`).
+
+Prova: `docs/patches/test_v235_presence.js` — **23 ✅** (inclui simulação de
+12s: erro médio de perseguição 221px → 53px, pico 376px → 119px).
