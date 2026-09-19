@@ -1,9 +1,14 @@
 # 🗺️ Mapas separados de verdade + scan consertado + pontes, Caverna Secreta, o fim dos quadrados escuros e o herói indo atrás da criatura
 
-**Chaotic.IdleWorld · v2.33** · aplicado em `chaotic_idleworld_v123.html`
+**Chaotic.IdleWorld · v2.34** · aplicado em `chaotic_idleworld_v123.html`
 (continua com o mesmo nome do arquivo — é só substituir o antigo)
 
-> 🔝 **Última rodada (v2.33):** a **FORJA-7** (o robô que forja a chave do Drome) ganhou o **painel novo** e a
+> 🔝 **Última rodada (v2.34):** o **clique nos mapas do PORTAL DE VIAGEM voltou a funcionar** — a v2.31
+> (painéis móveis) tinha transformado o painel inteiro em alça de arrasto, então clicar num mapa só
+> "puxava" o painel e o `travelTo()` nunca disparava. Agora o arrasto é **só pelo cabeçalho**, só começa
+> após **mover 7px** (clique simples passa limpo) e o conteúdo **rola no celular**. Detalhes na **seção 17**.
+>
+> 📜 Rodada anterior (v2.33): a **FORJA-7** (o robô que forja a chave do Drome) ganhou o **painel novo** e a
 > **receita nova**: a Drome Key agora é feita com **🧭 Fragmento da Exploração ×1 + ⚔️ Fragmento de Batalha ×5 +
 > ⚙️ Fragmento do Tempo ×7 + 💠 400 bits**. Cada fragmento vem de um lugar diferente do jogo (100% de um mapa ·
 > vitória em batalha · tempo jogado). Detalhes na **seção 16**.
@@ -1172,11 +1177,55 @@ Prints desta rodada: `forja-faltando-v233.png` (faltando 1 de batalha e 1 de tem
 
 ---
 
-## 17. Arquivos
+## 17. v2.34 — Clique vs. arrasto: o Portal de Viagem voltou a viajar 🖱️
+
+### 17.1 O que você relatou
+
+> *"Não consigo selecionar nenhum mapa: quando clico para selecionar, o jogo não vai — fica querendo puxar."*
+
+### 17.2 A causa (v2.31, painéis móveis)
+
+O script da v2.31 procurava a alça de arrasto só em `h1,h2,h3,h4,.panel-title,...` e, quando não achava,
+caía no fallback `handle = el` — **o painel INTEIRO virava alça**. É o caso do `#room-menu` (o cabeçalho dele
+é `.room-panel-header`), do `#mission-board-panel` (`.mbp-header`), do `#scanner-real` (`.scanner-real-header`)
+e do `#clerk-panel` antes do primeiro render (vazio). Com o painel inteiro como alça, qualquer `pointerdown`
+fora de botão/input dava `preventDefault` + `setPointerCapture` no painel — e o clique no `.region-card`
+(uma DIV com `onclick="travelTo(...)"`) morria ali: o navegador retargetava o `click` para o painel.
+
+### 17.3 O que mudou (v171)
+
+- Cada painel tem sua **alça real**: `.room-panel-header`, `.mbp-header`, `.scanner-real-header`, `.ck169-top`,
+  `.ck170-top`, `h1-h4`, ... (resolvida **na hora do clique**, então painel dinâmico como o clerk funciona);
+- **sem alça = sem arrasto** (o fallback que engolia cliques morreu);
+- o arrasto só começa após **mover 7px** — clique simples e tremida de mão passam 100% limpos, sem
+  `preventDefault` e sem capture no `pointerdown`;
+- `touch-action:none` saiu do painel inteiro e foi **só para a alça** — o conteúdo volta a **rolar no celular**,
+  e inputs voltaram a ser selecionáveis;
+- clicáveis (`[onclick]`, `.region-card`, `.inv-slot`, botões...) **nunca** iniciam arrasto; botão direito não arrasta;
+- após um arrasto real, **1 click fantasma é engolido** (sem viagem acidental se soltar sobre um card);
+- a chave do `localStorage` é a mesma — **as posições que o jogador salvou continuam valendo**.
+
+### 17.4 Provas
+
+- **`test_v234_painel.js` — 24 ✅ · 0 ❌** (Node puro, sem navegador: `node docs/patches/test_v234_painel.js`):
+  clique no card/mapa chega ao `travelTo`, selo `.lm-tag` clicável, arrasto pelo cabeçalho move + salva,
+  tremida de 3px não move, botão fechar não arrasta, painel sem alça fica fixo, alça dinâmica (clerk)
+  funciona, toque no celular (tap + arrasto), botão direito não arrasta e trava do click fantasma até
+  **sem** `pointer capture` (Safari antigo).
+- O mesmo teste contra o HTML **antes** da correção: **10 ✅ · 14 ❌**, falhando exatamente no clique
+  do mapa (`travelTo` não dispara) e nos demais sintomas do fallback.
+
+### 17.5 Como aplicar
+
+Na raiz do repo: `python3 docs/patches/patch_painel_clique_vs_arrasto.py` (idempotente — rodar 2× não duplica).
+
+---
+
+## 18. Arquivos
 
 | Arquivo | O que é |
 |---|---|
-| `chaotic_idleworld_v123.html` | **o jogo com tudo** (v2.33: FORJA-7 nova com os 3 fragmentos, com a v2.32 dos materiais por nível + COSTURA-11 nova, com a v2.31/v2.30/v2.29/v2.28/v2.27/v2.26/v2.25/v2.24/v2.23 e tudo o que já existia) |
+| `chaotic_idleworld_v123.html` | **o jogo com tudo** (v2.34: clique vs. arrasto nos painéis, com a v2.33 da FORJA-7 nova com os 3 fragmentos, com a v2.32 dos materiais por nível + COSTURA-11 nova, com a v2.31/v2.30/v2.29/v2.28/v2.27/v2.26/v2.25/v2.24/v2.23 e tudo o que já existia) |
 | `LEIA-ME-MAPAS-E-SCAN.md` | este guia |
 | `QUALIDADES-E-RARIDADES.md` | qualidades/raridades (escala 50) **e a seção 7 nova: os 15 materiais por nível + o custo do upgrade da mochila** |
 | `LEIA-ME-JANELINHA-PIP.md` | guia da janelinha flutuante / modo fora da aba (v2.20) |
@@ -1202,12 +1251,14 @@ Prints desta rodada: `forja-faltando-v233.png` (faltando 1 de batalha e 1 de tem
 | `patch_forja_170.py` | script da v2.33 (v170): a Drome Key passa a ser forjada com os 3 fragmentos (🧭×1 · ⚔️×5 · ⚙️×7), as 3 fontes de fragmento e o painel novo da FORJA-7 |
 | `test_v233_forja.js` | prova da v2.33: a receita, o painel, os bloqueios, as 3 fontes de fragmento, o forjar e o save/reload (21 ✅) |
 | `test_v232_costura.js` / `test_v232_e2e.js` / `test_v232_fluxo.js` | provas da v2.32: o painel, o custo e a forja (27 ✅) · o jogo de verdade ponta a ponta — spawn nos mapas, drop do scan, Depósito e os 5 upgrades (19 ✅) · o fluxo do jogador com [E], clique e celular (12 ✅) |
+| `patch_painel_clique_vs_arrasto.py` | script da v2.34 (v171): alças reais por painel + arrasto só após 7px + touch-action só na alça (o clique no Portal volta a viajar) |
+| `test_v234_painel.js` | prova da v2.34: clique vs. arrasto em DOM simulado, Node puro, sem navegador (24 ✅) |
 
 ### Publicar
 Suba o `chaotic_idleworld_v123.html` por cima do antigo no GitHub/Render (o `server.js` busca
 esse nome exato) e faça o deploy. **Só o jogo mudou** — o `site/index.html` e o servidor continuam
 iguais aos da v2.20. Depois de subir, abra o jogo com Ctrl+F5 (ou aba anônima) para o navegador
-não usar a versão antiga do arquivo. O título interno passa a mostrar **v2.33**.
+não usar a versão antiga do arquivo. O título interno passa a mostrar **v2.34**.
 
 > ℹ️ Se você já tinha jogado antes, o **progresso é preservado** (save no navegador + conta).
 > O que muda é o desenho dos mapas a partir de agora — e o fato de cada mapa ter criaturas próprias.
