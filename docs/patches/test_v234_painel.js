@@ -177,7 +177,8 @@ checa('CSS: touch-action foi para a alça (.panel-drag-handle)',
 checa('CSS: painel inteiro NÃO tem mais touch-action:none',
   !html.includes('.movable-panel{touch-action:none'));
 checa('JS v2.34/v171 presente', html.includes('v2.34 (v171)'));
-checa('título v2.34', html.includes('Chaotic.idleWorld v2.34'));
+const titleVersion = html.match(/<title>Chaotic\.idleWorld v(\d+)\.(\d+)/);
+checa('título identifica v2.34 ou posterior', titleVersion && (+titleVersion[1] > 2 || (+titleVersion[1] === 2 && +titleVersion[2] >= 34)));
 
 const { src, qual } = extraiScript(html);
 console.log('\n[1] SCRIPT DETECTADO: ' + qual);

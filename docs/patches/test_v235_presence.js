@@ -29,7 +29,8 @@ checa('travelTo chama gcBeatSoon', html.includes("typeof gcBeatSoon === 'functio
 checa('visibilitychange atualiza na volta', html.includes('voltou pra aba'));
 checa('snap em teleporte (>550px)', html.includes('dist172 > 550'));
 checa('chase perto/longe (0.28/0.45)', html.includes('0.45 : 0.28'));
-checa('título v2.35', html.includes('Chaotic.idleWorld v2.35'));
+const titleVersion = html.match(/<title>Chaotic\.idleWorld v(\d+)\.(\d+)/);
+checa('título identifica v2.35 ou posterior', titleVersion && (+titleVersion[1] > 2 || (+titleVersion[1] === 2 && +titleVersion[2] >= 35)));
 
 // ------------------------------------------------ extrai predição REAL
 function extraiPred(src) {

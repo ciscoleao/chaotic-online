@@ -384,6 +384,28 @@ async function route(req, res) {
   }
   if (p === '/favicon.ico') { res.writeHead(204); res.end(); return; }
 
+  // Only these public lobby files are exposed; server/data and repository files
+  // are never served through this route. Query strings are cache version tags.
+  const lobbyAssets = {
+    '/assets/lobby/central-lobby.js': 'application/javascript; charset=utf-8',
+    '/assets/lobby/central-lobby.css': 'text/css; charset=utf-8',
+    '/assets/lobby/patio-central.webp': 'image/webp'
+  };
+  if (Object.prototype.hasOwnProperty.call(lobbyAssets, p) && (req.method === 'GET' || req.method === 'HEAD')) {
+    const file = path.join(ROOT, p.slice(1));
+    if (!fs.existsSync(file)) return json(res, 404, { err: 'Cenário não encontrado' });
+    res.writeHead(200, {
+      'content-type': lobbyAssets[p],
+      'content-length': fs.statSync(file).size,
+      'cache-control': 'public, max-age=3600',
+      'x-content-type-options': 'nosniff'
+    });
+    if (req.method === 'HEAD') res.end();
+    else fs.createReadStream(file).pipe(res);
+    return;
+  }
+
+
   /* ---- config pública ---- */
   if (p === '/api/config' && req.method === 'GET') {
     return json(res, 200, { sitekey: CFG.SITEKEY, google: !!CFG.GOOGLE_CLIENT_ID });

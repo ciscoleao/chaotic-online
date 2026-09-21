@@ -108,6 +108,19 @@ rara = **+20%** de velocidade e dano). Entrega validada por **146 verificações
 
 ## 🆕 Novidades
 
+**v2.36 — Pátio Central com o lobby espacial da referência**
+
+A praça circular passa a conectar Roleta, Portal, Shop, Forja, Leilão, Depósito,
+Missões e Comunicação nas posições da referência. A Costura fica na Forja, as
+bebidas no Shop e a saída sul leva à Ilha dos Dromos. Há colisões de paredes e
+móveis, rotas por clique/toque, câmera adaptada a telas pequenas e minimapa com
+o novo layout. Os serviços usam os painéis e sistemas existentes.
+
+![Arte do cenário do novo Pátio Central](assets/lobby/patio-central.webp)
+
+Arte de fundo; o personagem, os controles e as interações são adicionados pelo jogo.
+→ [Detalhes, controles e validação](docs/LOBBY-ESPACIAL.md)
+
 **v2.35 — Presença rápida: menos delay vendo gente online ⚡**
 Ver outros jogadores tinha MUITO delay (posição enviada 1× a cada 2s + render perseguindo
 amostra velha). Agora, **sem mudar o servidor**: beat adaptativo (**650ms** andando · 2400ms parado),
