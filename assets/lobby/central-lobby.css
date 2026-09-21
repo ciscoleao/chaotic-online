@@ -1,0 +1,17 @@
+body.lobby-active { background: #040916; }
+.lobby-active .stat-pill { background: #0b172bee; border-color: #35476a; color: #dceafa; }
+.lobby-active #map-name { color: #e1f5ff; }
+.lobby-active #map-banner-151 { display: none; }
+#lobby-controls { position: absolute; z-index: 15; top: 55px; right: 14px; display: flex; align-items: center; gap: 14px; pointer-events: none; }
+#lobby-controls span { font-size: 10px; letter-spacing: .5px; color: #b8cee5; text-shadow: 0 2px 4px #000; }
+#lobby-map-button { pointer-events: auto; min-height: 38px; padding: 8px 15px; color: #ccf6ff; background: #0b182de8; border: 1px solid #496887; border-radius: 8px; font: 600 12px 'Segoe UI', sans-serif; cursor: pointer; box-shadow: 0 4px 16px #0005; }
+#lobby-map-button:hover { background: #173957; border-color: #89eaff; }
+#lobby-interaction { position: absolute; z-index: 16; transform: translate(-50%, -100%); padding: 9px 15px; min-height: 40px; max-width: 210px; color: #f5fbff; border: 1px solid var(--sector-color, #8ceafa); border-radius: 7px; background: #071222ed; box-shadow: 0 4px 14px #0007; font: 700 13px 'Segoe UI', sans-serif; white-space: nowrap; cursor: pointer; }
+#lobby-interaction[hidden] { display: none; }
+#lobby-map-button:focus-visible, #lobby-interaction:focus-visible { outline: 2px solid #c4f6ff; outline-offset: 3px; }
+@media (max-width: 899px), (max-height: 599px) {
+  #lobby-controls { top: 63px; right: 9px; }
+  #lobby-controls span { display: none; }
+  #lobby-map-button { min-height: 44px; padding: 9px 14px; }
+  #lobby-interaction { min-height: 44px; }
+}
