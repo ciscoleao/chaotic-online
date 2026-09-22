@@ -1586,8 +1586,7 @@ LOBBY_SPRITES['room_console'] = { w: 26, h: 30, palette: ["#20232e", "#454e63", 
         fontFamily: 'monospace', fontSize: '26px', fontStyle: 'bold', color: '#9af8ff',
         backgroundColor: 'rgba(8,18,32,.85)', padding: { x: 6, y: 3 }
       }).setOrigin(0.5, 1).setDepth(9.7);
-      bot.setInteractive({ useHandCursor: true });
-      bot.on('pointerdown', (pointer, lx, ly, event) => { if (event) event.stopPropagation(); openService(sc, r.service); });
+      // v186 — NPC abre só com [E]: sem clique (o clique atravessa e vira andar)
       sc.tweens.add({ targets: [bot, label], y: '-=6', duration: 1100 + (i % 3) * 200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: i * 150 });
     });
   }
@@ -1599,11 +1598,7 @@ LOBBY_SPRITES['room_console'] = { w: 26, h: 30, palette: ["#20232e", "#454e63", 
       d.shadow = sc.add.ellipse(d.fx, d.fy + 3, wx(20), wy(6), 0x000000, 0.3).setDepth(1);
       const tex = ['lobby_drone', 'lobby_drone_side', 'lobby_drone_back'][i % 3];
       d.body = sc.add.image(d.fx, d.fy - 30, tex).setOrigin(0.5, 0.5).setScale(DRONE_SCALE).setDepth(depthForRefY(path[0][1]));
-      d.body.setInteractive({ useHandCursor: true });
-      d.body.on('pointerdown', (pointer, lx, ly, event) => {
-        if (event) event.stopPropagation();
-        showNotif(DRONE_QUIPS[Math.floor(Math.random() * DRONE_QUIPS.length)], 'info');
-      });
+      // v186 — drones não interceptam mais o clique
       sc.drones.push(d);
     });
   }
@@ -1942,8 +1937,10 @@ LOBBY_SPRITES['room_console'] = { w: 26, h: 30, palette: ["#20232e", "#454e63", 
       cam.setZoom(zoom); cam.setBounds(0, 0, sc.worldW, sc.worldH);
       cam.startFollow(sc.player, true, 0.12, 0.12); cam.centerOn(sc.player.x, sc.player.y);
     }
-    sc._lobbyMapButton.textContent = sc.fullMapMode ? 'Aproximar' : 'Ver pátio';
-    sc._lobbyMapButton.setAttribute('aria-pressed', String(sc.fullMapMode));
+    if (sc._lobbyMapButton) { // v186 — botão só existe no Modo Foto
+      sc._lobbyMapButton.textContent = sc.fullMapMode ? 'Aproximar' : 'Ver pátio';
+      sc._lobbyMapButton.setAttribute('aria-pressed', String(sc.fullMapMode));
+    }
   }
   function toggleMap(sc) { sc.fullMapMode = !sc.fullMapMode; fitCamera(sc); }
   function create(sc) {
@@ -2006,23 +2003,20 @@ LOBBY_SPRITES['room_console'] = { w: 26, h: 30, palette: ["#20232e", "#454e63", 
     sc.wasd = sc.input.keyboard.addKeys({ up: 'W', down: 'S', left: 'A', right: 'D' });
     sc.interactKey = sc.input.keyboard.addKey('E');
     sc.fullMapKey = sc.input.keyboard.addKey('F8');
-    sc.fullMapMode = false; // v185 — começa aproximado (segue o jogador); botão 'Ver pátio' continua disponível
+    sc.fullMapMode = false; // v185 — começa aproximado (segue o jogador) // v186 — botão 'Ver pátio' só no Modo Foto
 
     const controls = document.createElement('div');
     controls.id = 'lobby-controls';
-    const mapButton = document.createElement('button');
-    mapButton.type = 'button'; mapButton.id = 'lobby-map-button';
-    mapButton.title = 'Alternar visão do pátio (F8)';
-    mapButton.addEventListener('click', () => toggleMap(sc));
+    // v186 — botão 'Ver pátio' removido do HUD normal (visão ampla é função do Modo Foto)
     const help = document.createElement('span');
     help.textContent = 'WASD / setas · E interagir · clique para andar';
-    controls.append(help, mapButton);
+    controls.append(help);
     const prompt = document.createElement('button');
     prompt.id = 'lobby-interaction'; prompt.type = 'button'; prompt.hidden = true;
-    prompt.addEventListener('click', () => { if (sc._lobbyNearest) sc._lobbyNearest.action(); });
+    prompt.style.cursor = 'default'; // v186 — balão virou só dica visual; interação é só no [E]
     const ui = document.getElementById('ui-layer'); ui.append(controls, prompt);
     document.body.classList.add('lobby-active');
-    sc._lobbyMapButton = mapButton; sc._lobbyPrompt = prompt;
+    sc._lobbyMapButton = null; sc._lobbyPrompt = prompt; sc.toggleMapView = function() { toggleMap(sc); }; // v186 — alternância de visão exposta p/ o Modo Foto
     fitCamera(sc);
     const resize = () => fitCamera(sc);
     sc.scale.on('resize', resize);
@@ -2032,12 +2026,7 @@ LOBBY_SPRITES['room_console'] = { w: 26, h: 30, palette: ["#20232e", "#454e63", 
       const it = { id: z.id, name: z.name, color: z.color, x: wx(z.point[0]), y: wy(z.point[1]) - sc._lobbyFootOffset,
         action: () => openService(sc, z.id) };
       sc.interactables.push(it);
-      // Signs and shop counters keep the game's immediate click/touch access.
-      const areas = [z.sign]; if (z.area) areas.push(z.area);
-      areas.forEach(r => {
-        const zone = sc.add.zone(wx(r[0] + r[2] / 2), wy(r[1] + r[3] / 2), wx(r[2]), wy(r[3])).setDepth(4).setInteractive({ useHandCursor: true });
-        zone.on('pointerdown', (pointer, lx, ly, event) => { event.stopPropagation(); it.action(); });
-      });
+      // v186 — setores abrem só com [E]: sem zonas de clique (clique virou só andar)
     });
     // Costura remains available in the forge alongside crafting.
     const costura = { id: 'costura', name: 'Costura · mochila', color: '#a9d7ff', x: wx(312), y: wy(528) - sc._lobbyFootOffset,
@@ -2046,16 +2035,14 @@ LOBBY_SPRITES['room_console'] = { w: 26, h: 30, palette: ["#20232e", "#454e63", 
     const costuraText = sc.add.text(wx(315), wy(556), 'COSTURA', {
       fontFamily: 'monospace', fontSize: '24px', fontStyle: 'bold', color: '#d9f4ff',
       backgroundColor: '#103251', padding: { x: 10, y: 6 }
-    }).setOrigin(0.5).setDepth(9.6).setInteractive({ useHandCursor: true });
-    costuraText.on('pointerdown', (pointer, lx, ly, event) => { event.stopPropagation(); costura.action(); });
+    }).setOrigin(0.5).setDepth(9.6); // v186 — placa visual; abre só com [E]
     // The old vending service is retained at the shop's drinks counter.
     const drinks = { id: 'bebidas', name: 'Bebidas', color: '#81f4d7', x: wx(1020), y: wy(252) - sc._lobbyFootOffset,
       action: () => openService(sc, 'bebidas') };
     sc.interactables.push(drinks);
     sc.add.text(wx(1060), wy(267), 'BEBIDAS', { fontFamily: 'monospace', fontSize: '24px', fontStyle: 'bold',
       color: '#d8fff0', backgroundColor: '#103b36', padding: { x: 10, y: 6 } })
-      .setOrigin(0.5).setDepth(9.6).setInteractive({ useHandCursor: true })
-      .on('pointerdown', (pointer, lx, ly, event) => { event.stopPropagation(); drinks.action(); });
+      .setOrigin(0.5).setDepth(9.6); // v186 — placa visual; abre só com [E]
     const quarto = { id: 'quarto', name: 'Quarto · teleporte', color: '#c9a7ff', x: wx(862), y: wy(774) - sc._lobbyFootOffset,
       action: () => openService(sc, 'quarto') };
     sc.interactables.push(quarto);
@@ -2090,7 +2077,7 @@ LOBBY_SPRITES['room_console'] = { w: 26, h: 30, palette: ["#20232e", "#454e63", 
       sc.scale.off('resize', resize); sc.input.off('pointerdown', moveTo);
       sc.input.keyboard.off('keydown-I', inv); sc.input.keyboard.off('keydown-Q', scanner);
       controls.remove(); prompt.remove(); document.body.classList.remove('lobby-active');
-      sc._lobbyPath = []; sc.interactables = []; sc._lobbyNearest = null;
+      sc._lobbyPath = []; sc.interactables = []; sc._lobbyNearest = null; sc.toggleMapView = null;
       closeLobbyPanels();
       const _tick = document.getElementById('lobby-ticker'); if (_tick) _tick.remove();
     });
@@ -10431,7 +10418,7 @@ class ExteriorScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(110).setVisible(false);
     this.interactables.push({ x: cx, y: cy - 60, hint: centralHint, action: function() { self.enterCentral(); } });
     /* v163 — NPC MASTER: fica na praça, ao lado da entrada do Pátio Central.
-     * Fala pelo [E] (PC), pelo 👆 (celular) ou clicando nele. */
+     * Fala pelo [E] (PC) ou pelo 👆 (celular). */ // v186 — clique removido
     {
       const mx = cx + 300, my = cy + 40;
       self.add.ellipse(mx, my + 26, 76, 26, 0xffd54f, 0.16).setDepth(3); // pedestal
@@ -10439,8 +10426,7 @@ class ExteriorScene extends Phaser.Scene {
       self.tweens.add({ targets: glowM, alpha: 0.26, duration: 1400, yoyo: true, repeat: -1 });
       const spriteM = self.add.sprite(mx, my, 'npc_master');
       spriteM.setDepth(7); spriteM.setScale(1.75);
-      spriteM.setInteractive({ useHandCursor: true });
-      spriteM.on('pointerdown', function() { openMasterPanel(); });
+      // v186 — MASTER fala só no [E]/👆 (sem clique direto)
       self.add.text(mx, my - 50, 'MASTER', { fontSize: '11px', color: '#ffd54f', fontFamily: 'monospace', fontStyle: 'bold' }).setOrigin(0.5).setDepth(9).setShadow(1, 1, '#000', 2);
       const hintM = self.add.text(mx, my - 66, '[E] Falar com o MASTER', {
         fontSize: '10px', color: '#ffe9b0', fontFamily: 'monospace', fontStyle: 'bold',
@@ -11495,7 +11481,8 @@ function togglePhotoMode150() {
     st150.textContent = '.pm150 #top-bar,.pm150 #room-menu,.pm150 #btn-options,.pm150 #chat-bar,.pm150 #mc-joy,.pm150 #mc-btn-action,.pm150 .scan-charge-bar{display:none!important}'
       + '#foto-frame150{position:fixed;inset:0;pointer-events:none;z-index:9998;box-shadow:inset 0 0 0 6px rgba(255,215,0,.8),inset 0 0 0 11px rgba(0,0,0,.5)}'
       + '#foto-frame150::after{content:attr(data-cap);position:absolute;left:16px;bottom:14px;color:#ffd700;font-size:11px;font-family:monospace;background:rgba(10,14,22,.75);padding:3px 10px;border-radius:8px}'
-      + '#foto-exit150{position:fixed;left:8px;bottom:8px;z-index:9999;background:rgba(10,14,22,.85);color:#8be2ff;border:1px solid #2c3d63;border-radius:10px;padding:6px 12px;font-size:12px;font-family:monospace;cursor:pointer}';
+      + '#foto-exit150{position:fixed;left:8px;bottom:8px;z-index:9999;background:rgba(10,14,22,.85);color:#8be2ff;border:1px solid #2c3d63;border-radius:10px;padding:6px 12px;font-size:12px;font-family:monospace;cursor:pointer}'
+      + '#foto-map150{position:fixed;left:8px;bottom:48px;z-index:9999;background:rgba(10,14,22,.85);color:#ffd700;border:1px solid #2c3d63;border-radius:10px;padding:6px 12px;font-size:12px;font-family:monospace;cursor:pointer}';
     document.head.appendChild(st150);
   }
   document.body.classList.toggle('pm150', on150);
@@ -11512,6 +11499,12 @@ function togglePhotoMode150() {
         ex150.textContent = '📸 Sair do Modo Foto'; ex150.onclick = togglePhotoMode150;
         document.body.appendChild(ex150);
       }
+      if (s150 && typeof s150.toggleMapView === 'function' && !document.getElementById('foto-map150')) { // v186 — visão ampla mora aqui
+        const mp150 = document.createElement('button'); mp150.id = 'foto-map150';
+        mp150.textContent = '🗺️ Ver pátio';
+        mp150.onclick = function() { try { s150.toggleMapView(); mp150.textContent = s150.fullMapMode ? '🔍 Aproximar' : '🗺️ Ver pátio'; } catch (e) {} };
+        document.body.appendChild(mp150);
+      }
       if (s150 && s150.enemies) {
         s150._pm150labels = [];
         s150.enemies.getChildren().forEach(function(e) { if (e.label) { e.label.setVisible(false); s150._pm150labels.push(e.label); } });
@@ -11521,6 +11514,7 @@ function togglePhotoMode150() {
     } else {
       if (fr150) fr150.style.display = 'none';
       const ex150 = document.getElementById('foto-exit150'); if (ex150) ex150.remove();
+      const mp150 = document.getElementById('foto-map150'); if (mp150) mp150.remove();
       if (s150 && s150._pm150labels) { s150._pm150labels.forEach(function(l) { l.setVisible(true); }); s150._pm150labels = null; }
       if (s150 && s150._preFoto150) { s150.autoState = s150._preFoto150; s150._preFoto150 = null; }
     }
@@ -13636,5 +13630,6 @@ setInterval(tickMarket, 1000);
   scan();
   try{if(document.body) new MutationObserver(scan).observe(document.body,{childList:true,subtree:true})}catch(e){}
 })();
-</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3f361ab5a9ca45a',t:'MTc5MDEwMTgzMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3f373e43c700b1b',t:'MTc5MDEwMjU3OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
+</body>
 </html>
