@@ -46,23 +46,38 @@ global.localStorage = {
   setItem: (k, v) => { store[k] = String(v); }
 };
 const els = {};
+const allEls = [];
 function fakeEl(id) {
   if (!els[id]) {
     const classes = new Set();
     els[id] = {
-      id, value: '', textContent: '', listeners: {},
+      id, value: '', textContent: '', title: '', style: {}, listeners: {},
       addEventListener(ev, fn) { this.listeners[ev] = fn; },
       classList: {
         add: c => classes.add(c), remove: c => { classes.delete(c); },
         contains: c => classes.has(c)
       }
     };
+    allEls.push(els[id]);
   }
   return els[id];
 }
 const docListeners = {};
+const createdEls = [];
+const REAL_IDS = new Set(['opt-music-vol', 'opt-music-mute', 'opt-music-pct', 'dromo-panel', 'dromo-game-overlay']);
 global.document = {
-  getElementById: id => fakeEl(id),
+  getElementById: id => {
+    const found = allEls.find(e => e.id === id);
+    if (found) return found;
+    if (REAL_IDS.has(id)) return fakeEl(id);
+    return null;
+  },
+  createElement: () => {
+    const el = { id: '', textContent: '', title: '', style: {}, listeners: {}, addEventListener(ev, fn) { this.listeners[ev] = fn; } };
+    allEls.push(el); createdEls.push(el);
+    return el;
+  },
+  body: { appendChild() {} },
   addEventListener: (ev, fn) => { docListeners[ev] = fn; }
 };
 global.window = { AudioContext: FakeAC };
@@ -95,6 +110,7 @@ for (const k of Object.keys(wrapKey)) {
   const key = wrapKey[k];
   LM[k] = (f, t) => { calls[key]++; orig(f, t); };
 }
+clearInterval(LM.watchTimer); LM.watchTimer = null; // sonda manual (determinística)
 
 // ---------- UI/volume (igual antes) ----------
 ok(typeof LM === 'object', 'LobbyMusic definido');
@@ -104,6 +120,9 @@ ok(els['opt-music-pct'].textContent === '40%', 'label 40%');
 ok(els['opt-music-mute'].textContent === '🔊', 'botão 🔊');
 ok(typeof docListeners.pointerdown === 'function' && typeof docListeners.keydown === 'function', 'kick no pointerdown+keydown');
 ok(typeof bound['opt-music-mute'] === 'function', 'mute ligado via bindImmediateButton');
+ok(typeof docListeners.click === 'function', 'kick extra no click');
+ok(global.window.__musica === LM, 'handle de debug window.__musica');
+ok(document.getElementById('music-hud').textContent === '🎵', 'HUD criado pré-start (🎵)');
 els['opt-music-vol'].value = '25';
 els['opt-music-vol'].listeners.input();
 ok(LM.vol === 25, 'slider ajusta vol');
@@ -190,6 +209,7 @@ ok(calls.bass === 6, 'baixo: 1 pulso por acorde', 'bass=' + calls.bass);
 ok(calls.bell >= 3 && calls.bell <= 10, 'pings: 3 da abertura + raros', 'bells=' + calls.bell);
 ok(LM.droneNodes.length === 2, 'drone do pátio (2 oscs)');
 ok(LM.windNodes === null, 'pátio sem vento');
+ok(document.getElementById('music-hud').textContent === '🎵🛸', 'HUD mostra faixa (🎵🛸)');
 
 // ---------- troca de faixa + bateria + vento (async) ----------
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -221,6 +241,44 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await sleep(60);
   ok(LM.windNodes === null, 'vento desliga ao sair do deserto');
   ok(LM.trackId === 'patio', 'volta ao pátio');
+  ok(document.getElementById('music-hud').textContent === '🎵🛸', 'HUD acompanha a troca');
+  LM.musicBus.gain.value = 0;
+  LM.startAt = Date.now() - 6000; LM.dipping = false;
+  LM.gainGuard();
+  ok(Math.abs(LM.musicBus.gain.value - LM.volTarget()) < 1e-9, 'watchdog restaura ganho mudo');
+  LM.musicBus.gain.value = 0; LM.dipping = true;
+  LM.gainGuard();
+  ok(LM.musicBus.gain.value === 0, 'watchdog respeita o dip da troca');
+  LM.dipping = false; LM.applyVol();
+  bound['music-hud']();
+  ok(LM.muted === true && document.getElementById('music-hud').textContent === '🔇', 'toque no HUD muta');
+  bound['music-hud']();
+  ok(LM.muted === false, 'toque no HUD desmuta');
+
+  // regressão v183: dip perpétuo (sonda 1s x DIP 1.2s)
+  LM.DIP_MS = 1200;
+  LM.switchTrack('battle');
+  const tok1 = LM.switchToken;
+  LM.switchTrack('battle'); LM.switchTrack('battle');
+  ok(LM.switchToken === tok1, 'pending: ticks repetidos não re-disparam');
+  await sleep(1400);
+  ok(LM.trackId === 'battle', 'adopt completa mesmo com sonda chamando');
+  LM.switchTrack('patio'); await sleep(1400);
+  testLoc = 'ow_grove';
+  LM.watchTick();
+  ok(LM.trackId === 'patio' && LM.pendingTrack === null, 'debounce: 1º tick só observa');
+  LM.watchTick();
+  ok(LM.pendingTrack === 'tribe_overworld', 'debounce: 2º tick estável dispara');
+  await sleep(1400);
+  ok(LM.trackId === 'tribe_overworld', 'debounce: troca completa');
+  const tok2 = LM.switchToken;
+  testLoc = 'uw_ember'; LM.watchTick();
+  testLoc = 'ow_grove'; LM.watchTick();
+  testLoc = 'uw_ember'; LM.watchTick();
+  testLoc = 'ow_grove'; LM.watchTick();
+  ok(LM.trackId === 'tribe_overworld' && LM.switchToken === tok2, 'flapping alternado nunca troca (sem dip)');
+  testLoc = 'portico'; LM.watchTick(); LM.watchTick(); await sleep(1400);
+  ok(LM.trackId === 'patio', 'volta ao pátio (debounce)');
 
   // ---------- lab de teste ----------
   const lab = fs.readFileSync(LAB, 'utf8');

@@ -1,11 +1,11 @@
 // Teste funcional v2 — profundidade/colisão/atores do Pátio Central.
-// Valida: conectividade, móveis bloqueando, pontos andáveis, 36 oclusores,
+// Valida: conectividade, móveis bloqueando, pontos andáveis, 65 oclusores,
 // Y-sort, rotas dos drones, robôs, e a fiação (spawns, quarto, comunicacao).
 // Uso: node test_lobby_depth.js
 const fs = require('fs');
-const path = require('path');
 const { execFileSync } = require('child_process');
 
+const path = require('path');
 const FIX = path.join(__dirname, '..', 'Chaotic_Online_Lobby_FIX.html');
 let pass = 0, fail = 0;
 const ok = (cond, name, extra = '') => {
@@ -30,7 +30,7 @@ const SPAWN = [600, 447];
 
 console.log('== conectividade (spawn -> destino tem rota válida?) ==');
 const targets = L.SECTORS.map(z => [z.id, z.point])
-  .concat([['saida', L.EXIT.point], ['costura', [312, 528]], ['bebidas', [1020, 252]], ['quarto', [862, 774]], ['punch', [492, 648]], ['dep-door', [388, 652]], ['forge-recess', [350, 480]], ['shop-ramp', [869, 270]]]);
+  .concat([['saida', L.EXIT.point], ['costura', [200, 500]], ['bebidas', [1020, 252]], ['quarto', [843, 722]], ['punch', [540, 665]], ['dep-door', [388, 652]], ['forge-recess', [350, 460]], ['shop-ramp', [869, 270]]]);
 for (const [id, pt] of targets) {
   const path = L.findPath(SPAWN, pt);
   const end = path.length ? path[path.length - 1] : null;
@@ -40,43 +40,43 @@ for (const [id, pt] of targets) {
 
 console.log('== móveis bloqueiam (centro do móvel = não-andável) ==');
 const blocked = [
-  ['roleta', [216, 153]], ['shop-counter', [969, 150]], ['shop-table', [905, 249]],
-  ['shop-crates', [1041, 220]], ['shop-counter-sw', [957, 267]], ['shop-counter-se', [1060, 267]],
+  ['roleta', [216, 153]], ['shop-counter', [969, 150]], ['shop-table', [898, 220]],
+  ['shop-crates', [1041, 220]], ['shop-displays', [973, 175]], ['shop-shelf', [867, 175]],
   ['portal-pillar-l', [557, 150]], ['portal-pillar-r', [645, 150]],
-  ['forge', [215, 400]], ['forge-shelves-low', [274, 489]], ['forge-counter', [312, 472]],
-  ['leilao-desk', [988, 440]], ['holo', [972, 711]], ['missoes-board', [600, 687]],
+  ['forge', [215, 400]], ['forge-shelves-low', [235, 450]], ['forge-counter', [170, 500]],
+  ['leilao-desk', [988, 440]], ['holo', [978, 746]], ['missoes-board', [600, 687]],
   ['bench-seat-nl', [545, 301]], ['bench-seat-nr', [673, 301]],
-  ['bench-seat-sl', [575, 506]], ['bench-seat-sr', [654, 506]],
-  ['bench-lamp-sl', [548, 486]], ['bench-lamp-sr', [676, 486]],
+  ['bench-seat-sl', [535, 617]], ['bench-seat-sr', [665, 617]],
+  ['bench-lamp-sl', [503, 614]], ['bench-lamp-sr', [697, 614]],
   ['deposito-craft', [311, 733]], ['comms-desk-l', [895, 708]], ['comms-desk-r', [1069, 708]],
   ['plant-nl', [424, 391]], ['plant-nr', [778, 391]], ['plant-sl', [424, 498]], ['plant-sr', [778, 498]],
   ['tree-nl', [385, 252]], ['tree-nr', [831, 252]], ['tree-sl', [362, 604]], ['tree-sr', [840, 604]],
-  ['torch-nl', [466, 326]], ['torch-nr', [754, 326]], ['lamp-sl', [486, 570]], ['lamp-sr', [714, 570]],
-  ['leilao-back', [988, 397]], ['missoes-col-w', [517, 687]], ['missoes-col-e', [687, 687]],
-  ['banner-pole-w', [474, 698]], ['banner-pole-e', [725, 698]],
-  ['torch-nw2', [396, 318]], ['torch-ne2', [790, 318]],
+  ['torch-nl', [466, 326]], ['torch-nr', [737, 306]], ['lamp-sl', [486, 570]], ['lamp-sr', [714, 570]],
+  ['leilao-back', [967, 417]], ['missoes-col-w', [523, 719]], ['missoes-col-e', [677, 719]],
+  ['banner-pole-w', [492, 688]], ['banner-pole-e', [708, 688]],
+  ['mastro-base-w', [392, 362]], ['mastro-base-e', [808, 362]],
   ['door-post', [342, 490]],
-  ['tree-nl-s', [385, 276]], ['tree-nr-s', [831, 276]],
+  ['vaso-pot-nl', [382, 231]], ['vaso-pot-nr', [818, 231]],
 ];
 for (const [id, pt] of blocked) ok(!L.isWalkable(pt[0], pt[1]), `bloqueado: ${id}`);
 
 console.log('== pontos-chave andáveis ==');
 const open = [
-  ['spawn', SPAWN], ['forge-approach', [280, 530]], ['costura', [312, 528]],
+  ['spawn', SPAWN], ['forge-approach', [280, 530]], ['costura', [200, 500]],
   ['leilao-door', [875, 447]], ['deposito-entry', [392, 644]], ['comms-entry', [830, 690]],
-  ['roleta-front', [243, 220]], ['shop-front', [982, 212]], ['forja-front', [245, 484]],
-  ['leilao-front', [977, 505]], ['deposito-front', [279, 754]], ['missoes-front', [600, 756]],
-  ['comms-front', [958, 760]], ['portal-front', [600, 203]], ['bebidas', [1020, 252]],
-  ['quarto', [862, 774]], ['stairs-s', [615, 540]], ['stairs-n', [608, 255]],
+  ['roleta-front', [260, 240]], ['shop-front', [982, 212]], ['forja-front', [245, 484]],
+  ['leilao-front', [977, 505]], ['deposito-front', [280, 772]], ['missoes-front', [600, 756]],
+  ['comms-front', [958, 786]], ['portal-front', [600, 203]], ['bebidas', [1020, 252]],
+  ['quarto', [843, 722]], ['stairs-s', [615, 540]], ['stairs-n', [608, 255]],
   ['plaza-w', [480, 447]], ['ring-n', [600, 250]], ['exit', [600, 852]],
-  ['punch-n', [492, 620]], ['punch-mid', [492, 648]], ['punch-s', [492, 658]],
-  ['recess', [350, 480]], ['slot-e', [712, 745]], ['detour-w', [490, 700]], ['comms-s', [810, 660]],
+  ['punch-n', [600, 600]], ['punch-mid', [540, 665]], ['punch-s', [503, 728]],
+  ['recess', [350, 460]], ['slot-e', [712, 745]], ['detour-w', [510, 745]], ['comms-s', [810, 660]],
   ['torch-e-road', [812, 318]], ['door-mid', [356, 470]],
 ];
 for (const [id, pt] of open) ok(L.isWalkable(pt[0], pt[1]), `andável: ${id}`);
 
 console.log('== oclusores + Y-sort ==');
-ok(Array.isArray(L.OCCLUDERS) && L.OCCLUDERS.length === 36, `36 oclusores (achado: ${L.OCCLUDERS.length})`);
+ok(Array.isArray(L.OCCLUDERS) && L.OCCLUDERS.length === 65, `65 oclusores (achado: ${L.OCCLUDERS.length})`);
 let inBounds = true; const keys = new Set();
 for (const [k, x, y, w, h] of L.OCCLUDERS) {
   keys.add(k);
@@ -86,7 +86,7 @@ for (const [k, x, y, w, h] of L.OCCLUDERS) {
 }
 ok(inBounds, 'todos dentro de 1200x900 e do webp 1448x1086');
 ok(keys.size === L.OCCLUDERS.length, 'chaves únicas');
-ok(keys.has('torch-nw2') && keys.has('torch-ne2') && !keys.has('missoes-sign-w') && !keys.has('missoes-sign-e'), 'tochas novas + letreiro sem oclusor (heroi visivel no patamar)');
+ok(keys.has('anel-mastro-e') && keys.has('anel-mastro-d') && !keys.has('missoes-sign-w') && !keys.has('missoes-sign-e'), 'tochas novas + letreiro sem oclusor (heroi visivel no patamar)');
 const d = L.depthForRefY;
 ok(d(0) === 5 && d(900) === 9 && d(100) < d(800), 'depthForRefY: 5 (topo) -> 9 (base)');
 ok(fix.includes('p.setDepth(depthForRefY((p.y + sc._lobbyFootOffset) / sc._lobbyScale));'), 'Y-sort do herói no update');
@@ -124,7 +124,7 @@ for (const r of L.ROBOTS) {
   }
 }
 ok(rbOk, 'robôs dentro do mapa com nome + serviço válido');
-const cover = { caixa: [978, 178], croupier: [220, 126], vip: [313, 144], leiloeiro: [982, 450], forja: [214, 486] };
+const cover = { caixa: [978, 178], croupier: [220, 126], vip: [313, 144], leiloeiro: [982, 450], forja: [312, 438] };
 let coverOk = true;
 for (const [id, pt] of Object.entries(cover)) {
   const r = L.ROBOTS.find(r => r.id === (id === 'forja' ? 'forja' : id));
@@ -158,7 +158,7 @@ for (const [x1, y1, x2, y2, color] of L.CHEVRON_RUNS) {
 ok(chevOk, 'setas em segmentos >= 30px com meio andavel');
 ok(chevEnd, 'pontas das setas em chao andavel');
 ok(Array.isArray(L.BEACONS) && L.BEACONS.length === 11, `11 farois (achado: ${L.BEACONS.length})`);
-const dests = L.SECTORS.map(z => z.point).concat([L.EXIT.point, [862, 774], [388, 652], [356, 482]]);
+const dests = L.SECTORS.map(z => z.point).concat([L.EXIT.point, [843, 722], [388, 652], [340, 447]]);
 let becOk = true, becNear = true;
 for (const [bx, by, br] of L.BEACONS) {
   if (!L.isWalkable(bx, by)) { becOk = false; console.log('    farol em chao bloqueado:', bx, by); }
