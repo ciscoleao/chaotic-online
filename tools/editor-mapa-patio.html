@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor de Mapa — Pátio Central (protótipo)</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #0b0e1a; color: #e9eefc;
+    font-family: monospace; font-size: 13px; }
+  #top { display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+    background: #12172a; border-bottom: 2px solid #2b3352; flex-wrap: wrap; }
+  #top h1 { font-size: 14px; margin: 0 8px 0 0; color: #8fdcff; white-space: nowrap; }
+  button, select { font-family: monospace; font-size: 12px; background: #1b2340; color: #e9eefc;
+    border: 1px solid #3a4a6e; border-radius: 6px; padding: 6px 9px; cursor: pointer; }
+  button:hover, select:hover { border-color: #8fdcff; }
+  button.on { border-color: #ffd23a; color: #ffd23a; background: rgba(255,210,58,0.1); }
+  button.warn:hover { border-color: #ff5566; color: #ff8899; }
+  #wrap { display: flex; height: calc(100% - 118px); min-height: 300px; }
+  #pal { width: 212px; overflow-y: auto; background: #0e1330; border-right: 2px solid #2b3352; padding: 8px; }
+  #pal h3 { font-size: 11px; color: #8fdcff; margin: 10px 0 6px; text-transform: uppercase; }
+  #pal h3:first-child { margin-top: 0; }
+  .tile { display: inline-block; width: 88px; margin: 0 6px 6px 0; padding: 4px; text-align: center;
+    background: #151b36; border: 2px solid #2b3352; border-radius: 6px; cursor: pointer; vertical-align: top; }
+  .tile:hover { border-color: #8fdcff; }
+  .tile.sel { border-color: #ffd23a; background: rgba(255,210,58,0.08); }
+  .tile canvas { image-rendering: pixelated; max-width: 76px; max-height: 56px; background: #00000022; }
+  .tile span { display: block; font-size: 9px; color: #aeb8d8; margin-top: 2px; line-height: 1.25; }
+  #mid { flex: 1; overflow: auto; background: #05070f; position: relative; }
+  #mapa { image-rendering: pixelated; display: block; margin: 12px; cursor: crosshair; }
+  #side { width: 228px; overflow-y: auto; background: #0e1330; border-left: 2px solid #2b3352; padding: 8px; }
+  #side h3 { font-size: 11px; color: #8fdcff; margin: 10px 0 6px; text-transform: uppercase; }
+  #side h3:first-child { margin-top: 0; }
+  .row { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+  .sec { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; background: #151b36;
+    border: 1px solid #2b3352; border-radius: 6px; padding: 4px 6px; }
+  .sec i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+  .sec b { font-size: 10px; flex: 1; }
+  .sec input { width: 52px; font-family: monospace; font-size: 11px; background: #0b1120;
+    border: 1px solid #33415c; border-radius: 4px; color: #e9eefc; padding: 2px 3px; }
+  .sec button { padding: 2px 6px; font-size: 10px; }
+  #status { padding: 6px 10px; background: #12172a; border-top: 2px solid #2b3352;
+    font-size: 11px; color: #aeb8d8; min-height: 30px; }
+  #status b { color: #ffd23a; }
+  #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 99;
+    align-items: center; justify-content: center; }
+  #modal.open { display: flex; }
+  #mbox { width: min(640px, 92vw); background: #12172a; border: 2px solid #3a4a6e; border-radius: 10px; padding: 12px; }
+  #mbox textarea { width: 100%; height: 220px; font-family: monospace; font-size: 10px;
+    background: #0b1120; color: #e9eefc; border: 1px solid #33415c; border-radius: 6px; }
+  .hint { font-size: 10px; color: #7c86a8; line-height: 1.5; }
+  kbd { background: #1b2340; border: 1px solid #3a4a6e; border-radius: 4px; padding: 0 4px; }
+</style>
+</head>
+<body>
+<div id="top">
+  <h1>🗺️ Editor de Mapa — Pátio Central</h1>
+  <button id="b-new" class="warn" title="Volta ao mapa atual do jogo">Novo (padrão)</button>
+  <button id="b-save" title="Baixa o JSON do mapa">⬇ Exportar JSON</button>
+  <button id="b-copy" title="Copia o JSON">📋 Copiar JSON</button>
+  <button id="b-load" title="Carrega um JSON">⬆ Importar</button>
+  <button id="b-png" title="Baixa uma imagem do mapa">🖼 Exportar PNG</button>
+  <button id="b-grid" class="on" title="Mostra/esconde a grade">Grade</button>
+  <label>Zoom <select id="zoom">
+    <option value="8">0.25×</option>
+    <option value="16" selected>0.5×</option>
+    <option value="32">1×</option>
+    <option value="64">2×</option>
+  </select></label>
+</div>
+<div id="wrap">
+  <div id="pal"></div>
+  <div id="mid"><canvas id="mapa"></canvas></div>
+  <div id="side">
+    <h3>Ferramenta</h3>
+    <div class="row">
+      <button id="t-brush" class="on">🖌 Pincel</button>
+      <button id="t-fill">🪣 Balde</button>
+      <button id="t-erase">🧽 Borracha</button>
+    </div>
+    <h3>Camada (tiles 32px)</h3>
+    <div class="row">
+      <button id="l-ground" class="on">🟫 Chão</button>
+      <button id="l-wall">🧱 Parede</button>
+    </div>
+    <div class="hint">Carimbos (móveis, salas, placas, portal) vão para a camada de objetos sozinhos, em qualquer camada.</div>
+    <h3>Setores (arraste no mapa)</h3>
+    <div id="secs"></div>
+    <h3>Portão &amp; spawn</h3>
+    <div id="gate"></div>
+    <h3>Como usar</h3>
+    <div class="hint">
+      🖱️ <b>Clique/arraste</b> pinta · <b>botão direito</b> apaga ·
+      <b>arraste os marcadores</b> (setores, portão, spawn) para mover ·
+      <kbd>Ctrl</kbd>+rodinha = zoom.<br><br>
+      Quando ficar do seu gosto: <b>Exportar JSON</b> (ou PNG) e me mande —
+      eu transformo no mapa de verdade do jogo.
+    </div>
+  </div>
+</div>
+<div id="status">carregando…</div>
+<div id="modal"><div id="mbox">
+  <div style="margin-bottom:6px"><b id="mtitle">Importar JSON</b></div>
+  <textarea id="mtext" placeholder='Cole o JSON aqui…'></textarea>
+  <div class="row" style="margin-top:8px">
+    <button id="m-ok">Carregar</button>
+    <button id="m-file">Escolher arquivo…</button>
+    <button id="m-close">Fechar</button>
+    <input type="file" id="m-input" accept=".json,application/json" style="display:none">
+  </div>
+</div></div>
+<script>
+'use strict';
+/* ============================================================
+ * NÚCLEO PURO (testável em Node): texturas, tiles, mapa, JSON.
+ * O editor visual (DOM) fica no final, atrás de guarda.
+ * ============================================================ */
+const TILE = 32, MW = 100, MH = 75; // 3200×2400, igual ao jogo
+
+// ---- do jogo: drawLunarFloor (extraído de chaotic_idleworld_v123.html)
+
+function drawLunarFloor(ctx, variant) {
+  const bases = ['#d9dfe9', '#d2d9e6', '#cbd3e2'];
+  const w = 32, h = 32;
+  ctx.fillStyle = bases[variant % 3]; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = 'rgba(120,135,165,0.55)'; ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+  ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(0, 0, w, 2); ctx.fillRect(0, 0, 2, h);
+  const rng = variant * 7 + 3;
+  ctx.fillStyle = 'rgba(105,120,150,0.35)';
+  ctx.beginPath(); ctx.arc(8 + (rng * 3) % 16, 10 + (rng * 5) % 14, 3, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(20 + (rng * 2) % 9, 22 + (rng * 4) % 8, 2, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillRect(6 + (rng * 3) % 18, 8 + (rng * 5) % 12, 1, 1);
+  ctx.fillRect(14 + (rng * 2) % 14, 18 + (rng * 3) % 10, 1, 1);
+  ctx.fillRect(24 + (rng * 4) % 6, 6 + (rng * 2) % 20, 1, 1);
+}
+
+// ---- do jogo: drawLunarWall (extraído de chaotic_idleworld_v123.html)
+
+function drawLunarWall(ctx) {
+  // Muralha sci-fi contínua: textura 32x32, pixel-grid rígido e sem efeitos dinâmicos.
+  const w = 32, h = 32;
+  ctx.fillStyle = '#1c1e24'; ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#2d313d'; ctx.fillRect(2, 2, w - 4, h - 4);
+  ctx.fillStyle = '#414954'; ctx.fillRect(2, 2, w - 4, 3);
+  ctx.fillStyle = '#15181e'; ctx.fillRect(2, h - 5, w - 4, 3);
+  ctx.strokeStyle = '#687582'; ctx.lineWidth = 1; ctx.strokeRect(1.5, 1.5, w - 3, h - 3);
+  ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 1; ctx.strokeRect(4.5, 5.5, w - 9, h - 11);
+  ctx.fillStyle = '#00f0ff'; ctx.fillRect(5, 5, 5, 1); ctx.fillRect(w - 10, h - 7, 5, 1);
+  ctx.fillStyle = '#9aa6b2'; ctx.fillRect(4, 4, 2, 2); ctx.fillRect(w - 6, 4, 2, 2); ctx.fillRect(4, h - 6, 2, 2); ctx.fillRect(w - 6, h - 6, 2, 2);
+}
+
+// ---- do jogo: drawPorticoFloor (extraído de chaotic_idleworld_v123.html)
+
+function drawPorticoFloor(ctx, variant) {
+  const bases = ['#e8e8e8', '#dedede', '#d5d5d5'];
+  const base = bases[variant % bases.length];
+  ctx.fillStyle = base; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#c0c0c0'; ctx.fillRect(0, 0, 32, 1); ctx.fillRect(0, 31, 32, 1);
+  ctx.fillRect(0, 0, 1, 32); ctx.fillRect(31, 0, 1, 32);
+  ctx.fillStyle = '#b0b0b0'; ctx.fillRect(15, 0, 2, 32); ctx.fillRect(0, 15, 32, 2);
+}
+
+// ---- do jogo: drawPorticoWall (extraído de chaotic_idleworld_v123.html)
+
+function drawPorticoWall(ctx) {
+  ctx.fillStyle = '#c8cdd4'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#d8dde4'; ctx.fillRect(2, 2, 28, 28);
+  ctx.fillStyle = '#a8adb4'; ctx.fillRect(0, 28, 32, 4);
+  ctx.fillStyle = '#7ec8d8'; ctx.fillRect(8, 8, 16, 8);
+  ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fillRect(8, 8, 4, 4);
+}
+
+// ---- do jogo: drawPlanter (extraído de chaotic_idleworld_v123.html)
+
+function drawPlanter(ctx) { // v132 — canteiro/vaso de flores (Pórtico)
+  ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(20, 33, 12, 3, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#3a7a30'; ctx.fillRect(10, 16, 2, 8); ctx.fillRect(27, 14, 2, 9); ctx.fillRect(19, 12, 2, 10);
+  const fl = function(fx, fy, c) { ctx.fillStyle = c; ctx.fillRect(fx - 2, fy, 5, 2); ctx.fillRect(fx, fy - 2, 2, 5); ctx.fillStyle = '#ffd54f'; ctx.fillRect(fx, fy, 2, 2); };
+  fl(11, 14, '#ef5f5f'); fl(20, 10, '#ff9ec4'); fl(28, 12, '#f7f7f7');
+  ctx.fillStyle = '#b35a3a'; ctx.fillRect(8, 24, 24, 5);
+  ctx.fillStyle = '#c96a45'; ctx.fillRect(10, 29, 20, 4);
+  ctx.fillStyle = '#8a4530'; ctx.fillRect(8, 24, 24, 2);
+  ctx.fillStyle = '#a05540'; ctx.fillRect(7, 23, 26, 3);
+}
+
+// ---- do jogo: drawPorticoScreen (extraído de chaotic_idleworld_v123.html)
+
+function drawPorticoScreen(ctx) {
+  ctx.fillStyle = '#b0b5bc'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#2a2a2a'; ctx.fillRect(4, 4, 24, 20);
+  ctx.fillStyle = '#ff8c00'; ctx.fillRect(6, 6, 8, 6); ctx.fillRect(16, 6, 10, 6);
+  ctx.fillStyle = '#00bcd4'; ctx.fillRect(6, 14, 20, 4);
+  ctx.fillStyle = '#7ec850'; ctx.fillRect(6, 20, 12, 3);
+  ctx.fillStyle = '#888'; ctx.fillRect(4, 26, 24, 2);
+}
+
+// ---- do jogo: drawPorticoTerminal (extraído de chaotic_idleworld_v123.html)
+
+function drawPorticoTerminal(ctx) {
+  ctx.fillStyle = '#d0d5dc'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#00bcd4'; ctx.fillRect(6, 4, 20, 16);
+  ctx.fillStyle = '#fff'; ctx.fillRect(8, 6, 16, 3); ctx.fillRect(8, 11, 12, 2); ctx.fillRect(8, 15, 10, 2);
+  ctx.fillStyle = '#ff8c00'; ctx.fillRect(6, 22, 20, 4);
+  ctx.fillStyle = '#888'; ctx.fillRect(10, 28, 12, 2);
+}
+
+// ---- do jogo: drawPorticoSeat (extraído de chaotic_idleworld_v123.html)
+
+function drawPorticoSeat(ctx) {
+  ctx.fillStyle = '#c0c5cc'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#ff8c00'; ctx.fillRect(4, 10, 24, 8);
+  ctx.fillStyle = '#b07830'; ctx.fillRect(4, 18, 24, 4);
+  ctx.fillStyle = '#a0a5ac'; ctx.fillRect(6, 22, 4, 8); ctx.fillRect(22, 22, 4, 8);
+}
+
+// ---- do jogo: drawPorticoRing (extraído de chaotic_idleworld_v123.html)
+
+function drawPorticoRing(ctx) {
+  ctx.fillStyle = '#e0e0e0'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#b0b5bc'; ctx.beginPath(); ctx.arc(16, 16, 14, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#e0e0e0'; ctx.beginPath(); ctx.arc(16, 16, 10, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#00bcd4'; ctx.beginPath(); ctx.arc(16, 16, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(16, 16, 2, 0, Math.PI * 2); ctx.fill();
+}
+
+// ---- do jogo: drawPorticoTable (extraído de chaotic_idleworld_v123.html)
+
+function drawPorticoTable(ctx) {
+  const w = 84, h = 72;
+  // ombrelone teal
+  ctx.fillStyle = '#2aa79b';
+  ctx.beginPath(); ctx.moveTo(w/2, 0); ctx.quadraticCurveTo(w/2 + 34, 8, w/2 + 26, 22); ctx.lineTo(w/2 - 26, 22); ctx.quadraticCurveTo(w/2 - 34, 8, w/2, 0); ctx.fill();
+  ctx.fillStyle = '#1f857b';
+  for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(w/2, 2); ctx.lineTo(w/2 + 22 - i * 14, 21); ctx.lineTo(w/2 + 14 - i * 14, 21); ctx.fill(); }
+  ctx.fillStyle = '#cfd8e2'; ctx.fillRect(w/2 - 1.5, 22, 3, 22);
+  // mesa redonda
+  ctx.fillStyle = '#e8ecf2';
+  ctx.beginPath(); ctx.ellipse(w/2, 52, 24, 9, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#c2ccd8';
+  ctx.beginPath(); ctx.ellipse(w/2, 55, 24, 9, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#aeb9c8'; ctx.fillRect(w/2 - 3, 55, 6, 12);
+  ctx.fillStyle = '#98a5b5';
+  ctx.beginPath(); ctx.ellipse(w/2, 68, 10, 4, 0, 0, 7); ctx.fill();
+  // canecas na mesa
+  ctx.fillStyle = '#ff8fa3'; ctx.fillRect(w/2 - 10, 44, 5, 6);
+  ctx.fillStyle = '#7ec850'; ctx.fillRect(w/2 + 5, 44, 5, 6);
+}
+
+// ---- do jogo: drawPorticoChair (extraído de chaotic_idleworld_v123.html)
+
+function drawPorticoChair(ctx) {
+  const w = 24, h = 30;
+  ctx.fillStyle = '#dfe6ee';
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(4, 2, 16, 14, 4) : ctx.rect(4, 2, 16, 14); ctx.fill();
+  ctx.fillStyle = '#b8c4d4'; ctx.fillRect(4, 12, 16, 5);
+  ctx.fillStyle = '#e8ecf2'; ctx.fillRect(3, 16, 18, 5);
+  ctx.fillStyle = '#98a5b5'; ctx.fillRect(4, 21, 3, 8); ctx.fillRect(17, 21, 3, 8);
+  ctx.strokeStyle = '#8fa0b5'; ctx.lineWidth = 1.5; ctx.strokeRect(3, 16, 18, 5);
+}
+
+// ---- do jogo: drawVendingMachine (extraído de chaotic_idleworld_v123.html)
+
+function drawVendingMachine(ctx) {
+  const w = 40, h = 68;
+  ctx.fillStyle = '#2c3a55';
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(2, 2, w - 4, h - 4, 5) : ctx.rect(2, 2, w - 4, h - 4); ctx.fill();
+  ctx.fillStyle = '#3d6fd8';
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(4, 4, w - 8, h - 8, 4) : ctx.rect(4, 4, w - 8, h - 8); ctx.fill();
+  // janela brilhante com "latinhas"
+  ctx.fillStyle = '#0e1a26'; ctx.fillRect(8, 10, 16, 26);
+  ctx.fillStyle = '#bfe8ff'; ctx.fillRect(9, 11, 14, 24);
+  const cols = ['#ff8fa3', '#7ef0a0', '#ffd54f', '#7ec8d8'];
+  for (let i = 0; i < 4; i++) { ctx.fillStyle = cols[i]; ctx.fillRect(11, 14 + i * 5, 6, 3); ctx.fillRect(19, 14 + i * 5, 3, 3); }
+  // painel de botões
+  ctx.fillStyle = '#0e1a26'; ctx.fillRect(27, 10, 8, 18);
+  ctx.fillStyle = '#ffe08a'; ctx.fillRect(28, 12, 6, 2); ctx.fillRect(28, 16, 6, 2); ctx.fillRect(28, 20, 6, 2);
+  // saída
+  ctx.fillStyle = '#0e1a26'; ctx.fillRect(10, 48, 22, 12);
+  ctx.strokeStyle = '#8fb8e8'; ctx.lineWidth = 1; ctx.strokeRect(10, 48, 22, 12);
+  ctx.fillStyle = '#1a2a3f'; ctx.fillRect(4, 62, w - 8, 4);
+}
+
+// ---- do jogo: drawGlowSoft (extraído de chaotic_idleworld_v123.html)
+
+function drawGlowSoft(ctx) {
+  const w = 96, h = 96;
+  const g = ctx.createRadialGradient(w/2, h/2, 2, w/2, h/2, w/2);
+  g.addColorStop(0, 'rgba(255,255,255,0.85)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+}
+
+// ---- do jogo: drawGlowDot (extraído de chaotic_idleworld_v123.html)
+
+function drawGlowDot(ctx) {
+  const w = 16, h = 16;
+  const g = ctx.createRadialGradient(w/2, h/2, 1, w/2, h/2, w/2);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.5, 'rgba(255,255,255,0.4)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+}
+
+// ---- do jogo: drawPortalGlow (extraído de chaotic_idleworld_v123.html)
+
+function drawPortalGlow(ctx) {
+  const w = 96, h = 96;
+  const g = ctx.createRadialGradient(w/2, h/2, 4, w/2, h/2, w/2);
+  g.addColorStop(0, 'rgba(140,225,255,0.9)'); g.addColorStop(0.4, 'rgba(60,160,255,0.45)'); g.addColorStop(1, 'rgba(30,80,200,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+}
+
+// ---- do jogo: drawPortalPillar (extraído de chaotic_idleworld_v123.html)
+
+function drawPortalPillar(ctx) {
+  const w = 32, h = 64;
+  ctx.fillStyle = '#1a2030'; ctx.fillRect(4, h - 6, 24, 6);
+  ctx.fillStyle = '#252c3e'; ctx.fillRect(6, 8, 20, h - 14);
+  ctx.fillStyle = '#313a52'; ctx.fillRect(8, 10, 16, h - 18);
+  ctx.fillStyle = '#7fd4ff'; ctx.fillRect(6, 14, 20, 3);
+  ctx.fillStyle = 'rgba(127,212,255,0.35)'; ctx.fillRect(4, 17, 24, 6);
+  ctx.fillStyle = '#9fe4ff';
+  ctx.fillRect(14, 28, 4, 2); ctx.fillRect(14, 38, 4, 2); ctx.fillRect(14, 48, 4, 2);
+}
+
+// ---- do jogo: drawPortalCore (extraído de chaotic_idleworld_v123.html)
+
+function drawPortalCore(ctx) {
+  const w = 64, h = 64;
+  const g = ctx.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.22, 'rgba(200,246,255,0.95)');
+  g.addColorStop(0.55, 'rgba(90,205,255,0.55)');
+  g.addColorStop(1, 'rgba(40,120,255,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+}
+
+// ---- do jogo: drawPortalRing (extraído de chaotic_idleworld_v123.html)
+
+function drawPortalRing(ctx, segments, colorA, colorB, lw) {
+  const w = 128, c = w / 2, R = 54;
+  const seg = Math.PI * 2 / segments;
+  for (let pass = 0; pass < 2; pass++) {
+    ctx.lineWidth = pass === 0 ? lw * 2.4 : lw;
+    ctx.globalAlpha = pass === 0 ? 0.22 : 1;
+    for (let i = 0; i < segments; i++) {
+      const a0 = i * seg;
+      ctx.strokeStyle = i % 2 ? colorB : colorA;
+      ctx.beginPath(); ctx.arc(c, c, R, a0, a0 + seg * 0.62); ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ---- do jogo: drawRoomDeposit (extraído de chaotic_idleworld_v123.html)
+
+function drawRoomDeposit(ctx) {
+  const w = 256, h = 192;
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#1d3550'); g.addColorStop(1, '#0d1622');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = '#5ea0ff'; ctx.lineWidth = 3; ctx.strokeRect(4, 4, w - 8, h - 8);
+  ctx.fillStyle = '#5ea0ff'; ctx.fillRect(8, h - 14, w - 16, 3);
+  for (let s = 0; s < 3; s++) {
+    const sx = 26 + s * 72;
+    ctx.fillStyle = '#16283c'; ctx.fillRect(sx, 34, 56, 118);
+    ctx.strokeStyle = '#3d5a7d'; ctx.lineWidth = 2; ctx.strokeRect(sx, 34, 56, 118);
+    for (let sh = 0; sh < 3; sh++) {
+      const sy = 46 + sh * 36;
+      ctx.fillStyle = '#0e1a28'; ctx.fillRect(sx + 6, sy, 44, 4);
+      ctx.fillStyle = ['#c8a24a', '#7ec850', '#e05c3a', '#5ea0ff'][Math.floor(Math.random() * 4)];
+      ctx.fillRect(sx + 10, sy - 14, 14, 12);
+      ctx.fillRect(sx + 28, sy - 12, 12, 10);
+    }
+  }
+  ctx.fillStyle = '#0e1622'; ctx.fillRect(w / 2 - 20, 150, 40, 14);
+  ctx.strokeStyle = '#7ec850'; ctx.strokeRect(w / 2 - 20, 150, 40, 14);
+  ctx.fillStyle = '#7ec850'; ctx.font = 'bold 8px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('DEPÓSITO', w / 2, 157); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+
+// ---- do jogo: drawRoomAuction (extraído de chaotic_idleworld_v123.html)
+
+function drawRoomAuction(ctx) {
+  const w = 256, h = 192;
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#3d2f10'); g.addColorStop(1, '#171008');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = '#c8a24a'; ctx.lineWidth = 3; ctx.strokeRect(4, 4, w - 8, h - 8);
+  // tapete dourado
+  ctx.fillStyle = 'rgba(200,162,74,0.35)'; ctx.fillRect(24, 120, w - 48, 8);
+  ctx.fillStyle = 'rgba(200,162,74,0.2)'; ctx.fillRect(32, 132, w - 64, 4);
+  // púlpito do leiloeiro
+  ctx.fillStyle = '#6b4e1f'; ctx.fillRect(w/2 - 26, 104, 52, 30);
+  ctx.fillStyle = '#8a6a2c'; ctx.fillRect(w/2 - 30, 98, 60, 8);
+  ctx.strokeStyle = '#e8c76a'; ctx.lineWidth = 2; ctx.strokeRect(w/2 - 26, 104, 52, 30);
+  // martelo
+  ctx.fillStyle = '#c8a24a'; ctx.fillRect(w/2 + 12, 84, 5, 18);
+  ctx.fillStyle = '#e8c76a'; ctx.fillRect(w/2 + 6, 78, 17, 7);
+  // bandeiras tribais
+  const flags = ['#ff5566', '#8be25a', '#4fb3e8', '#c77dff'];
+  for (let i = 0; i < 4; i++) {
+    const fx = 22 + i * ((w - 44) / 3);
+    ctx.fillStyle = '#5a4a28'; ctx.fillRect(fx, 14, 2, 26);
+    ctx.fillStyle = flags[i]; ctx.beginPath(); ctx.moveTo(fx + 2, 14); ctx.lineTo(fx + 16, 20); ctx.lineTo(fx + 2, 26); ctx.fill();
+  }
+  // placa "LEILÃO"
+  ctx.fillStyle = '#0e0a04'; ctx.fillRect(w/2 - 34, 44, 68, 16);
+  ctx.strokeStyle = '#e8c76a'; ctx.strokeRect(w/2 - 34, 44, 68, 16);
+  ctx.fillStyle = '#e8c76a'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('LEILÃO', w/2, 53);
+  // pedestais com relíquias
+  ctx.fillStyle = '#2c2214'; ctx.fillRect(40, 140, 14, 20); ctx.fillRect(w - 54, 140, 14, 20);
+  ctx.fillStyle = '#ffd54f'; ctx.beginPath(); ctx.arc(47, 136, 5, 0, 7); ctx.fill();
+  ctx.fillStyle = '#7ef0a0'; ctx.beginPath(); ctx.arc(w - 47, 136, 5, 0, 7); ctx.fill();
+}
+
+// ---- do jogo: drawRoomDrome (extraído de chaotic_idleworld_v123.html)
+
+function drawRoomDrome(ctx) {
+  const w = 256, h = 192;
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#1d2a52'); g.addColorStop(1, '#0d1430');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = '#e8b23a'; ctx.lineWidth = 3; ctx.strokeRect(4, 4, w - 8, h - 8);
+  const flags = [14, w - 30];
+  for (let f = 0; f < flags.length; f++) {
+    const fx = flags[f];
+    ctx.fillStyle = '#2a3a6a'; ctx.fillRect(fx, 10, 16, 54);
+    ctx.strokeStyle = '#e8b23a'; ctx.lineWidth = 2; ctx.strokeRect(fx, 10, 16, 54);
+    ctx.fillStyle = '#ffd54f';
+    ctx.beginPath(); ctx.arc(fx + 8, 26, 4, 0, 7); ctx.fill();
+    ctx.fillRect(fx + 7, 30, 2, 12); ctx.fillRect(fx + 7, 38, 5, 2); ctx.fillRect(fx + 7, 42, 4, 2);
+  }
+  ctx.fillStyle = '#141c3a'; ctx.fillRect(w / 2 - 40, 84, 80, 84);
+  ctx.strokeStyle = '#e8b23a'; ctx.lineWidth = 3; ctx.strokeRect(w / 2 - 40, 84, 80, 84);
+  ctx.strokeStyle = '#3a4a7a'; ctx.lineWidth = 2; ctx.strokeRect(w / 2 - 30, 94, 60, 64);
+  ctx.save(); ctx.translate(w / 2, 58);
+  ctx.fillStyle = '#ffd54f'; ctx.shadowColor = '#ffd54f'; ctx.shadowBlur = 12;
+  ctx.beginPath(); ctx.arc(0, -6, 12, 0, 7); ctx.fill();
+  ctx.fillRect(-4, 4, 8, 26); ctx.fillRect(-4, 22, 12, 5); ctx.fillRect(-4, 30, 9, 5);
+  ctx.restore();
+  ctx.fillStyle = '#9fb6ff';
+  ctx.fillRect(w / 2 - 26, 100, 3, 3); ctx.fillRect(w / 2 + 22, 120, 3, 3); ctx.fillRect(w / 2 - 10, 140, 3, 3);
+}
+
+// ---- do jogo: drawRoomLounge (extraído de chaotic_idleworld_v123.html)
+
+function drawRoomLounge(ctx) {
+  const w = 256, h = 192;
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#4a2560'); g.addColorStop(1, '#22102f');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = '#c77dff'; ctx.lineWidth = 3; ctx.strokeRect(4, 4, w - 8, h - 8);
+  ctx.fillStyle = '#c77dff'; ctx.fillRect(8, h - 14, w - 16, 3);
+  ctx.fillStyle = 'rgba(199,125,255,0.3)'; ctx.fillRect(6, h - 11, w - 12, 4);
+  const sofas = [[24, 110], [w - 88, 110]];
+  for (let s = 0; s < sofas.length; s++) {
+    const sx = sofas[s][0], sy = sofas[s][1];
+    ctx.fillStyle = '#7a3f9a'; ctx.fillRect(sx, sy, 64, 22);
+    ctx.fillStyle = '#9354b5'; ctx.fillRect(sx, sy - 10, 64, 12);
+    ctx.fillStyle = '#5d2f78'; ctx.fillRect(sx, sy + 22, 64, 5);
+  }
+  ctx.fillStyle = '#2c1740'; ctx.fillRect(w / 2 - 28, 116, 56, 16);
+  ctx.strokeStyle = '#c77dff'; ctx.lineWidth = 2; ctx.strokeRect(w / 2 - 28, 116, 56, 16);
+  const plants = [40, w - 40];
+  for (let p = 0; p < plants.length; p++) {
+    const pxx = plants[p];
+    ctx.fillStyle = '#3f8f5f'; ctx.beginPath(); ctx.arc(pxx, 86, 10, 0, 7); ctx.fill();
+    ctx.fillStyle = '#5fbf7f'; ctx.beginPath(); ctx.arc(pxx - 6, 80, 6, 0, 7); ctx.fill();
+    ctx.fillStyle = '#5a3a2a'; ctx.fillRect(pxx - 7, 94, 14, 12);
+  }
+  for (let i = 0; i < 6; i++) { ctx.fillStyle = i % 2 ? '#ff9de2' : '#c77dff'; ctx.fillRect(20 + i * 38, 16, 5, 5); }
+}
+
+// ---- do jogo: drawNeonSign (extraído de chaotic_idleworld_v123.html)
+
+function drawNeonSign(ctx, a, b) {
+  const data = (typeof a === 'object' && a !== null) ? a : b;
+  const w = 128, h = 40;
+  ctx.fillStyle = 'rgba(14,10,26,0.95)'; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = data.color; ctx.lineWidth = 2; ctx.strokeRect(2, 2, w - 4, h - 4);
+  ctx.font = 'bold 17px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.shadowColor = data.color; ctx.shadowBlur = 10; ctx.fillStyle = data.color;
+  ctx.fillText(data.text, w / 2, h / 2 + 1);
+  ctx.shadowBlur = 3; ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.85;
+  ctx.fillText(data.text, w / 2, h / 2 + 1);
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+}
+
+// ---- do jogo: drawMissionBoard (extraído de chaotic_idleworld_v123.html)
+
+function drawMissionBoard(ctx) {
+  // v2.29 — textura Phaser estrita: 264x248, somente primitivas retangulares
+  const W = 264, H = 248;
+  ctx.clearRect(0, 0, W, H);
+  // sombra/base
+  ctx.fillStyle = '#111820'; ctx.fillRect(28, 224, 208, 10);
+  ctx.fillStyle = '#2e3033'; ctx.fillRect(30, 218, 204, 12);
+  ctx.fillStyle = '#8b949e'; ctx.fillRect(34, 218, 196, 3);
+  // colunas metálicas laterais
+  ctx.fillStyle = '#20262c'; ctx.fillRect(30, 48, 18, 174); ctx.fillRect(216, 48, 18, 174);
+  ctx.fillStyle = '#59636b'; ctx.fillRect(33, 52, 12, 166); ctx.fillRect(219, 52, 12, 166);
+  ctx.fillStyle = '#00f0ff'; ctx.fillRect(38, 66, 3, 88); ctx.fillRect(223, 66, 3, 88);
+  ctx.fillStyle = '#172027'; ctx.fillRect(33, 157, 12, 55); ctx.fillRect(219, 157, 12, 55);
+  // topo único, reto e sem placas suspensas
+  ctx.fillStyle = '#151b21'; ctx.fillRect(20, 32, 224, 22);
+  ctx.fillStyle = '#2e3033'; ctx.fillRect(24, 35, 216, 14);
+  ctx.fillStyle = '#aab3ba'; ctx.fillRect(30, 35, 204, 2);
+  ctx.fillStyle = '#00f0ff'; ctx.fillRect(30, 48, 204, 2);
+  ctx.fillStyle = '#4e5961'; ctx.fillRect(62, 40, 140, 4);
+  // antena discreta
+  ctx.fillStyle = '#59636b'; ctx.fillRect(130, 18, 4, 14);
+  ctx.fillStyle = '#00f0ff'; ctx.fillRect(126, 14, 12, 3); ctx.fillRect(130, 10, 4, 4);
+  // moldura externa reta
+  ctx.fillStyle = '#10161c'; ctx.fillRect(42, 62, 180, 116);
+  ctx.fillStyle = '#59636b'; ctx.fillRect(46, 66, 172, 108);
+  ctx.fillStyle = '#00f0ff'; ctx.fillRect(50, 70, 164, 2); ctx.fillRect(50, 168, 164, 2);
+  // tela
+  ctx.fillStyle = '#07141b'; ctx.fillRect(54, 76, 156, 88);
+  ctx.fillStyle = '#19333c'; ctx.fillRect(58, 80, 148, 17);
+  ctx.fillStyle = '#00f0ff'; ctx.font = 'bold 11px monospace'; ctx.fillText('PAINEL DE MISSOES', 65, 92);
+  // missões e barras sólidas
+  const rows = [['Permanecer Online','#ffd23f','0/1'],['Scanner Biologico','#59e879','0/5'],['Gladiador do Dromo','#d982ff','0/3']];
+  for (let i = 0; i < rows.length; i++) {
+    const y = 101 + i * 20, color = rows[i][1];
+    ctx.fillStyle = '#10252d'; ctx.fillRect(58, y, 148, 17);
+    ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.strokeRect(58, y, 148, 17);
+    ctx.fillStyle = color; ctx.font = 'bold 8px monospace'; ctx.fillText(i === 0 ? 'O' : i === 1 ? 'S' : 'X', 63, y + 12);
+    ctx.fillText(rows[i][0], 75, y + 10); ctx.fillText(rows[i][2], 181, y + 10);
+    ctx.fillStyle = '#02070a'; ctx.fillRect(75, y + 12, 98, 3);
+    ctx.fillStyle = color; ctx.fillRect(75, y + 12, i === 0 ? 2 : 5, 3);
+  }
+  // botões inferiores nas posições originais
+  function button(x, label) {
+    ctx.fillStyle = '#151b21'; ctx.fillRect(x, 186, 66, 30);
+    ctx.strokeStyle = '#59636b'; ctx.lineWidth = 2; ctx.strokeRect(x, 186, 66, 30);
+    ctx.fillStyle = '#0b2029'; ctx.fillRect(x + 5, 191, 56, 20);
+    ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 1; ctx.strokeRect(x + 5, 191, 56, 20);
+    ctx.fillStyle = '#8cecf0'; ctx.font = 'bold 6px monospace'; ctx.fillText(label, x + 9, 204);
+  }
+  button(56, 'CONTRATOS'); button(144, 'DIARIAS');
+  // cabos e indicadores quadrados
+  ctx.fillStyle = '#29343b'; ctx.fillRect(76, 216, 4, 24); ctx.fillRect(184, 216, 4, 24);
+  ctx.fillStyle = '#00f0ff'; ctx.fillRect(38, 213, 5, 5); ctx.fillRect(221, 213, 5, 5);
+}
+
+// ---- do jogo: drawNPC (extraído de chaotic_idleworld_v123.html)
+
+function drawNPC(ctx, color) {
+  drawPixelRect(ctx, 10, 14, 12, 10, color);
+  drawPixelRect(ctx, 11, 24, 4, 6, '#3a3020'); drawPixelRect(ctx, 17, 24, 4, 6, '#3a3020');
+  drawPixelRect(ctx, 12, 6, 8, 8, '#d4a574');
+  drawPixelRect(ctx, 11, 4, 10, 4, color);
+  drawPixelRect(ctx, 13, 8, 2, 2, '#222'); drawPixelRect(ctx, 17, 8, 2, 2, '#222');
+}
+
+// ---- do jogo: drawRobotClerk (extraído de chaotic_idleworld_v123.html)
+
+function drawRobotClerk(ctx) {
+  const w = 48, h = 64;
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(24, 60, 14, 4, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#9aa8ba'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(24, 4); ctx.lineTo(24, 10); ctx.stroke();
+  ctx.fillStyle = '#7ec850'; ctx.beginPath(); ctx.arc(24, 4, 2.5, 0, 7); ctx.fill();
+  ctx.fillStyle = '#c2ccd8';
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(11, 10, 26, 18, 5) : ctx.rect(11, 10, 26, 18); ctx.fill();
+  ctx.fillStyle = '#10141c'; ctx.fillRect(14, 14, 20, 10);
+  ctx.fillStyle = '#7ec850'; ctx.fillRect(17, 17, 5, 4); ctx.fillRect(26, 17, 5, 4);
+  ctx.fillStyle = '#aab6c4'; ctx.fillRect(18, 26, 12, 3);
+  ctx.fillStyle = '#dfe4ec';
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(12, 30, 24, 22, 5) : ctx.rect(12, 30, 24, 22); ctx.fill();
+  ctx.fillStyle = '#2a3548'; ctx.fillRect(16, 34, 16, 12);
+  ctx.fillStyle = '#7ee7ff'; ctx.fillRect(18, 36, 12, 2); ctx.fillRect(18, 40, 8, 2);
+  ctx.fillStyle = '#c2ccd8'; ctx.fillRect(5, 32, 6, 16); ctx.fillRect(37, 32, 6, 16);
+  ctx.fillStyle = '#8fa0b5'; ctx.fillRect(15, 53, 7, 7); ctx.fillRect(26, 53, 7, 7);
+}
+
+// ---- do jogo: drawClerkCounter (extraído de chaotic_idleworld_v123.html)
+
+function drawClerkCounter(ctx) {
+  const w = 96, h = 46;
+  ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(w / 2, h - 4, 42, 4, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#141c28'; ctx.fillRect(8, 34, 7, 10); ctx.fillRect(w - 15, 34, 7, 10);
+  ctx.fillStyle = '#2b3a4d'; ctx.fillRect(2, 6, w - 4, 13);
+  ctx.fillStyle = '#3d5270'; ctx.fillRect(2, 6, w - 4, 3);
+  ctx.fillStyle = '#53e0ff'; ctx.fillRect(6, 11, w - 12, 2);
+  ctx.fillStyle = '#1c2735'; ctx.fillRect(6, 19, w - 12, 19);
+  ctx.fillStyle = '#243244'; ctx.fillRect(6, 19, w - 12, 2);
+  ctx.fillStyle = '#53e0ff'; ctx.fillRect(12, 24, 12, 2); ctx.fillRect(12, 28, 7, 2); ctx.fillRect(12, 32, 10, 2);
+  ctx.fillStyle = '#ffb84d'; ctx.fillRect(w - 22, 24, 9, 9);
+  ctx.fillStyle = '#7ec850'; ctx.fillRect(38, 24, 18, 3); ctx.fillRect(38, 29, 11, 3);
+  ctx.fillStyle = '#0e1622'; ctx.fillRect(38, 33, 20, 3);
+}
+
+// ---- do jogo: drawDroneBase (extraído de chaotic_idleworld_v123.html)
+
+function drawDroneBase(ctx, body, bodyDark, trim, eyeGlow) {
+  const w = 44, h = 36;
+  // rotor superior
+  ctx.strokeStyle = 'rgba(200,220,255,0.5)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(w/2 - 12, 5); ctx.lineTo(w/2 + 12, 5); ctx.stroke();
+  ctx.fillStyle = '#8fa0b5'; ctx.fillRect(w/2 - 2, 4, 4, 6);
+  // corpo arredondado
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.ellipse(w/2, 20, 17, 12, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = bodyDark;
+  ctx.beginPath(); ctx.ellipse(w/2, 25, 13, 7, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = trim; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(w/2, 20, 17, 12, 0, 0, 7); ctx.stroke();
+  // "olho" (tela)
+  ctx.fillStyle = '#10141c';
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(w/2 - 9, 12, 18, 10, 4) : ctx.rect(w/2 - 9, 12, 18, 10); ctx.fill();
+  ctx.fillStyle = eyeGlow; ctx.fillRect(w/2 - 6, 15, 7, 3);
+  // luzes laterais
+  ctx.fillStyle = eyeGlow; ctx.beginPath(); ctx.arc(w/2 - 14, 24, 2, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(w/2 + 14, 24, 2, 0, 7); ctx.fill();
+  // garra/base
+  ctx.fillStyle = trim; ctx.fillRect(w/2 - 5, 32, 3, 3); ctx.fillRect(w/2 + 2, 32, 3, 3);
+}
+
+// ---- do jogo: drawDroneA (extraído de chaotic_idleworld_v123.html)
+
+function drawDroneA(ctx) { drawDroneBase(ctx, '#dfe6ee', '#b8c4d4', '#8fa0b5', '#7ef0a0'); }
+
+// ---- do jogo: drawDroneB (extraído de chaotic_idleworld_v123.html)
+
+function drawDroneB(ctx) { drawDroneBase(ctx, '#f2b8c6', '#d891a2', '#c4808f', '#ffe08a'); }
+
+// ---- do jogo: drawDroneC (extraído de chaotic_idleworld_v123.html)
+
+function drawDroneC(ctx) {
+  const w = 48, h = 44;
+  ctx.strokeStyle = 'rgba(200,220,255,0.5)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(w/2 - 14, 5); ctx.lineTo(w/2 + 14, 5); ctx.stroke();
+  ctx.fillStyle = '#8fa0b5'; ctx.fillRect(w/2 - 2, 4, 4, 6);
+  ctx.fillStyle = '#dfe6ee';
+  ctx.beginPath(); ctx.ellipse(w/2, 24, 19, 13, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#8fa0b5'; ctx.stroke();
+  // telão verde grande (estilo drones do Pórtico)
+  ctx.fillStyle = '#0e1a12';
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(w/2 - 14, 15, 28, 17, 4) : ctx.rect(w/2 - 14, 15, 28, 17); ctx.fill();
+  ctx.strokeStyle = '#5a7a68'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = '#7ef0a0';
+  ctx.fillRect(w/2 - 11, 19, 8, 3); ctx.fillRect(w/2 - 11, 24, 13, 3); ctx.fillRect(w/2 + 4, 19, 7, 8);
+  ctx.fillStyle = '#e8a0b5'; ctx.beginPath(); ctx.arc(w/2 - 15, 33, 2, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(w/2 + 15, 33, 2, 0, 7); ctx.fill();
+}
+
+// ---- do jogo: drawPixelRect (extraído de chaotic_idleworld_v123.html)
+
+function drawPixelRect(ctx, x, y, w, h, color) { ctx.fillStyle = color; ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h)); }
+
+// ---- do jogo: drawDromeFloor (extraído de chaotic_idleworld_v123.html)
+
+function drawDromeFloor(ctx) {
+  ctx.fillStyle = '#2a2a2a'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#333';
+  ctx.fillRect(4, 6, 4, 2); ctx.fillRect(16, 12, 4, 2); ctx.fillRect(24, 20, 4, 2); ctx.fillRect(8, 26, 4, 2);
+  ctx.fillStyle = '#3a3a3a';
+  ctx.fillRect(10, 10, 2, 2); ctx.fillRect(22, 18, 2, 2); ctx.fillRect(6, 22, 2, 2);
+}
+
+// ---- do jogo: drawDromeWall (extraído de chaotic_idleworld_v123.html)
+
+function drawDromeWall(ctx) {
+  ctx.fillStyle = '#4a4a4a'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#5a5a5a'; ctx.fillRect(2, 2, 28, 28);
+  ctx.fillStyle = '#3a3a3a'; ctx.fillRect(4, 4, 4, 4); ctx.fillRect(24, 20, 4, 4);
+}
+
+// ---- do jogo: drawDromePortal (extraído de chaotic_idleworld_v123.html)
+
+function drawDromePortal(ctx) {
+  ctx.fillStyle = '#2a1a3a'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#ff8fa3'; ctx.beginPath(); ctx.arc(16, 16, 10, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ffd54f'; ctx.beginPath(); ctx.arc(16, 16, 5, 0, Math.PI * 2); ctx.fill();
+}
+
+// ---- do jogo: drawCaveFloor (extraído de chaotic_idleworld_v123.html)
+
+function drawCaveFloor(ctx) {
+  ctx.fillStyle = '#4a3a2c'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#544234'; ctx.fillRect(1, 1, 30, 30);
+  for (let i = 0; i < 7; i++) {
+    const rx = (i * 13 + 5) % 27, ry = (i * 17 + 3) % 27;
+    ctx.fillStyle = i % 2 ? '#5e4b3a' : '#453629';
+    ctx.fillRect(rx + 1, ry + 1, 3, 2);
+  }
+  ctx.strokeStyle = 'rgba(20,14,10,0.35)'; ctx.lineWidth = 1;
+  ctx.strokeRect(0.5, 0.5, 31, 31);
+}
+
+// ---- do jogo: drawCaveWall (extraído de chaotic_idleworld_v123.html)
+
+function drawCaveWall(ctx) {
+  ctx.fillStyle = '#241b14'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#32261c'; ctx.fillRect(2, 2, 28, 28);
+  ctx.fillStyle = '#3e2f22';
+  ctx.fillRect(4, 4, 10, 8); ctx.fillRect(18, 14, 9, 7); ctx.fillRect(7, 20, 8, 6);
+  ctx.fillStyle = 'rgba(255,235,180,0.10)';
+  ctx.fillRect(5, 5, 7, 2); ctx.fillRect(19, 15, 6, 2);
+  ctx.strokeStyle = 'rgba(12,8,6,0.6)'; ctx.lineWidth = 1; ctx.strokeRect(0.5, 0.5, 31, 31);
+}
+
+// ---- do jogo: drawExtGrass (extraído de chaotic_idleworld_v123.html)
+
+function drawExtGrass(ctx) {
+  ctx.fillStyle = '#5da348'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = 'rgba(70,130,55,0.5)'; ctx.fillRect(6, 9, 2, 4); ctx.fillRect(22, 21, 2, 4); ctx.fillRect(14, 5, 2, 3);
+  ctx.fillStyle = 'rgba(140,200,110,0.3)'; ctx.fillRect(26, 8, 2, 3); ctx.fillRect(3, 25, 2, 3);
+}
+
+// ---- do jogo: drawExtPath (extraído de chaotic_idleworld_v123.html)
+
+function drawExtPath(ctx) {
+  ctx.fillStyle = '#d8c49a'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#c9b489'; ctx.fillRect(4, 6, 5, 4); ctx.fillRect(20, 18, 6, 4); ctx.fillRect(12, 26, 4, 3);
+  ctx.fillStyle = '#e4d3ad'; ctx.fillRect(8, 20, 5, 3); ctx.fillRect(24, 4, 4, 3);
+}
+
+// ---- do jogo: drawExtWater (extraído de chaotic_idleworld_v123.html)
+
+function drawExtWater(ctx) {
+  // v129 — textura com ondulacao + espuma
+  const g = ctx.createLinearGradient(0, 0, 0, 32);
+  g.addColorStop(0, '#5fb0e8'); g.addColorStop(1, '#3f8fd4');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(0, 6, 32, 2); ctx.fillRect(0, 22, 32, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.30)'; ctx.fillRect(5, 13, 8, 2); ctx.fillRect(21, 27, 7, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.14)'; ctx.fillRect(0, 0, 32, 4);
+  ctx.fillStyle = 'rgba(20,60,120,0.15)'; ctx.fillRect(0, 30, 32, 2);
+}
+
+// ---- do jogo: drawExtHedge (extraído de chaotic_idleworld_v123.html)
+
+function drawExtHedge(ctx) {
+  ctx.fillStyle = '#2f6b34';
+  ctx.beginPath(); ctx.arc(16, 18, 14, 0, 7); ctx.fill();
+  ctx.fillStyle = '#3d8242';
+  ctx.beginPath(); ctx.arc(12, 14, 9, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(22, 19, 8, 0, 7); ctx.fill();
+  ctx.fillStyle = '#57a355'; ctx.fillRect(8, 10, 3, 3); ctx.fillRect(19, 15, 3, 3);
+}
+
+// ---- do jogo: drawExtTree (extraído de chaotic_idleworld_v123.html)
+
+function drawExtTree(ctx) {
+  ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(24, 90, 14, 5, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#6b4a2c'; ctx.fillRect(20, 56, 8, 34);
+  ctx.fillStyle = '#3f8f4f';
+  ctx.beginPath(); ctx.arc(24, 34, 22, 0, 7); ctx.fill();
+  ctx.fillStyle = '#4fa862';
+  ctx.beginPath(); ctx.arc(17, 27, 13, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(32, 38, 11, 0, 7); ctx.fill();
+  ctx.fillStyle = '#63c176'; ctx.fillRect(10, 18, 4, 4); ctx.fillRect(26, 12, 4, 4);
+}
+
+// ---- do jogo: drawExtFountain (extraído de chaotic_idleworld_v123.html)
+
+function drawExtFountain(ctx) {
+  ctx.fillStyle = '#cfd8e2'; ctx.beginPath(); ctx.arc(32, 36, 28, 0, 7); ctx.fill();
+  ctx.fillStyle = '#5fb6e8'; ctx.beginPath(); ctx.arc(32, 36, 22, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.arc(26, 30, 6, 0, 7); ctx.fill();
+  ctx.fillStyle = '#e8ecf2'; ctx.fillRect(28, 16, 8, 20);
+  ctx.fillStyle = '#cfd8e2'; ctx.beginPath(); ctx.arc(32, 14, 9, 0, 7); ctx.fill();
+  ctx.fillStyle = '#9fe4ff'; ctx.fillRect(30, 2, 4, 6);
+  ctx.fillStyle = '#b8c4d4'; ctx.fillRect(6, 58, 52, 5);
+}
+
+// ---- do jogo: drawCentralBuilding (extraído de chaotic_idleworld_v123.html)
+
+function drawCentralBuilding(ctx) {
+  const w = 256, h = 210;
+  ctx.fillStyle = '#c2ccd8';
+  ctx.beginPath(); ctx.ellipse(w/2, h-40, 116, 40, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#e8ecf2';
+  ctx.beginPath(); ctx.ellipse(w/2, h-52, 116, 40, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#9aa8ba';
+  for (let i = -3; i <= 3; i++) {
+    ctx.beginPath(); ctx.arc(w/2 + i*30, h-52, 9, Math.PI, 0); ctx.fill();
+  }
+  ctx.fillStyle = '#dfe4ec'; ctx.fillRect(w/2-70, h-118, 140, 66);
+  ctx.strokeStyle = '#aab6c4'; ctx.lineWidth = 2; ctx.strokeRect(w/2-70, h-118, 140, 66);
+  ctx.fillStyle = '#f0c040';
+  ctx.beginPath(); ctx.moveTo(w/2, h-180); ctx.quadraticCurveTo(w/2+64, h-150, w/2+54, h-118); ctx.lineTo(w/2-54, h-118); ctx.quadraticCurveTo(w/2-64, h-150, w/2, h-180); ctx.fill();
+  ctx.fillStyle = '#d4a028';
+  ctx.beginPath(); ctx.moveTo(w/2, h-180); ctx.quadraticCurveTo(w/2+30, h-156, w/2+24, h-118); ctx.lineTo(w/2, h-118); ctx.fill();
+  ctx.fillStyle = '#fff2c0'; ctx.fillRect(w/2-2, h-176, 4, 56);
+  ctx.fillStyle = '#e8ecf2';
+  ctx.beginPath(); ctx.moveTo(w/2-70, h-112); ctx.lineTo(w/2-116, h-92); ctx.lineTo(w/2-70, h-84); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(w/2+70, h-112); ctx.lineTo(w/2+116, h-92); ctx.lineTo(w/2+70, h-84); ctx.fill();
+  ctx.fillStyle = '#313a52'; ctx.fillRect(w/2-14, h-72, 28, 32);
+  ctx.fillStyle = '#7fd4ff'; ctx.fillRect(w/2-10, h-68, 20, 24);
+  ctx.strokeStyle = '#8fa0b5'; ctx.beginPath(); ctx.moveTo(w/2, h-180); ctx.lineTo(w/2, h-200); ctx.stroke();
+  ctx.fillStyle = '#ffd23a'; ctx.beginPath(); ctx.moveTo(w/2, h-200); ctx.lineTo(w/2+14, h-195); ctx.lineTo(w/2, h-190); ctx.fill();
+}
+
+// ---- do jogo: drawDromoCrellan (extraído de chaotic_idleworld_v123.html)
+
+function drawDromoCrellan(ctx) { drawDromoShell(ctx, '#3f8f4f', '#2f6b34', '#7ec850', false); }
+
+// ---- do jogo: drawDromoHotekk (extraído de chaotic_idleworld_v123.html)
+
+function drawDromoHotekk(ctx) { drawDromoShell(ctx, '#dfe4ec', '#b8c4d4', '#8fa0b5', false); }
+
+// ---- do jogo: drawDromoAmzen (extraído de chaotic_idleworld_v123.html)
+
+function drawDromoAmzen(ctx) { drawDromoShell(ctx, '#2a4fa8', '#1d3a7e', '#5ea0ff', true); }
+
+// ---- do jogo: drawDromoOron (extraído de chaotic_idleworld_v123.html)
+
+function drawDromoOron(ctx) { drawDromoShell(ctx, '#e8ecf2', '#c2ccd8', '#ff9d5c', false); }
+
+// ---- do jogo: drawDromoTirasis (extraído de chaotic_idleworld_v123.html)
+
+function drawDromoTirasis(ctx) { drawDromoShell(ctx, '#f0ead0', '#d8ceb0', '#c8a24a', false); }
+
+// ---- do jogo: drawDromoImthor (extraído de chaotic_idleworld_v123.html)
+
+function drawDromoImthor(ctx) { drawDromoShell(ctx, '#5a3a7e', '#3f2859', '#c77dff', false); }
+
+// ---- do jogo: drawDromoChirrul (extraído de chaotic_idleworld_v123.html)
+
+function drawDromoChirrul(ctx) { drawDromoShell(ctx, '#2a9db5', '#1d7a8e', '#7ee7ff', false); }
+
+// ---- do jogo: drawEnergyCell (extraído de chaotic_idleworld_v123.html)
+
+function drawEnergyCell(ctx) {
+  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#66bb6a'; ctx.beginPath(); ctx.arc(16, 16, 8, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#aaffaa'; ctx.beginPath(); ctx.arc(16, 16, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.fillRect(14, 10, 4, 12); ctx.fillRect(10, 14, 12, 4);
+}
+
+// ---- do jogo: drawMatSucata (extraído de chaotic_idleworld_v123.html)
+
+function drawMatSucata(ctx) {
+  // Pedaço de metal amassado (cinza)
+  drawPixelRect(ctx, 8, 12, 16, 12, '#8a8a7a');
+  drawPixelRect(ctx, 10, 10, 9, 4, '#9a9a8a');
+  drawPixelRect(ctx, 12, 15, 10, 3, '#6a6a5a');
+  drawPixelRect(ctx, 10, 19, 4, 4, '#b0b0a0');
+  drawPixelRect(ctx, 21, 13, 3, 9, '#5a5a4a');
+  drawPixelRect(ctx, 13, 21, 6, 2, '#7a7a6a');
+  drawPixelRect(ctx, 11, 13, 2, 2, '#c8c8b8');
+}
+
+// ---- do jogo: drawMatGeodo (extraído de chaotic_idleworld_v123.html)
+
+function drawMatGeodo(ctx) {
+  // Geodo Luminoso: geodo de cristal teal (exclusivo da caverna)
+  drawPixelRect(ctx, 10, 12, 12, 12, '#2a6a68');
+  drawPixelRect(ctx, 12, 8, 8, 6, '#3a8a86');
+  drawPixelRect(ctx, 8, 16, 4, 8, '#34807c');
+  drawPixelRect(ctx, 20, 16, 5, 9, '#34807c');
+  drawPixelRect(ctx, 13, 10, 4, 8, '#7fe3ea');
+  drawPixelRect(ctx, 14, 13, 2, 3, '#d8ffff');
+  drawPixelRect(ctx, 21, 18, 2, 2, '#b0f4f8');
+}
+
+// ---- do jogo: drawMatCircuito (extraído de chaotic_idleworld_v123.html)
+
+function drawMatCircuito(ctx) {
+  // Placa de circuito verde com trilhas douradas
+  drawPixelRect(ctx, 7, 9, 18, 14, '#1a6a3a');
+  drawPixelRect(ctx, 9, 11, 14, 10, '#22884a');
+  ctx.fillStyle = '#f0c040';
+  ctx.fillRect(10, 13, 12, 1); ctx.fillRect(10, 18, 12, 1);
+  ctx.fillRect(12, 11, 1, 10); ctx.fillRect(20, 11, 1, 10);
+  drawPixelRect(ctx, 14, 14, 4, 4, '#333333');
+  drawPixelRect(ctx, 15, 15, 2, 2, '#66bb6a');
+  drawPixelRect(ctx, 6, 12, 1, 2, '#f0c040'); drawPixelRect(ctx, 6, 18, 1, 2, '#f0c040');
+  drawPixelRect(ctx, 25, 12, 1, 2, '#f0c040'); drawPixelRect(ctx, 25, 18, 1, 2, '#f0c040');
+}
+
+// ---- do jogo: drawMatCristal (extraído de chaotic_idleworld_v123.html)
+
+function drawMatCristal(ctx) {
+  // Cristal bruto (losango ciano brilhante)
+  ctx.fillStyle = '#4fc3f7';
+  ctx.beginPath(); ctx.moveTo(16, 5); ctx.lineTo(24, 16); ctx.lineTo(16, 27); ctx.lineTo(8, 16); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#b3e5fc';
+  ctx.beginPath(); ctx.moveTo(16, 9); ctx.lineTo(20, 16); ctx.lineTo(16, 23); ctx.lineTo(12, 16); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(14, 11, 2, 2); ctx.fillRect(13, 13, 1, 1);
+  ctx.fillStyle = 'rgba(79,195,247,0.35)';
+  ctx.beginPath(); ctx.arc(16, 16, 13, 0, Math.PI * 2); ctx.fill();
+}
+
+// ---- do jogo: drawGroundMat (extraído de chaotic_idleworld_v123.html)
+
+function drawGroundMat(ctx, color, dark, shape) {
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(16, 26, 9, 3, 0, 0, 7); ctx.fill();
+  if (shape === 'couro') {
+    ctx.fillStyle = color; ctx.beginPath(); ctx.ellipse(16, 17, 11, 8, 0.4, 0, 7); ctx.fill();
+    ctx.fillStyle = dark; ctx.fillRect(9, 12, 3, 3); ctx.fillRect(19, 19, 3, 3);
+    ctx.strokeStyle = dark; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(14, 15, 4, 0.4, 2.6); ctx.stroke();
+  } else if (shape === 'teia') {
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+    for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(16, 16); const a = i * 2.09; ctx.lineTo(16 + Math.cos(a) * 12, 16 + Math.sin(a) * 12); ctx.stroke(); }
+    for (let r = 4; r <= 11; r += 4) { ctx.beginPath(); ctx.arc(16, 16, r, 0, 7); ctx.stroke(); }
+    ctx.fillStyle = dark; ctx.fillRect(15, 15, 2, 2);
+  } else if (shape === 'cipo') {
+    ctx.strokeStyle = color; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.moveTo(8, 24); ctx.bezierCurveTo(12, 10, 20, 24, 26, 8); ctx.stroke();
+    ctx.fillStyle = dark; ctx.fillRect(11, 20, 3, 3); ctx.fillRect(20, 16, 3, 3);
+  } else if (shape === 'dente') {
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(10, 24); ctx.lineTo(16, 5); ctx.lineTo(22, 24); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = dark; ctx.beginPath(); ctx.moveTo(16, 5); ctx.lineTo(22, 24); ctx.lineTo(16, 24); ctx.closePath(); ctx.fill();
+  } else if (shape === 'fio') {
+    ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(16, 16, 9, 0.6, 5.2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(16, 16, 5, 3.2, 7.5); ctx.stroke();
+    ctx.fillStyle = dark; ctx.fillRect(22, 10, 4, 4);
+  } else if (shape === 'musgo') {
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.ellipse(11, 21, 7, 5, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(20, 18, 8, 6, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(16, 24, 7, 4, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = dark; ctx.fillRect(14, 14, 2, 3); ctx.fillRect(22, 22, 2, 3);
+  } else if (shape === 'cristal') {
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(16, 4); ctx.lineTo(24, 16); ctx.lineTo(16, 28); ctx.lineTo(8, 16); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = dark;
+    ctx.beginPath(); ctx.moveTo(16, 4); ctx.lineTo(24, 16); ctx.lineTo(16, 28); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillRect(14, 10, 2, 9);
+  } else if (shape === 'garra') {
+    ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(16, 18, 9, Math.PI * 0.9, Math.PI * 1.9); ctx.stroke();
+    ctx.lineCap = 'butt';
+    ctx.fillStyle = dark; ctx.beginPath(); ctx.arc(23, 12, 2.5, 0, 7); ctx.fill();
+  } else if (shape === 'retalho') {
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(5, 8); ctx.lineTo(26, 6); ctx.lineTo(23, 24); ctx.lineTo(14, 20); ctx.lineTo(7, 26); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = dark; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = dark; ctx.fillRect(16, 11, 4, 2);
+  } else {
+    ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.ellipse(16, 20, 4, 11, 0.5, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(19, 16, 4, 8, 0.9, 0, 7); ctx.stroke();
+    ctx.fillStyle = dark; ctx.beginPath(); ctx.arc(22, 24, 2.5, 0, 7); ctx.fill();
+  }
+}
+
+// ---- do jogo: drawGMatGema (extraído de chaotic_idleworld_v123.html)
+
+function drawGMatGema(ctx) { drawGroundMat(ctx, '#7fe9ff', '#3f6fc4', 'cristal'); }
+
+// ---- do jogo: drawGMatCristal (extraído de chaotic_idleworld_v123.html)
+
+function drawGMatCristal(ctx) { drawGroundMat(ctx, '#a78bfa', '#6a4fa8', 'cristal'); }
+
+// ---- do jogo: drawGMatFio (extraído de chaotic_idleworld_v123.html)
+
+function drawGMatFio(ctx) { drawGroundMat(ctx, '#7fd4ff', '#3f8fc4', 'fio'); }
+
+// ---- do jogo: drawGMatReator (extraído de chaotic_idleworld_v123.html)
+
+function drawGMatReator(ctx) { drawGroundMat(ctx, '#e07fff', '#7a2fa8', 'fio'); }
+
+// ---- do jogo: drawPorticoPortal (extraído de chaotic_idleworld_v123.html)
+
+function drawPorticoPortal(ctx, frame) {
+  ctx.fillStyle = '#e0e0e0'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#00bcd4'; ctx.beginPath(); ctx.arc(16, 16, 12, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#b2ebf2'; ctx.beginPath(); ctx.arc(16, 16, 8, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(16, 16, 4, 0, Math.PI * 2); ctx.fill();
+  if (frame === 1) { ctx.fillStyle = 'rgba(0,188,212,0.3)'; ctx.beginPath(); ctx.arc(16, 16, 14, 0, Math.PI * 2); ctx.fill(); }
+}
+
+// ---- do jogo: drawDromoShell (extraído de chaotic_idleworld_v123.html)
+
+function drawDromoShell(ctx, roofA, roofB, trim, triangular) {
+  const w = 160, h = 120;
+  ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(w/2, h-12, 62, 10, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#c2ccd8'; ctx.fillRect(12, h-22, w-24, 12);
+  ctx.fillStyle = '#aab6c4'; ctx.fillRect(12, h-14, w-24, 5);
+  if (triangular) {
+    ctx.fillStyle = roofA;
+    ctx.beginPath(); ctx.moveTo(w/2, 8); ctx.lineTo(w/2+58, h-24); ctx.lineTo(w/2-58, h-24); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = roofB;
+    ctx.beginPath(); ctx.moveTo(w/2, 8); ctx.lineTo(w/2+20, h-24); ctx.lineTo(w/2-20, h-24); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = trim; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(w/2, 8); ctx.lineTo(w/2+58, h-24); ctx.lineTo(w/2-58, h-24); ctx.closePath(); ctx.stroke();
+  } else {
+    ctx.fillStyle = roofA;
+    ctx.beginPath(); ctx.moveTo(14, h-26);
+    ctx.quadraticCurveTo(w/2-20, 2, w/2+30, 14);
+    ctx.quadraticCurveTo(w-16, 30, w-14, h-26);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = roofB;
+    ctx.beginPath(); ctx.moveTo(34, h-26);
+    ctx.quadraticCurveTo(w/2-6, 22, w/2+34, 30);
+    ctx.quadraticCurveTo(w-30, 44, w-30, h-26);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = trim; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(14, h-26);
+    ctx.quadraticCurveTo(w/2-20, 2, w/2+30, 14);
+    ctx.quadraticCurveTo(w-16, 30, w-14, h-26); ctx.stroke();
+  }
+  ctx.fillStyle = '#22283a';
+  ctx.beginPath(); ctx.arc(w/2, h-24, 15, Math.PI, 0); ctx.fill();
+  ctx.fillRect(w/2-15, h-24, 30, 13);
+  ctx.fillStyle = trim; ctx.fillRect(w/2-3, h-42, 6, 6);
+}
+
+/* ---- reimplementações canvas de trechos do jogo ---- */
+function drawMapPathEd(ctx) { // igual ao 'map_path' da PorticoScene
+  ctx.fillStyle = '#333b66'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#46508a'; ctx.fillRect(2, 2, 28, 28);
+  ctx.fillStyle = '#525da0'; ctx.fillRect(4, 4, 24, 24);
+}
+function drawLanternEd(ctx) { // núcleo do lanternTex()
+  const g = ctx.createRadialGradient(24, 30, 2, 24, 30, 24);
+  g.addColorStop(0, 'rgba(255,200,110,0.5)'); g.addColorStop(1, 'rgba(255,200,110,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(24, 30, 24, 0, 7); ctx.fill();
+  ctx.fillStyle = '#2b2e3a'; ctx.fillRect(21, 18, 6, 40);
+  ctx.fillStyle = '#45262d'; ctx.fillRect(16, 8, 16, 14);
+  ctx.fillStyle = '#ffd54f'; ctx.fillRect(19, 11, 10, 8);
+  ctx.fillStyle = '#2b2e3a'; ctx.fillRect(14, 5, 20, 3);
+}
+function drawHoloEd(ctx) { // núcleo do glowTex('holo')
+  const g = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+  g.addColorStop(0, 'rgba(63,227,234,0.9)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(8, 8, 8, 0, 7); ctx.fill();
+}
+
+/* ---- TILES SCI-FI NOVOS (estilo da referência: metal azul + neon ciano) ---- */
+function drawScifiWall(ctx) {
+  ctx.fillStyle = '#1a1e28'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#262c3a'; ctx.fillRect(1, 1, 30, 30);
+  ctx.fillStyle = '#313a4e'; ctx.fillRect(1, 1, 30, 5);          // topo claro
+  ctx.fillStyle = '#141821'; ctx.fillRect(1, 26, 30, 5);          // base escura
+  ctx.fillStyle = '#10131b'; ctx.fillRect(1, 12, 30, 2);          // junta
+  ctx.fillStyle = '#3d4a63'; ctx.fillRect(1, 13, 30, 1);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(3, 22, 26, 2);          // filete neon
+  ctx.fillStyle = 'rgba(0,229,255,0.25)'; ctx.fillRect(3, 24, 26, 2);
+  ctx.fillStyle = '#8fa0b5';                                             // rebites
+  ctx.fillRect(3, 3, 2, 2); ctx.fillRect(27, 3, 2, 2); ctx.fillRect(3, 27, 2, 2); ctx.fillRect(27, 27, 2, 2);
+  ctx.fillStyle = '#0c0e14'; ctx.fillRect(0, 0, 1, 32); ctx.fillRect(31, 0, 1, 32);
+}
+function drawScifiWallTop(ctx) { // parede norte (face de cima mais clara)
+  drawScifiWall(ctx);
+  ctx.fillStyle = '#4a5878'; ctx.fillRect(1, 1, 30, 7);
+  ctx.fillStyle = '#6a7ea8'; ctx.fillRect(1, 1, 30, 2);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(1, 8, 30, 1);
+}
+function drawScifiPillar(ctx) {
+  ctx.fillStyle = '#141821'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#2c3547'; ctx.fillRect(4, 0, 24, 32);
+  ctx.fillStyle = '#3d4a63'; ctx.fillRect(6, 0, 5, 32);
+  ctx.fillStyle = '#1a1e28'; ctx.fillRect(21, 0, 5, 32);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(13, 2, 6, 28);          // neon vertical
+  ctx.fillStyle = '#bffbff'; ctx.fillRect(15, 2, 2, 28);
+  ctx.fillStyle = '#4a5878'; ctx.fillRect(4, 0, 24, 3); ctx.fillRect(4, 29, 24, 3);
+  ctx.fillStyle = '#8fa0b5'; ctx.fillRect(5, 5, 2, 2); ctx.fillRect(25, 5, 2, 2);
+  ctx.fillRect(5, 25, 2, 2); ctx.fillRect(25, 25, 2, 2);
+}
+function drawScifiDoor(ctx) {
+  ctx.fillStyle = '#1a1e28'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(0, 0, 3, 32); ctx.fillRect(29, 0, 3, 32); // batentes
+  ctx.fillStyle = '#262c3a'; ctx.fillRect(4, 1, 10, 30); ctx.fillRect(18, 1, 10, 30); // folhas
+  ctx.fillStyle = '#313a4e'; ctx.fillRect(5, 2, 8, 4); ctx.fillRect(19, 2, 8, 4);
+  ctx.fillStyle = '#05070d'; ctx.fillRect(14, 1, 4, 30);          // vão central
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(15, 6, 2, 5); ctx.fillRect(15, 21, 2, 5); // setas/luzes
+  ctx.fillStyle = '#ffd23a'; ctx.fillRect(15, 14, 2, 4);
+  ctx.fillStyle = '#4a5878'; ctx.fillRect(0, 0, 32, 2);
+}
+function drawScifiWindow(ctx) { // parede com vigia pro espaço
+  drawScifiWall(ctx);
+  const g = ctx.createLinearGradient(0, 8, 0, 24);
+  g.addColorStop(0, '#0a1030'); g.addColorStop(1, '#1a2a5a');
+  ctx.fillStyle = g; ctx.fillRect(6, 8, 20, 12);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(9, 11, 1, 1); ctx.fillRect(15, 14, 1, 1); ctx.fillRect(21, 10, 1, 1);
+  ctx.fillRect(12, 17, 1, 1); ctx.fillRect(18, 12, 2, 1); ctx.fillRect(23, 16, 1, 1);
+  ctx.fillStyle = '#6a7ea8'; ctx.fillRect(6, 8, 20, 1);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(6, 20, 20, 1);
+}
+function drawScifiFloor(ctx) {
+  ctx.fillStyle = '#20242f'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#262b38'; ctx.fillRect(1, 1, 30, 30);
+  ctx.fillStyle = '#1a1e28'; ctx.fillRect(1, 15, 30, 1); ctx.fillRect(15, 1, 1, 30);
+  ctx.fillStyle = '#313a4e'; ctx.fillRect(1, 16, 30, 1); ctx.fillRect(16, 1, 1, 30);
+  ctx.fillStyle = '#3a4358'; ctx.fillRect(3, 3, 4, 1); ctx.fillRect(25, 25, 4, 1);
+  ctx.fillStyle = '#8fa0b5'; ctx.fillRect(2, 2, 1, 1); ctx.fillRect(29, 2, 1, 1);
+  ctx.fillRect(2, 29, 1, 1); ctx.fillRect(29, 29, 1, 1);
+}
+function drawScifiFloorTrim(ctx) { // piso + borda neon (topo)
+  drawScifiFloor(ctx);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(1, 1, 30, 2);
+  ctx.fillStyle = 'rgba(0,229,255,0.3)'; ctx.fillRect(1, 3, 30, 2);
+}
+function drawScifiGrate(ctx) { // piso gradeado/respiradouro
+  drawScifiFloor(ctx);
+  ctx.fillStyle = '#0c0e14'; ctx.fillRect(5, 5, 22, 22);
+  ctx.fillStyle = '#3d4a63';
+  for (let i = 0; i < 6; i++) ctx.fillRect(6, 7 + i * 4, 20, 2);
+  ctx.fillStyle = 'rgba(0,229,255,0.5)'; ctx.fillRect(6, 25, 20, 1);
+}
+function drawScifiCanto(ctx, pos) { // 0=TL 1=TR 2=BL 3=BR: canto de sala (parede em L + piso)
+  drawScifiFloor(ctx);
+  const L = (pos === 0 || pos === 2), T = (pos < 2);
+  ctx.fillStyle = '#1a1e28';
+  if (T) ctx.fillRect(0, 0, 32, 9); else ctx.fillRect(0, 23, 32, 9);
+  if (L) ctx.fillRect(0, 0, 9, 32); else ctx.fillRect(23, 0, 9, 32);
+  ctx.fillStyle = '#313a4e';
+  if (T) ctx.fillRect(0, 1, 32, 4); else ctx.fillRect(0, 27, 32, 4);
+  if (L) ctx.fillRect(1, 0, 4, 32); else ctx.fillRect(27, 0, 4, 32);
+  ctx.fillStyle = '#00e5ff';
+  if (T) ctx.fillRect(0, 7, 32, 2); else ctx.fillRect(0, 23, 32, 2);
+  if (L) ctx.fillRect(7, 0, 2, 32); else ctx.fillRect(23, 0, 2, 32);
+  const cx = L ? 2 : 24, cy = T ? 2 : 24;
+  ctx.fillStyle = '#2c3547'; ctx.fillRect(cx, cy, 6, 6);
+  ctx.fillStyle = '#4a5878'; ctx.fillRect(cx + 1, cy + 1, 4, 2);
+  ctx.fillStyle = '#8fa0b5'; ctx.fillRect(cx + 2, cy + 3, 2, 2);
+}
+function drawScifiPortaAberta(ctx) {
+  ctx.fillStyle = '#1a1e28'; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(0, 0, 4, 32); ctx.fillRect(28, 0, 4, 32);
+  ctx.fillStyle = '#bffbff'; ctx.fillRect(1, 0, 1, 32); ctx.fillRect(30, 0, 1, 32);
+  ctx.fillStyle = '#05070d'; ctx.fillRect(4, 0, 24, 32);
+  ctx.fillStyle = '#20242f'; ctx.fillRect(6, 24, 20, 8);
+  ctx.fillStyle = '#262c3a'; ctx.fillRect(4, 0, 3, 32); ctx.fillRect(25, 0, 3, 32);
+  ctx.fillStyle = '#313a4e'; ctx.fillRect(5, 2, 1, 28); ctx.fillRect(26, 2, 1, 28);
+  ctx.fillStyle = '#7ef0a0'; ctx.fillRect(14, 4, 4, 4);
+  ctx.fillStyle = '#4a5878'; ctx.fillRect(0, 0, 32, 2);
+}
+function drawScifiVidro(ctx) {
+  drawScifiWall(ctx);
+  const g = ctx.createLinearGradient(0, 4, 0, 28);
+  g.addColorStop(0, 'rgba(120,200,255,0.55)'); g.addColorStop(1, 'rgba(40,90,160,0.55)');
+  ctx.fillStyle = g; ctx.fillRect(5, 4, 22, 24);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillRect(9, 4, 3, 24); ctx.fillRect(15, 4, 2, 24);
+  ctx.fillStyle = '#4a5878'; ctx.fillRect(5, 4, 22, 2); ctx.fillRect(5, 26, 22, 2);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(15, 4, 2, 24);
+}
+function drawScifiTapete(ctx, base, borda, fio) {
+  ctx.fillStyle = base; ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = borda;
+  ctx.fillRect(0, 0, 32, 3); ctx.fillRect(0, 29, 32, 3); ctx.fillRect(0, 0, 3, 32); ctx.fillRect(29, 0, 3, 32);
+  ctx.fillStyle = fio;
+  for (let i = 0; i < 8; i++) { ctx.fillRect(4 + i * 3, 5, 1, 1); ctx.fillRect(4 + i * 3, 26, 1, 1); }
+  ctx.fillRect(14, 10, 4, 12); ctx.fillRect(10, 14, 12, 4);
+  ctx.fillStyle = borda; ctx.fillRect(15, 11, 2, 10); ctx.fillRect(11, 15, 10, 2);
+}
+function drawScifiXadrez(ctx) {
+  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
+    ctx.fillStyle = ((x + y) % 2) ? '#313a4e' : '#20242f';
+    ctx.fillRect(x * 8, y * 8, 8, 8);
+  }
+  ctx.fillStyle = 'rgba(0,229,255,0.6)'; ctx.fillRect(0, 0, 32, 1); ctx.fillRect(0, 31, 32, 1);
+  ctx.fillStyle = '#8fa0b5'; ctx.fillRect(1, 1, 1, 1); ctx.fillRect(30, 30, 1, 1);
+}
+function drawScifiLuzPiso(ctx) {
+  drawScifiFloor(ctx);
+  ctx.fillStyle = 'rgba(0,229,255,0.3)'; ctx.fillRect(2, 12, 28, 8);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(2, 14, 28, 4);
+  ctx.fillStyle = '#e8ffff'; ctx.fillRect(2, 15, 28, 2);
+  ctx.fillStyle = '#4a5878'; ctx.fillRect(2, 12, 2, 8); ctx.fillRect(28, 12, 2, 8);
+}
+function drawScifiConsole(ctx) {
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(16, 29, 12, 3, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#2c3547'; ctx.fillRect(5, 8, 22, 18);
+  ctx.fillStyle = '#1a1e28'; ctx.fillRect(5, 22, 22, 4);
+  const g = ctx.createLinearGradient(0, 10, 0, 20);
+  g.addColorStop(0, '#0a2a4a'); g.addColorStop(1, '#134a7a');
+  ctx.fillStyle = g; ctx.fillRect(7, 10, 18, 9);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(9, 12, 8, 1); ctx.fillRect(9, 14, 12, 1); ctx.fillRect(9, 16, 6, 1);
+  ctx.fillStyle = '#7ef0a0'; ctx.fillRect(21, 12, 3, 3);
+  ctx.fillStyle = '#ff5566'; ctx.fillRect(7, 21, 2, 2);
+  ctx.fillStyle = '#ffd23a'; ctx.fillRect(11, 21, 2, 2);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(15, 21, 2, 2);
+  ctx.fillStyle = '#4a5878'; ctx.fillRect(5, 8, 22, 2);
+  ctx.fillStyle = '#8fa0b5'; ctx.fillRect(8, 27, 3, 3); ctx.fillRect(21, 27, 3, 3);
+}
+function drawScifiCaixa(ctx) {
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(3, 27, 26, 3);
+  ctx.fillStyle = '#5a6a85'; ctx.fillRect(4, 6, 24, 22);
+  ctx.fillStyle = '#4a5878'; ctx.fillRect(4, 6, 24, 3);
+  ctx.fillStyle = '#3d4a63'; ctx.fillRect(4, 25, 24, 3);
+  ctx.fillStyle = '#2c3547'; ctx.fillRect(4, 6, 3, 22); ctx.fillRect(25, 6, 3, 22);
+  ctx.fillStyle = '#ff9a2e'; ctx.fillRect(4, 14, 24, 4);
+  ctx.fillStyle = '#c46a1a'; ctx.fillRect(4, 17, 24, 1);
+  ctx.fillStyle = '#8fa0b5';
+  ctx.fillRect(6, 8, 2, 2); ctx.fillRect(24, 8, 2, 2); ctx.fillRect(6, 24, 2, 2); ctx.fillRect(24, 24, 2, 2);
+}
+function drawScifiPrateleira(ctx) {
+  ctx.fillStyle = '#2c3547'; ctx.fillRect(3, 2, 26, 28);
+  ctx.fillStyle = '#1a1e28'; ctx.fillRect(5, 4, 22, 24);
+  const cores = ['#ff8899', '#7ec850', '#7ec8ff', '#ffd23a', '#c77dff', '#ff9a2e'];
+  for (let p = 0; p < 3; p++) {
+    const y = 5 + p * 8;
+    ctx.fillStyle = cores[p * 2]; ctx.fillRect(7, y, 5, 5);
+    ctx.fillStyle = cores[p * 2 + 1]; ctx.fillRect(14, y, 5, 5);
+    ctx.fillStyle = '#8fa0b5'; ctx.fillRect(21, y + 1, 4, 4);
+    ctx.fillStyle = '#4a5878'; ctx.fillRect(5, y + 6, 22, 1);
+  }
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(3, 2, 26, 1);
+}
+function drawScifiPlanta(ctx) {
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(16, 29, 10, 2, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#3d4a63'; ctx.fillRect(10, 21, 12, 7);
+  ctx.fillStyle = '#2c3547'; ctx.fillRect(10, 21, 12, 2);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(10, 26, 12, 1);
+  ctx.fillStyle = '#2f7a3c'; ctx.fillRect(15, 12, 2, 10);
+  ctx.fillStyle = '#4fae5c';
+  ctx.beginPath(); ctx.arc(11, 12, 4, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(21, 12, 4, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(16, 8, 5, 0, 7); ctx.fill();
+  ctx.fillStyle = '#7fe08a';
+  ctx.fillRect(9, 10, 2, 2); ctx.fillRect(19, 10, 2, 2); ctx.fillRect(14, 6, 2, 2);
+}
+function drawScifiPodio(ctx) {
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(4, 27, 24, 3);
+  ctx.fillStyle = '#2c3547'; ctx.fillRect(6, 14, 20, 14);
+  ctx.fillStyle = '#3d4a63'; ctx.fillRect(6, 14, 20, 3);
+  ctx.fillStyle = '#4a5878'; ctx.fillRect(4, 10, 24, 5);
+  ctx.fillStyle = '#6a7ea8'; ctx.fillRect(4, 10, 24, 2);
+  ctx.fillStyle = '#ffd23a'; ctx.fillRect(14, 18, 4, 8);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(6, 26, 20, 2);
+  ctx.fillStyle = '#8fa0b5'; ctx.fillRect(8, 16, 2, 2); ctx.fillRect(22, 16, 2, 2);
+}
+function drawScifiPoste(ctx) {
+  ctx.fillStyle = 'rgba(0,229,255,0.15)';
+  ctx.beginPath(); ctx.moveTo(12, 10); ctx.lineTo(20, 10); ctx.lineTo(28, 44); ctx.lineTo(4, 44); ctx.fill();
+  ctx.fillStyle = '#2c3547'; ctx.fillRect(14, 8, 4, 34);
+  ctx.fillStyle = '#4a5878'; ctx.fillRect(14, 8, 4, 2);
+  ctx.fillStyle = '#1a1e28'; ctx.fillRect(9, 2, 14, 8);
+  ctx.fillStyle = '#bffbff'; ctx.fillRect(11, 4, 10, 4);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(11, 8, 10, 1);
+  ctx.fillStyle = '#3d4a63'; ctx.fillRect(10, 42, 12, 4);
+  ctx.fillStyle = '#8fa0b5'; ctx.fillRect(12, 43, 2, 2); ctx.fillRect(18, 43, 2, 2);
+}
+function drawScifiBanner(ctx, cor) {
+  ctx.fillStyle = '#4a5878'; ctx.fillRect(2, 0, 28, 3);
+  ctx.fillStyle = '#8fa0b5'; ctx.fillRect(2, 0, 2, 5); ctx.fillRect(28, 0, 2, 5);
+  ctx.fillStyle = cor; ctx.fillRect(6, 3, 20, 40);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(6, 3, 3, 40); ctx.fillRect(23, 3, 3, 40);
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(16, 16, 7, 0, 7); ctx.fill();
+  ctx.fillStyle = cor;
+  ctx.beginPath(); ctx.arc(16, 16, 5, 0, 7); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(15, 12, 2, 8); ctx.fillRect(12, 15, 8, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fillRect(8, 30, 16, 2); ctx.fillRect(8, 34, 12, 2);
+  ctx.clearRect(13, 40, 6, 3);
+}
+function drawScifiAntena(ctx) {
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(24, 60, 16, 3, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#3d4a63'; ctx.fillRect(14, 54, 20, 6);
+  ctx.fillStyle = '#7ef0a0'; ctx.fillRect(16, 56, 3, 2);
+  ctx.fillStyle = '#2c3547'; ctx.fillRect(22, 20, 4, 36);
+  ctx.fillStyle = '#4a5878'; ctx.fillRect(22, 20, 4, 3);
+  ctx.fillStyle = '#565e73'; ctx.beginPath(); ctx.ellipse(24, 16, 18, 10, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#8fa0b5'; ctx.beginPath(); ctx.ellipse(24, 14, 13, 7, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#00e5ff'; ctx.beginPath(); ctx.arc(24, 14, 3, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,229,255,0.7)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(24, 14, 9, -2.4, -0.7); ctx.stroke();
+  ctx.strokeStyle = 'rgba(0,229,255,0.4)';
+  ctx.beginPath(); ctx.arc(24, 14, 13, -2.4, -0.7); ctx.stroke();
+}
+function drawScifiFornalha(ctx) {
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(32, 58, 26, 5, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#3a3f4e'; ctx.fillRect(8, 10, 48, 48);
+  ctx.fillStyle = '#2b2e3a'; ctx.fillRect(8, 10, 48, 6);
+  ctx.fillStyle = '#565e73'; ctx.fillRect(8, 10, 48, 2);
+  ctx.fillStyle = '#23262f'; ctx.fillRect(8, 52, 48, 6);
+  ctx.fillStyle = '#3a3f4e'; ctx.fillRect(24, 0, 16, 12);
+  ctx.fillStyle = '#565e73'; ctx.fillRect(24, 0, 16, 3);
+  ctx.fillStyle = '#10131b'; ctx.fillRect(16, 28, 32, 24);
+  const g = ctx.createLinearGradient(0, 28, 0, 52);
+  g.addColorStop(0, '#ff5a2a'); g.addColorStop(0.6, '#ff9a2e'); g.addColorStop(1, '#ffd23a');
+  ctx.fillStyle = g; ctx.fillRect(19, 31, 26, 18);
+  ctx.fillStyle = '#fff3b0';
+  ctx.fillRect(24, 38, 5, 11); ctx.fillRect(31, 34, 5, 15); ctx.fillRect(38, 39, 5, 10);
+  ctx.fillRect(26, 35, 3, 5); ctx.fillRect(33, 31, 3, 5);
+  ctx.fillStyle = '#7a2a1a'; ctx.fillRect(19, 46, 26, 3);
+  ctx.fillStyle = '#8fa0b5';
+  ctx.fillRect(10, 12, 3, 3); ctx.fillRect(51, 12, 3, 3); ctx.fillRect(10, 53, 3, 3); ctx.fillRect(51, 53, 3, 3);
+  ctx.fillStyle = '#00e5ff'; ctx.fillRect(8, 20, 3, 12); ctx.fillRect(53, 20, 3, 12);
+}
+function drawScifiRoletaMesa(ctx) {
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(32, 56, 26, 6, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#5a3a2a'; ctx.beginPath(); ctx.arc(32, 30, 26, 0, 7); ctx.fill();
+  ctx.fillStyle = '#7a4a35'; ctx.beginPath(); ctx.arc(32, 30, 24, 0, 7); ctx.fill();
+  ctx.fillStyle = '#4a2a6a'; ctx.beginPath(); ctx.arc(32, 30, 20, 0, 7); ctx.fill();
+  ctx.fillStyle = '#5c3585'; ctx.beginPath(); ctx.arc(32, 30, 16, 0, 7); ctx.fill();
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    ctx.fillStyle = (i % 2) ? '#ffffff' : '#ff5566';
+    ctx.fillRect(Math.round(32 + Math.cos(a) * 18) - 1, Math.round(30 + Math.sin(a) * 18) - 1, 3, 3);
+  }
+  ctx.fillStyle = '#c9a0ff'; ctx.beginPath(); ctx.arc(32, 30, 6, 0, 7); ctx.fill();
+  ctx.fillStyle = '#7a4fb5'; ctx.beginPath(); ctx.arc(32, 30, 4, 0, 7); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(31, 26, 2, 8); ctx.fillRect(28, 29, 8, 2);
+  ctx.fillStyle = '#3a2a20'; ctx.fillRect(28, 52, 8, 8);
+  ctx.fillStyle = '#5a3a2a'; ctx.fillRect(24, 58, 16, 4);
+}
+function drawScifiTeleporte(ctx) {
+  ctx.fillStyle = '#1a1e28'; ctx.beginPath(); ctx.arc(32, 32, 28, 0, 7); ctx.fill();
+  ctx.fillStyle = '#262c3a'; ctx.beginPath(); ctx.arc(32, 32, 24, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(32, 32, 20, 0, 7); ctx.stroke();
+  ctx.strokeStyle = 'rgba(0,229,255,0.4)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(32, 32, 14, 0, 7); ctx.stroke();
+  ctx.fillStyle = '#00e5ff';
+  for (let i = 0; i < 4; i++) {
+    const a = i * Math.PI / 2 + Math.PI / 4;
+    ctx.fillRect(Math.round(32 + Math.cos(a) * 20) - 2, Math.round(32 + Math.sin(a) * 20) - 2, 4, 4);
+  }
+  const g = ctx.createRadialGradient(32, 32, 1, 32, 32, 12);
+  g.addColorStop(0, 'rgba(191,255,255,0.95)'); g.addColorStop(1, 'rgba(0,229,255,0.15)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(32, 32, 12, 0, 7); ctx.fill();
+  ctx.fillStyle = '#2c3547';
+  ctx.fillRect(2, 2, 8, 8); ctx.fillRect(54, 2, 8, 8); ctx.fillRect(2, 54, 8, 8); ctx.fillRect(54, 54, 8, 8);
+  ctx.fillStyle = '#00e5ff';
+  ctx.fillRect(4, 4, 4, 2); ctx.fillRect(56, 4, 4, 2); ctx.fillRect(4, 56, 4, 2); ctx.fillRect(56, 56, 4, 2);
+}
+function drawSparkleEd(ctx) { // núcleo do sparkleTex()
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.fillRect(5, 0, 2, 12); ctx.fillRect(0, 5, 12, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillRect(4, 4, 4, 4);
+}
+
+/* ---- tabela de tiles: [key, nome, categoria, w, h, fn, args] ---- */
+const TILE_DEFS = [
+  ['lunar0', 'Piso lunar 1', 'Piso do jogo', 32, 32, 'drawLunarFloor', [0]],
+  ['lunar1', 'Piso lunar 2', 'Piso do jogo', 32, 32, 'drawLunarFloor', [1]],
+  ['lunar2', 'Piso lunar 3', 'Piso do jogo', 32, 32, 'drawLunarFloor', [2]],
+  ['piso0', 'Piso pórtico 1', 'Piso do jogo', 32, 32, 'drawPorticoFloor', [0]],
+  ['piso1', 'Piso pórtico 2', 'Piso do jogo', 32, 32, 'drawPorticoFloor', [1]],
+  ['piso2', 'Piso pórtico 3', 'Piso do jogo', 32, 32, 'drawPorticoFloor', [2]],
+  ['avenida', 'Avenida (caminho)', 'Piso do jogo', 32, 32, 'drawMapPathEd', []],
+  ['parede_lunar', 'Parede lunar', 'Paredes do jogo', 32, 32, 'drawLunarWall', []],
+  ['parede_por', 'Parede pórtico', 'Paredes do jogo', 32, 32, 'drawPorticoWall', []],
+  ['sf_parede', 'Parede SCI-FI', 'Paredes SCI-FI ★', 32, 32, 'drawScifiWall', []],
+  ['sf_parede_topo', 'Parede SCI-FI (topo)', 'Paredes SCI-FI ★', 32, 32, 'drawScifiWallTop', []],
+  ['sf_pilar', 'Pilar SCI-FI', 'Paredes SCI-FI ★', 32, 32, 'drawScifiPillar', []],
+  ['sf_porta', 'Porta SCI-FI', 'Paredes SCI-FI ★', 32, 32, 'drawScifiDoor', []],
+  ['sf_janela', 'Parede c/ vigia', 'Paredes SCI-FI ★', 32, 32, 'drawScifiWindow', []],
+  ['sf_canto_tl', 'Canto SCI-FI ↖', 'Paredes SCI-FI ★', 32, 32, 'drawScifiCanto', [0]],
+  ['sf_canto_tr', 'Canto SCI-FI ↗', 'Paredes SCI-FI ★', 32, 32, 'drawScifiCanto', [1]],
+  ['sf_canto_bl', 'Canto SCI-FI ↙', 'Paredes SCI-FI ★', 32, 32, 'drawScifiCanto', [2]],
+  ['sf_canto_br', 'Canto SCI-FI ↘', 'Paredes SCI-FI ★', 32, 32, 'drawScifiCanto', [3]],
+  ['sf_porta_aberta', 'Porta aberta', 'Paredes SCI-FI ★', 32, 32, 'drawScifiPortaAberta', []],
+  ['sf_vidro', 'Parede de vidro', 'Paredes SCI-FI ★', 32, 32, 'drawScifiVidro', []],
+  ['sf_piso', 'Piso SCI-FI', 'Pisos SCI-FI ★', 32, 32, 'drawScifiFloor', []],
+  ['sf_piso_borda', 'Piso c/ borda neon', 'Pisos SCI-FI ★', 32, 32, 'drawScifiFloorTrim', []],
+  ['sf_grade', 'Piso gradeado', 'Pisos SCI-FI ★', 32, 32, 'drawScifiGrate', []],
+  ['sf_tapete_roxo', 'Tapete roxo', 'Pisos SCI-FI ★', 32, 32, 'drawScifiTapete', ['#3a2352', '#6a3a8a', '#a87fd4']],
+  ['sf_tapete_azul', 'Tapete azul', 'Pisos SCI-FI ★', 32, 32, 'drawScifiTapete', ['#1e3a5c', '#2f6aa8', '#7fc4ff']],
+  ['sf_xadrez', 'Piso xadrez', 'Pisos SCI-FI ★', 32, 32, 'drawScifiXadrez', []],
+  ['sf_luz_piso', 'Piso c/ luz', 'Pisos SCI-FI ★', 32, 32, 'drawScifiLuzPiso', []],
+  ['sf_console', 'Console', 'Móveis SCI-FI ★', 32, 32, 'drawScifiConsole', []],
+  ['sf_caixa', 'Caixa', 'Móveis SCI-FI ★', 32, 32, 'drawScifiCaixa', []],
+  ['sf_prateleira', 'Prateleira', 'Móveis SCI-FI ★', 32, 32, 'drawScifiPrateleira', []],
+  ['sf_planta', 'Planta', 'Móveis SCI-FI ★', 32, 32, 'drawScifiPlanta', []],
+  ['sf_podio', 'Pódio', 'Móveis SCI-FI ★', 32, 32, 'drawScifiPodio', []],
+  ['sf_poste', 'Poste de luz', 'Móveis SCI-FI ★', 32, 48, 'drawScifiPoste', []],
+  ['sf_banner_c', 'Estandarte ciano', 'Móveis SCI-FI ★', 32, 48, 'drawScifiBanner', ['#0e6a8a']],
+  ['sf_banner_m', 'Estandarte magenta', 'Móveis SCI-FI ★', 32, 48, 'drawScifiBanner', ['#7a2a6a']],
+  ['sf_antena', 'Antena', 'Móveis SCI-FI ★', 48, 64, 'drawScifiAntena', []],
+  ['sf_fornalha', 'Fornalha', 'Móveis SCI-FI ★', 64, 64, 'drawScifiFornalha', []],
+  ['sf_roleta', 'Mesa de roleta', 'Móveis SCI-FI ★', 64, 64, 'drawScifiRoletaMesa', []],
+  ['sf_teleporte', 'Teleporte', 'Móveis SCI-FI ★', 64, 64, 'drawScifiTeleporte', []],
+  ['pilar_portal', 'Pilar do portal', 'Portal', 32, 64, 'drawPortalPillar', []],
+  ['nucleo', 'Núcleo do portal', 'Portal', 64, 64, 'drawPortalCore', []],
+  ['brilho_portal', 'Brilho do portal', 'Portal', 96, 96, 'drawPortalGlow', []],
+  ['anel_a', 'Anel do portal A', 'Portal', 128, 128, 'drawPortalRing', [6, '#7fe7ff', '#2f9edd', 7]],
+  ['anel_b', 'Anel do portal B', 'Portal', 128, 128, 'drawPortalRing', [10, '#c77dff', '#8b5fd6', 5]],
+  ['portal_mini0', 'Portal mini 1', 'Portal', 32, 32, 'drawPorticoPortal', [0]],
+  ['portal_mini1', 'Portal mini 2', 'Portal', 32, 32, 'drawPorticoPortal', [1]],
+  ['vaso', 'Vaso de flores', 'Móveis & deco', 40, 36, 'drawPlanter', []],
+  ['tela', 'Tela', 'Móveis & deco', 32, 32, 'drawPorticoScreen', []],
+  ['terminal', 'Terminal', 'Móveis & deco', 32, 32, 'drawPorticoTerminal', []],
+  ['banco', 'Banco', 'Móveis & deco', 32, 32, 'drawPorticoSeat', []],
+  ['arco', 'Arco decorativo', 'Móveis & deco', 32, 32, 'drawPorticoRing', []],
+  ['mesa', 'Mesa', 'Móveis & deco', 84, 72, 'drawPorticoTable', []],
+  ['cadeira', 'Cadeira', 'Móveis & deco', 24, 30, 'drawPorticoChair', []],
+  ['vending', 'Vending machine', 'Móveis & deco', 40, 68, 'drawVendingMachine', []],
+  ['lanterna', 'Lanterna', 'Móveis & deco', 48, 64, 'drawLanternEd', []],
+  ['brilho', 'Brilho suave', 'Móveis & deco', 96, 96, 'drawGlowSoft', []],
+  ['pontinho', 'Pontinho de luz', 'Móveis & deco', 16, 16, 'drawGlowDot', []],
+  ['holo', 'Faísca holo', 'Móveis & deco', 16, 16, 'drawHoloEd', []],
+  ['sala_drome', 'Sala (drome)', 'Salas & placas', 256, 192, 'drawRoomDrome', []],
+  ['sala_dep', 'Sala (depósito)', 'Salas & placas', 256, 192, 'drawRoomDeposit', []],
+  ['sala_leilao', 'Sala (leilão)', 'Salas & placas', 256, 192, 'drawRoomAuction', []],
+  ['sala_desc', 'Sala (descanso)', 'Salas & placas', 256, 192, 'drawRoomLounge', []],
+  ['placa_roleta', 'Placa ROLETA', 'Salas & placas', 128, 40, 'drawNeonSign', [{ text: 'ROLETA', color: '#ff5566' }]],
+  ['placa_merc', 'Placa MERCADO', 'Salas & placas', 128, 40, 'drawNeonSign', [{ text: 'MERCADO', color: '#8be25a' }]],
+  ['placa_drome', 'Placa DROME KEY', 'Salas & placas', 128, 40, 'drawNeonSign', [{ text: 'DROME KEY', color: '#ffd54f' }]],
+  ['placa_dep', 'Placa DEPÓSITO', 'Salas & placas', 128, 40, 'drawNeonSign', [{ text: 'DEPÓSITO', color: '#7ec8ff' }]],
+  ['placa_desc', 'Placa DESCANSO', 'Salas & placas', 128, 40, 'drawNeonSign', [{ text: 'DESCANSO', color: '#d78bff' }]],
+  ['placa_leilao', 'Placa LEILÃO', 'Salas & placas', 128, 40, 'drawNeonSign', [{ text: 'LEILÃO', color: '#ffd23a' }]],
+  ['quadro', 'Quadro de missões', 'Salas & placas', 264, 248, 'drawMissionBoard', []],
+  ['npc_v', 'NPC (verde)', 'NPCs & robôs', 32, 32, 'drawNPC', ['#7ec850']],
+  ['npc_r', 'NPC (rosa)', 'NPCs & robôs', 32, 32, 'drawNPC', ['#ff8899']],
+  ['npc_a', 'NPC (azul)', 'NPCs & robôs', 32, 32, 'drawNPC', ['#7ec8ff']],
+  ['npc_ouro', 'NPC (dourado)', 'NPCs & robôs', 32, 32, 'drawNPC', ['#ffd54f']],
+  ['robo', 'Robô atendente', 'NPCs & robôs', 48, 64, 'drawRobotClerk', []],
+  ['balcao', 'Balcão', 'NPCs & robôs', 96, 46, 'drawClerkCounter', []],
+  ['drone_a', 'Drone A', 'NPCs & robôs', 44, 36, 'drawDroneA', []],
+  ['drone_b', 'Drone B', 'NPCs & robôs', 44, 36, 'drawDroneB', []],
+  ['drone_c', 'Drone C', 'NPCs & robôs', 48, 44, 'drawDroneC', []],
+  ['piso_drome', 'Piso drome', 'Outros mapas', 32, 32, 'drawDromeFloor', []],
+  ['parede_drome', 'Parede drome', 'Outros mapas', 32, 32, 'drawDromeWall', []],
+  ['portal_drome', 'Portal drome', 'Outros mapas', 32, 32, 'drawDromePortal', []],
+  ['piso_caverna', 'Piso caverna', 'Outros mapas', 32, 32, 'drawCaveFloor', []],
+  ['parede_caverna', 'Parede caverna', 'Outros mapas', 32, 32, 'drawCaveWall', []],
+  ['grama_ilha', 'Grama (ilha)', 'Outros mapas', 32, 32, 'drawExtGrass', []],
+  ['caminho_ilha', 'Caminho (ilha)', 'Outros mapas', 32, 32, 'drawExtPath', []],
+  ['agua_ilha', 'Água (ilha)', 'Outros mapas', 32, 32, 'drawExtWater', []],
+  ['cerca_ilha', 'Cerca viva', 'Outros mapas', 32, 32, 'drawExtHedge', []],
+  ['arvore_ilha', 'Árvore (ilha)', 'Prédios da Ilha', 48, 96, 'drawExtTree', []],
+  ['fonte_ilha', 'Fonte (ilha)', 'Prédios da Ilha', 64, 64, 'drawExtFountain', []],
+  ['predio_central', 'Prédio central', 'Prédios da Ilha', 256, 210, 'drawCentralBuilding', []],
+  ['dromo_crellan', 'Dromo Crellan', 'Prédios da Ilha', 160, 120, 'drawDromoCrellan', []],
+  ['dromo_hotekk', 'Dromo Hotekk', 'Prédios da Ilha', 160, 120, 'drawDromoHotekk', []],
+  ['dromo_amzen', 'Dromo Amzen', 'Prédios da Ilha', 160, 120, 'drawDromoAmzen', []],
+  ['dromo_oron', 'Dromo Oron', 'Prédios da Ilha', 160, 120, 'drawDromoOron', []],
+  ['dromo_tirasis', 'Dromo Tirasis', 'Prédios da Ilha', 160, 120, 'drawDromoTirasis', []],
+  ['dromo_imthor', 'Dromo Imthor', 'Prédios da Ilha', 160, 120, 'drawDromoImthor', []],
+  ['dromo_chirrul', 'Dromo Chirrul', 'Prédios da Ilha', 160, 120, 'drawDromoChirrul', []],
+  ['celula', 'Célula de energia', 'Itens & materiais', 32, 32, 'drawEnergyCell', []],
+  ['sucata', 'Sucata', 'Itens & materiais', 32, 32, 'drawMatSucata', []],
+  ['geodo', 'Geodo', 'Itens & materiais', 32, 32, 'drawMatGeodo', []],
+  ['circuito', 'Circuito', 'Itens & materiais', 32, 32, 'drawMatCircuito', []],
+  ['cristal', 'Cristal', 'Itens & materiais', 32, 32, 'drawMatCristal', []],
+  ['gema', 'Gema', 'Itens & materiais', 32, 32, 'drawGMatGema', []],
+  ['cristal_roxo', 'Cristal roxo', 'Itens & materiais', 32, 32, 'drawGMatCristal', []],
+  ['fio', 'Fio', 'Itens & materiais', 32, 32, 'drawGMatFio', []],
+  ['reator', 'Reator', 'Itens & materiais', 32, 32, 'drawGMatReator', []],
+  ['brilhinho', 'Brilhinho', 'Itens & materiais', 12, 12, 'drawSparkleEd', []],
+];
+function buildTextures(doc) {
+  const tex = {};
+  const G = (typeof window !== 'undefined' && window) || globalThis;
+  for (const d of TILE_DEFS) {
+    const fn = G[d[5]] || globalThis[d[5]];
+    if (typeof fn !== 'function') throw new Error('sem draw: ' + d[5]);
+    const cv = doc.createElement('canvas'); cv.width = d[3]; cv.height = d[4];
+    const ctx = cv.getContext('2d');
+    if (ctx && ('imageSmoothingEnabled' in ctx)) ctx.imageSmoothingEnabled = false;
+    fn.apply(null, [ctx].concat(d[6]));
+    tex[d[0]] = { def: d, cv: cv };
+  }
+  return tex;
+}
+
+/* setores padrão = SECTORS174 do jogo (cópia fiel) */
+function defaultSectors() {
+  return [
+    { id: 'roleta', nome: 'ROLETA', x: 560, y: 380, cor: '#ff4fd8' },
+    { id: 'portal', nome: 'PORTAL', x: 1600, y: 380, cor: '#00e5ff' },
+    { id: 'shop', nome: 'SHOP', x: 2640, y: 380, cor: '#00e5ff' },
+    { id: 'forja', nome: 'FORJA', x: 560, y: 1200, cor: '#ff9a2e' },
+    { id: 'leilao', nome: 'LEILÃO', x: 2640, y: 1200, cor: '#ff4fd8' },
+    { id: 'deposito', nome: 'DEPÓSITO', x: 560, y: 2020, cor: '#3fa9ff' },
+    { id: 'missoes', nome: 'MISSÕES', x: 1600, y: 2020, cor: '#2effc4' },
+    { id: 'comms', nome: 'COMMS', x: 2640, y: 2020, cor: '#3fa9ff' },
+  ];
+}
+
+/* mapa padrão = Pátio v2.37 aproximado (piso + borda + avenidas + carimbos) */
+function buildDefaultMap() {
+  const ground = [], wall = [];
+  for (let y = 0; y < MH; y++) {
+    ground.push([]); wall.push([]);
+    for (let x = 0; x < MW; x++) {
+      ground[y].push(1 + ((x * 7 + y * 13) % 3)); // lunar0..2 variado
+      wall[y].push((x === 0 || y === 0 || x === MW - 1 || y === MH - 1) ? 8 : 0); // parede_lunar
+    }
+  }
+  const AV = 7; // índice+1 de 'avenida'
+  const hRun = (ty, x0, x1) => { for (let x = x0; x <= x1; x++) ground[ty][x] = AV; };
+  const vRun = (tx, y0, y1) => { for (let y = y0; y <= y1; y++) ground[y][tx] = AV; };
+  vRun(50, 5, 70); hRun(37, 5, 94);       // cruz central (x=1600, y=1200)
+  hRun(11, 9, 90); hRun(63, 9, 90);       // fileiras (y=380, y=2020)
+  vRun(17, 6, 68); vRun(82, 6, 68);       // colunas (x=560, x=2640)
+  const stamps = [
+    { t: 'anel_a', x: 48, y: 10 }, { t: 'nucleo', x: 49, y: 11 }, // portal do setor norte
+    { t: 'quadro', x: 46, y: 59 },                                 // quadro nas missões
+    { t: 'pilar_portal', x: 48, y: 70 }, { t: 'pilar_portal', x: 51, y: 70 }, // saída sul
+    { t: 'vaso', x: 6, y: 6 }, { t: 'vaso', x: 93, y: 6 }, { t: 'vaso', x: 6, y: 68 }, { t: 'vaso', x: 93, y: 68 },
+    { t: 'lanterna', x: 4, y: 8 }, { t: 'lanterna', x: 94, y: 8 }, { t: 'lanterna', x: 4, y: 65 }, { t: 'lanterna', x: 94, y: 65 },
+    { t: 'lanterna', x: 49, y: 2 }, { t: 'lanterna', x: 43, y: 66 },
+    { t: 'mesa', x: 32, y: 27 }, { t: 'mesa', x: 65, y: 27 }, { t: 'mesa', x: 32, y: 48 }, { t: 'mesa', x: 65, y: 48 },
+    { t: 'vending', x: 27, y: 19 }, { t: 'vending', x: 71, y: 19 }, { t: 'vending', x: 27, y: 54 },
+    { t: 'npc_v', x: 17, y: 20 }, { t: 'npc_r', x: 82, y: 20 }, { t: 'npc_a', x: 17, y: 45 },
+  ];
+  return {
+    ground: ground, wall: wall, stamps: stamps,
+    sectors: defaultSectors(),
+    gate: { x: 1600, y: 2290 }, spawn: { x: 1600, y: 1240 },
+  };
+}
+
+/* JSON de troca com o jogo futuro */
+function serializeMap(st) {
+  return {
+    app: 'chaotic-mapa-patio', v: 1, tile: TILE, w: MW, h: MH,
+    tileset: TILE_DEFS.map(d => d[0]),
+    ground: st.ground, wall: st.wall, stamps: st.stamps,
+    sectors: st.sectors.map(s => ({ id: s.id, x: Math.round(s.x), y: Math.round(s.y) })),
+    gate: { x: Math.round(st.gate.x), y: Math.round(st.gate.y) },
+    spawn: { x: Math.round(st.spawn.x), y: Math.round(st.spawn.y) },
+  };
+}
+function keyToIdx(key) {
+  for (let i = 0; i < TILE_DEFS.length; i++) if (TILE_DEFS[i][0] === key) return i + 1;
+  return 0;
+}
+function deserializeMap(o) {
+  if (!o || o.app !== 'chaotic-mapa-patio' || o.w !== MW || o.h !== MH) throw new Error('JSON inválido (app/w/h)');
+  const mapIdx = (o.tileset || []).map(keyToIdx);
+  const conv = grid => grid.map(row => row.map(v => (v > 0 && v <= mapIdx.length) ? mapIdx[v - 1] : 0));
+  const st = {
+    ground: conv(o.ground), wall: conv(o.wall),
+    stamps: (o.stamps || []).filter(s => keyToIdx(s.t) > 0).map(s => ({ t: s.t, x: s.x | 0, y: s.y | 0 })),
+    sectors: defaultSectors(),
+    gate: { x: 1600, y: 2290 }, spawn: { x: 1600, y: 1240 },
+  };
+  if (o.sectors) for (const s of o.sectors) {
+    const d = st.sectors.find(x => x.id === s.id);
+    if (d) { d.x = +s.x || d.x; d.y = +s.y || d.y; }
+  }
+  if (o.gate) { st.gate.x = +o.gate.x || st.gate.x; st.gate.y = +o.gate.y || st.gate.y; }
+  if (o.spawn) { st.spawn.x = +o.spawn.x || st.spawn.x; st.spawn.y = +o.spawn.y || st.spawn.y; }
+  return st;
+}
+
+/* ============================================================
+ * EDITOR VISUAL (só no navegador)
+ * ============================================================ */
+function initEditor() {
+  const TEX = buildTextures(document);
+  let S = buildDefaultMap();
+  try {
+    const raw = (typeof localStorage !== 'undefined') ? localStorage.getItem('mapaPatio1') : null;
+    if (raw) S = deserializeMap(JSON.parse(raw));
+  } catch (e) { /* começa do padrão */ }
+  let saveT = null;
+  function autosave() {
+    let ls = null;
+    try { ls = (typeof localStorage !== 'undefined') ? localStorage : null; } catch (e) { ls = null; }
+    if (!ls) return;
+    if (saveT) clearTimeout(saveT);
+    saveT = setTimeout(() => { try { ls.setItem('mapaPatio1', JSON.stringify(serializeMap(S))); } catch (e) {} }, 600);
+  }
+
+  let tool = 'brush', layer = 'ground', cur = 1, showGrid = true, Z = 16;
+  const cv = document.getElementById('mapa');
+  const ctx = cv.getContext('2d');
+  const statusEl = document.getElementById('status');
+  const mid = document.getElementById('mid');
+
+  /* ---- paleta ---- */
+  const pal = document.getElementById('pal');
+  let lastCat = '';
+  TILE_DEFS.forEach((d, i) => {
+    if (d[2] !== lastCat) { lastCat = d[2]; const h = document.createElement('h3'); h.textContent = lastCat; pal.appendChild(h); }
+    const el = document.createElement('div');
+    el.className = 'tile' + (i === 0 ? ' sel' : ''); el.dataset.i = i;
+    const th = document.createElement('canvas'); th.width = d[3]; th.height = d[4];
+    th.getContext('2d').drawImage(TEX[d[0]].cv, 0, 0);
+    const lb = document.createElement('span'); lb.textContent = d[1] + (d[3] !== 32 || d[4] !== 32 ? ' ⬒' : '');
+    el.appendChild(th); el.appendChild(lb);
+    el.onclick = () => {
+      cur = i + 1;
+      pal.querySelectorAll('.tile').forEach(t => t.classList.toggle('sel', +t.dataset.i === i));
+      status('Tile: ' + d[1]);
+    };
+    pal.appendChild(el);
+  });
+
+  /* ---- painel de setores ---- */
+  const secsEl = document.getElementById('secs');
+  const gateEl = document.getElementById('gate');
+  function numRow(obj, label, cb) {
+    const row = document.createElement('div'); row.className = 'sec';
+    row.innerHTML = '<b>' + label + '</b>';
+    const ix = document.createElement('input'); ix.type = 'number'; ix.step = 10; ix.value = Math.round(obj.x);
+    const iy = document.createElement('input'); iy.type = 'number'; iy.step = 10; iy.value = Math.round(obj.y);
+    ix.onchange = () => { obj.x = +ix.value || 0; cb(); };
+    iy.onchange = () => { obj.y = +iy.value || 0; cb(); };
+    const go = document.createElement('button'); go.textContent = 'ir';
+    go.onclick = () => centerOn(obj.x, obj.y);
+    row.appendChild(ix); row.appendChild(iy); row.appendChild(go);
+    return { row: row, sync: () => { ix.value = Math.round(obj.x); iy.value = Math.round(obj.y); } };
+  }
+  let syncs = [];
+  function buildPanel() {
+    secsEl.innerHTML = ''; gateEl.innerHTML = ''; syncs = [];
+    S.sectors.forEach(s => {
+      const r = numRow(s, s.nome, () => { draw(); autosave(); });
+      r.row.querySelector('b').innerHTML = '<i style="background:' + s.cor + '"></i>' + s.nome;
+      secsEl.appendChild(r.row); syncs.push(r.sync);
+    });
+    [['SAÍDA', S.gate], ['SPAWN', S.spawn]].forEach(([lb, o]) => {
+      const r = numRow(o, lb, () => { draw(); autosave(); });
+      gateEl.appendChild(r.row); syncs.push(r.sync);
+    });
+  }
+  function syncPanel() { syncs.forEach(f => f()); }
+  buildPanel();
+
+  /* ---- desenho ---- */
+  function sizeCanvas() { cv.width = MW * Z; cv.height = MH * Z; ctx.imageSmoothingEnabled = false; }
+  function drawTileAt(ctx2, idx, tx, ty, z) {
+    if (!idx) return;
+    const t = TEX[TILE_DEFS[idx - 1][0]];
+    ctx2.drawImage(t.cv, tx * z, ty * z, z, z);
+  }
+  let rafOn = false;
+  function requestDraw() {
+    if (rafOn) return; rafOn = true;
+    requestAnimationFrame(() => { rafOn = false; draw(); });
+  }
+  function draw(showAll, ctx2, z, grid) {
+    ctx2 = ctx2 || ctx; z = z || Z;
+    if (typeof grid === 'undefined') grid = (ctx2 === ctx) ? showGrid : false;
+    ctx2.imageSmoothingEnabled = false;
+    ctx2.fillStyle = '#05070f'; ctx2.fillRect(0, 0, MW * z, MH * z);
+    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) drawTileAt(ctx2, S.ground[y][x], x, y, z);
+    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) drawTileAt(ctx2, S.wall[y][x], x, y, z);
+    const byY = S.stamps.slice().sort((a, b) => a.y - b.y);
+    for (const s of byY) {
+      const t = TEX[s.t]; if (!t) continue;
+      ctx2.drawImage(t.cv, s.x * z, s.y * z, t.def[3] / TILE * z, t.def[4] / TILE * z);
+    }
+    // praça de referência
+    ctx2.strokeStyle = 'rgba(127,231,255,0.5)'; ctx2.lineWidth = Math.max(1, z / 16);
+    ctx2.setLineDash([6, 4]);
+    ctx2.beginPath(); ctx2.arc(50 * z, 37.5 * z, 210 / TILE * z, 0, 7); ctx2.stroke();
+    ctx2.setLineDash([]);
+    if (showAll !== false) {
+      // setores
+      for (const s of S.sectors) {
+        const w = 260 / TILE * z, h = 240 / TILE * z;
+        const x = s.x / TILE * z - w / 2, y = s.y / TILE * z - h / 2;
+        ctx2.fillStyle = 'rgba(10,14,30,0.72)'; ctx2.fillRect(x, y, w, h);
+        ctx2.strokeStyle = s.cor; ctx2.lineWidth = Math.max(2, z / 8); ctx2.strokeRect(x, y, w, h);
+        if (z >= 8) {
+          ctx2.fillStyle = '#fff'; ctx2.font = 'bold ' + Math.max(9, z * 0.7) + 'px monospace';
+          ctx2.textAlign = 'center'; ctx2.textBaseline = 'middle';
+          ctx2.fillText(s.nome, s.x / TILE * z, s.y / TILE * z - h * 0.32);
+        }
+      }
+      // portão + spawn
+      ctx2.fillStyle = 'rgba(0,229,255,0.25)';
+      ctx2.fillRect(S.gate.x / TILE * z - 38 / TILE * z, S.gate.y / TILE * z - 45 / TILE * z, 76 / TILE * z, 90 / TILE * z);
+      ctx2.strokeStyle = '#7ee7ff'; ctx2.lineWidth = Math.max(2, z / 8);
+      ctx2.strokeRect(S.gate.x / TILE * z - 38 / TILE * z, S.gate.y / TILE * z - 45 / TILE * z, 76 / TILE * z, 90 / TILE * z);
+      if (z >= 8) {
+        ctx2.fillStyle = '#7ee7ff'; ctx2.font = 'bold ' + Math.max(9, z * 0.6) + 'px monospace'; ctx2.textAlign = 'center';
+        ctx2.fillText('SAÍDA', S.gate.x / TILE * z, S.gate.y / TILE * z - 60 / TILE * z);
+      }
+      ctx2.fillStyle = 'rgba(126,200,80,0.9)';
+      ctx2.beginPath(); ctx2.arc(S.spawn.x / TILE * z, S.spawn.y / TILE * z, Math.max(4, z * 0.4), 0, 7); ctx2.fill();
+      ctx2.fillStyle = '#0b0e1a'; ctx2.font = 'bold ' + Math.max(8, z * 0.4) + 'px monospace'; ctx2.textAlign = 'center'; ctx2.textBaseline = 'middle';
+      ctx2.fillText('S', S.spawn.x / TILE * z, S.spawn.y / TILE * z + 1);
+    }
+    if (grid) {
+      ctx2.strokeStyle = 'rgba(140,160,220,0.18)'; ctx2.lineWidth = 1;
+      ctx2.beginPath();
+      for (let x = 0; x <= MW; x += 5) { ctx2.moveTo(x * z + 0.5, 0); ctx2.lineTo(x * z + 0.5, MH * z); }
+      for (let y = 0; y <= MH; y += 5) { ctx2.moveTo(0, y * z + 0.5); ctx2.lineTo(MW * z, y * z + 0.5); }
+      ctx2.stroke();
+    }
+    if (hover && hover.on && ctx2 === ctx) {
+      ctx2.strokeStyle = '#ffd23a'; ctx2.lineWidth = 2;
+      ctx2.strokeRect(hover.x * z + 1, hover.y * z + 1, z - 2, z - 2);
+    }
+  }
+  function status(msg) {
+    statusEl.innerHTML = msg + ' &nbsp;·&nbsp; <b>' + TILE_DEFS[cur - 1][1] + '</b> na camada <b>' +
+      (layer === 'ground' ? 'chão' : 'parede') + '</b> · ferramenta <b>' +
+      (tool === 'brush' ? 'pincel' : tool === 'fill' ? 'balde' : 'borracha') + '</b>';
+  }
+
+  /* ---- pintura ---- */
+  const hover = { on: false, x: 0, y: 0 };
+  let painting = false, lastCell = null, dragMark = null, rightErase = false;
+  function evtCell(e) {
+    const r = cv.getBoundingClientRect();
+    const cx = (e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX) - r.left;
+    const cy = (e.touches && e.touches[0] ? e.touches[0].clientY : e.clientY) - r.top;
+    return { x: Math.floor(cx / r.width * MW), y: Math.floor(cy / r.height * MH), px: cx / r.width * MW * TILE, py: cy / r.height * MH * TILE };
+  }
+  function inMap(c) { return c.x >= 0 && c.y >= 0 && c.x < MW && c.y < MH; }
+  function hitMark(c) {
+    for (const s of S.sectors) {
+      const w = Math.max(260, 40), h = Math.max(240, 40);
+      if (Math.abs(c.px - s.x) < w / 2 && Math.abs(c.py - s.y) < h / 2) return s;
+    }
+    if (Math.abs(c.px - S.gate.x) < 60 && Math.abs(c.py - S.gate.y) < 70) return S.gate;
+    if (Math.hypot(c.px - S.spawn.x, c.py - S.spawn.y) < 40) return S.spawn;
+    return null;
+  }
+  function isStampDef(i) { const d = TILE_DEFS[i - 1]; return d[3] !== 32 || d[4] !== 32; }
+  function stampAt(tx, ty) {
+    for (let i = S.stamps.length - 1; i >= 0; i--) {
+      const s = S.stamps[i], t = TEX[s.t]; if (!t) continue;
+      const w = Math.ceil(t.def[3] / TILE), h = Math.ceil(t.def[4] / TILE);
+      if (tx >= s.x && tx < s.x + w && ty >= s.y && ty < s.y + h) return i;
+    }
+    return -1;
+  }
+  function paintCell(tx, ty, erase) {
+    if (erase) {
+      const si = stampAt(tx, ty);
+      if (si >= 0) S.stamps.splice(si, 1);
+      else S[layer][ty][tx] = 0;
+      return;
+    }
+    if (isStampDef(cur)) {
+      const key = TILE_DEFS[cur - 1][0];
+      const si = stampAt(tx, ty);
+      if (si >= 0 && S.stamps[si].t === key) return;
+      if (si >= 0) S.stamps.splice(si, 1);
+      S.stamps.push({ t: key, x: tx, y: ty });
+    } else {
+      S[layer][ty][tx] = cur;
+    }
+  }
+  function paintLine(a, b, erase) {
+    const dx = Math.abs(b.x - a.x), dy = Math.abs(b.y - a.y);
+    const n = Math.max(dx, dy);
+    for (let i = 0; i <= n; i++) {
+      const t = n ? i / n : 0;
+      const x = Math.round(a.x + (b.x - a.x) * t), y = Math.round(a.y + (b.y - a.y) * t);
+      if (x >= 0 && y >= 0 && x < MW && y < MH) paintCell(x, y, erase);
+    }
+  }
+  function floodFill(tx, ty, erase) {
+    if (isStampDef(cur) && !erase) { paintCell(tx, ty, false); return; }
+    const grid = S[layer], target = grid[ty][tx], val = erase ? 0 : cur;
+    if (target === val) return;
+    const st = [[tx, ty]];
+    while (st.length) {
+      const [x, y] = st.pop();
+      if (x < 0 || y < 0 || x >= MW || y >= MH || grid[y][x] !== target) continue;
+      grid[y][x] = val;
+      st.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+    }
+  }
+  cv.addEventListener('contextmenu', e => e.preventDefault());
+  cv.addEventListener('mousedown', e => {
+    const c = evtCell(e);
+    if (e.button === 2) { rightErase = true; painting = true; lastCell = c; if (inMap(c)) { paintCell(c.x, c.y, true); requestDraw(); } return; }
+    if (e.button !== 0) return;
+    const mk = hitMark(c);
+    if (mk) { dragMark = mk; return; }
+    if (!inMap(c)) return;
+    painting = true; lastCell = c;
+    if (tool === 'fill') floodFill(c.x, c.y, false);
+    else paintCell(c.x, c.y, tool === 'erase');
+    requestDraw(); autosave();
+  });
+  window.addEventListener('mouseup', () => { painting = false; rightErase = false; dragMark = null; lastCell = null; });
+  cv.addEventListener('mousemove', e => {
+    const c = evtCell(e);
+    hover.on = inMap(c); hover.x = c.x; hover.y = c.y;
+    if (dragMark) {
+      dragMark.x = Math.max(0, Math.min(MW * TILE, Math.round(c.px)));
+      dragMark.y = Math.max(0, Math.min(MH * TILE, Math.round(c.py)));
+      syncPanel(); requestDraw(); autosave(); return;
+    }
+    if (painting && inMap(c) && lastCell) paintLine(lastCell, c, rightErase || tool === 'erase');
+    if (painting) { lastCell = c; requestDraw(); autosave(); }
+    else {
+      requestDraw();
+      status('Tile (' + c.x + ',' + c.y + ') · mundo (' + Math.round(c.px) + ',' + Math.round(c.py) + ')');
+    }
+  });
+  cv.addEventListener('mouseleave', () => { hover.on = false; draw(); });
+  cv.addEventListener('touchstart', e => { e.preventDefault(); cv.dispatchEvent(new MouseEvent('mousedown', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY, button: 0 })); }, { passive: false });
+  cv.addEventListener('touchmove', e => { e.preventDefault(); cv.dispatchEvent(new MouseEvent('mousemove', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); }, { passive: false });
+  cv.addEventListener('touchend', e => { e.preventDefault(); window.dispatchEvent(new MouseEvent('mouseup')); }, { passive: false });
+  mid.addEventListener('wheel', e => {
+    if (!e.ctrlKey) return;
+    e.preventDefault();
+    const zs = [8, 16, 32, 64];
+    let i = zs.indexOf(Z) + (e.deltaY < 0 ? 1 : -1);
+    i = Math.max(0, Math.min(zs.length - 1, i));
+    document.getElementById('zoom').value = zs[i];
+    Z = zs[i]; sizeCanvas(); draw();
+  }, { passive: false });
+
+  /* ---- botões ---- */
+  function btn(id, fn) { document.getElementById(id).onclick = fn; }
+  btn('t-brush', () => setTool('brush')); btn('t-fill', () => setTool('fill')); btn('t-erase', () => setTool('erase'));
+  function setTool(t) {
+    tool = t;
+    document.getElementById('t-brush').classList.toggle('on', t === 'brush');
+    document.getElementById('t-fill').classList.toggle('on', t === 'fill');
+    document.getElementById('t-erase').classList.toggle('on', t === 'erase');
+    status('ferramenta: ' + t);
+  }
+  btn('l-ground', () => setLayer('ground')); btn('l-wall', () => setLayer('wall'));
+  function setLayer(l) {
+    layer = l;
+    document.getElementById('l-ground').classList.toggle('on', l === 'ground');
+    document.getElementById('l-wall').classList.toggle('on', l === 'wall');
+    status('camada: ' + l);
+  }
+  btn('b-grid', () => { showGrid = !showGrid; document.getElementById('b-grid').classList.toggle('on', showGrid); draw(); });
+  document.getElementById('zoom').onchange = e => { Z = +e.target.value; sizeCanvas(); draw(); };
+  btn('b-new', () => { if (confirm('Voltar ao mapa padrão do jogo? (apaga sua edição)')) { S = buildDefaultMap(); buildPanel(); draw(); autosave(); } });
+  function download(name, text, type) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: type || 'application/json' }));
+    a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  btn('b-save', () => { download('mapa-patio.json', JSON.stringify(serializeMap(S))); status('JSON exportado ✔'); });
+  btn('b-copy', () => {
+    const j = JSON.stringify(serializeMap(S));
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(j).then(() => status('JSON copiado ✔'), () => openModal('Copiar JSON', j));
+    else openModal('Copiar JSON', j);
+  });
+  btn('b-png', () => {
+    const off = document.createElement('canvas'); off.width = MW * TILE; off.height = MH * TILE;
+    draw(true, off.getContext('2d'), TILE, false);
+    off.toBlob(b => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b); a.download = 'mapa-patio.png'; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    });
+    status('PNG exportado ✔');
+  });
+  /* modal importar */
+  const modal = document.getElementById('modal'), mtext = document.getElementById('mtext'), minput = document.getElementById('m-input');
+  function openModal(title, pre) {
+    document.getElementById('mtitle').textContent = title;
+    mtext.value = pre || ''; modal.classList.add('open');
+  }
+  btn('b-load', () => openModal('Importar JSON', ''));
+  btn('m-close', () => modal.classList.remove('open'));
+  btn('m-file', () => minput.click());
+  minput.onchange = () => {
+    const f = minput.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => { mtext.value = r.result; };
+    r.readAsText(f);
+    minput.value = '';
+  };
+  btn('m-ok', () => {
+    try {
+      S = deserializeMap(JSON.parse(mtext.value));
+      buildPanel(); draw(); autosave(); modal.classList.remove('open');
+      status('Mapa carregado ✔');
+    } catch (e) { status('❌ ' + e.message); }
+  });
+
+  function centerOn(wx, wy) {
+    mid.scrollLeft = wx / TILE * Z - mid.clientWidth / 2;
+    mid.scrollTop = wy / TILE * Z - mid.clientHeight / 2;
+  }
+
+  sizeCanvas(); draw(); status('pronto!');
+  centerOn(1600, 1200);
+}
+if (typeof document !== 'undefined' && document.getElementById && document.getElementById('mapa')) {
+  try { initEditor(); }
+  catch (e) {
+    try {
+      const st = document.getElementById('status');
+      if (st) st.textContent = '❌ Erro ao iniciar o editor: ' + (e && e.message);
+    } catch (e2) {}
+    throw e;
+  }
+}
+</script>
+</body>
+</html>
+/html>

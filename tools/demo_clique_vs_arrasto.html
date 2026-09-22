@@ -1,0 +1,207 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo — Clique vs. arrasto (v2.34)</title>
+<style>
+body{margin:0;background:#070c16;color:#eaf3ff;font-family:Segoe UI,system-ui,sans-serif;padding:18px}
+h1{font-size:18px;margin:0 0 4px;color:#ffd54f}
+p{font-size:13px;color:#9fb0cc;max-width:900px;line-height:1.5}
+.cols{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px}
+.col{flex:1 1 360px;min-width:320px}
+.col h2{font-size:13px;margin:0 0 6px}
+.col.antes h2{color:#ff8fa3}.col.depois h2{color:#7ec850}
+iframe{width:100%;height:480px;border:2px solid #33415c;border-radius:10px;background:#0b1120}
+.col.antes iframe{border-color:#7a2540}.col.depois iframe{border-color:#3f9a46}
+code{background:#16203a;padding:1px 6px;border-radius:4px;color:#8be2ff;font-size:12px}
+</style></head><body>
+<h1>🖱️ Portal de Viagem — clique vs. arrasto (código REAL do jogo)</h1>
+<p><b>Como testar:</b> em cada painel abaixo, <b>clique num mapa</b> (Bosque/Prado/Floresta) e depois
+<b>arraste o painel pelo cabeçalho verde</b>. No <b>ANTES (v2.31)</b> o clique no mapa morre (o painel só
+"quer puxar" — <code>travelTo()</code> nunca roda). No <b>DEPOIS (v2.34)</b> o clique viaja e o arrasto
+continua funcionando — só que <b>só pelo cabeçalho</b>. Cada lado roda o script <b>byte-idêntico</b>
+ao do jogo (ANTES extraído do git, DEPOIS do arquivo corrigido).</p>
+<div class="cols">
+<div class="col antes"><h2>❌ ANTES — v2.31 (painel inteiro = alça)</h2><iframe sandbox="allow-scripts" srcdoc="&lt;!DOCTYPE html&gt;&lt;html lang=&quot;pt-BR&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;style&gt;
+body{margin:0;background:#0b1120;font-family:monospace;color:#e8eefc;padding:12px}
+#room-menu{position:absolute;top:52px;left:16px;width:290px;background:#141b12;border:2px solid #7ec850;border-radius:10px;padding:10px;z-index:5}
+.room-panel-header{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #3a4a2f;padding-bottom:6px;margin-bottom:8px;font-weight:800;color:#7ec850;font-size:12px}
+.room-panel-header button{background:#3a1020;color:#ffb3c0;border:1px solid #7a2540;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer}
+.region-card{background:#222b1c;border:1px solid #3a4a2f;border-radius:6px;padding:7px;margin-bottom:6px;cursor:pointer;font-size:11px}
+.region-card:hover{border-color:#7ec850;background:#2a3520}
+.region-card h5{margin:0 0 2px;font-size:11px;color:#d4cfa8}
+.region-card div{font-size:10px;color:#8a9a70}
+#log{background:#000;border:1px solid #33415c;border-radius:6px;padding:6px;font-size:10px;min-height:64px;margin-top:250px;white-space:pre-wrap;color:#9fe870}
+.tag{display:inline-block;background:#ff8fa3;color:#0b1120;font-weight:800;border-radius:4px;padding:2px 8px;font-size:11px}
+.hint{font-size:10px;color:#93a4c7;margin-top:4px}
+&lt;/style&gt;
+&lt;style id=&quot;movable-panels-style&quot;&gt;
+.movable-panel{touch-action:none;user-select:none}.movable-panel::before{content:&#x27;⠿&#x27;;position:absolute;top:8px;left:10px;color:#8ef3ff;opacity:.65;font-size:14px;z-index:20;pointer-events:none}.movable-panel.is-dragging{cursor:grabbing!important;z-index:9999!important;box-shadow:0 12px 40px rgba(0,0,0,.55),0 0 24px rgba(0,230,255,.25)!important}.movable-panel .panel-drag-handle{cursor:grab}
+&lt;/style&gt;
+&lt;/head&gt;&lt;body&gt;
+&lt;div class=&quot;tag&quot;&gt;ANTES — v2.31 (com o bug)&lt;/div&gt;
+&lt;div class=&quot;hint&quot;&gt;1) Clique num mapa &amp;nbsp;•&amp;nbsp; 2) Arraste o painel pelo cabeçalho verde&lt;/div&gt;
+&lt;div id=&quot;room-menu&quot; class=&quot;panel&quot;&gt;
+  &lt;div class=&quot;room-panel-header&quot;&gt;&lt;span class=&quot;room-panel-title&quot;&gt;🌀 Portal de Viagem&lt;/span&gt;&lt;button onclick=&quot;fechar()&quot;&gt;✕ Fechar&lt;/button&gt;&lt;/div&gt;
+  &lt;div id=&quot;room-content&quot;&gt;
+    &lt;div class=&quot;region-card&quot; onclick=&quot;travelTo(&#x27;ow_grove&#x27;)&quot;&gt;&lt;h5&gt;Bosque Verdejante 🛡&lt;/h5&gt;&lt;div&gt;Mapa 1 · Acesso livre · 🐾 5 espécies&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;region-card&quot; onclick=&quot;travelTo(&#x27;meadow&#x27;)&quot;&gt;&lt;h5&gt;Prado Verde&lt;/h5&gt;&lt;div&gt;Mapa 2 · Requer Lv.10 · 🐾 10 espécies&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;region-card&quot; onclick=&quot;travelTo(&#x27;forest&#x27;)&quot;&gt;&lt;h5&gt;Floresta Sombria&lt;/h5&gt;&lt;div&gt;Mapa 3 · Requer Lv.20 · 🐾 15 espécies&lt;/div&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&quot;log&quot;&gt;aguardando clique…&lt;/div&gt;
+&lt;script&gt;
+function travelTo(id){document.getElementById(&#x27;log&#x27;).textContent=&#x27;🧭 travelTo(\&#x27;&#x27;+id+&#x27;\&#x27;) — VIAJOU! ✅&#x27;;}
+function fechar(){document.getElementById(&#x27;log&#x27;).textContent=&#x27;✕ fechar (botão ok)&#x27;;}
+&lt;/script&gt;
+&lt;script&gt;
+/* v2.31 — painéis móveis: mouse + toque, sem interferir nos botões internos */
+(function(){
+  const SELECTOR=&#x27;#clerk-panel, #mission-board-panel, #scanner-real, #options-panel, #room-menu, #codex-panel, .panel.large-panel, .modal-panel&#x27;;
+  const KEY=&#x27;chaotic_panel_positions_v231&#x27;;
+  function load(){try{return JSON.parse(localStorage.getItem(KEY)||&#x27;{}&#x27;)}catch(e){return {}}}
+  function save(p){try{localStorage.setItem(KEY,JSON.stringify(p))}catch(e){}}
+  const pos=load();
+  function make(el){
+    if(!el||el.dataset.movable===&#x27;1&#x27;)return;
+    el.dataset.movable=&#x27;1&#x27;;el.classList.add(&#x27;movable-panel&#x27;);
+    const handle=el.querySelector(&#x27;h1,h2,h3,h4,.panel-title,.ck169-title,.ck170-title,.modal-title&#x27;)||el;
+    handle.classList.add(&#x27;panel-drag-handle&#x27;);
+    const id=el.id||(&#x27;panel_&#x27;+Math.random().toString(36).slice(2));el.dataset.moveId=id;
+    if(pos[id]){el.style.left=pos[id].left+&#x27;px&#x27;;el.style.top=pos[id].top+&#x27;px&#x27;;el.style.right=&#x27;auto&#x27;;el.style.bottom=&#x27;auto&#x27;;el.style.transform=&#x27;none&#x27;}
+    let drag=null;
+    el.addEventListener(&#x27;pointerdown&#x27;,function(e){
+      if(e.target.closest(&#x27;button,input,select,textarea,a,[data-no-drag]&#x27;))return;
+      if(e.target!==handle&amp;&amp;!handle.contains(e.target)&amp;&amp;handle!==el)return;
+      const r=el.getBoundingClientRect();drag={x:e.clientX,y:e.clientY,left:r.left,top:r.top};el.classList.add(&#x27;is-dragging&#x27;);el.setPointerCapture?.(e.pointerId);e.preventDefault();
+    });
+    el.addEventListener(&#x27;pointermove&#x27;,function(e){if(!drag)return;let l=drag.left+e.clientX-drag.x,t=drag.top+e.clientY-drag.y;const m=8;l=Math.max(m,Math.min(innerWidth-el.offsetWidth-m,l));t=Math.max(m,Math.min(innerHeight-el.offsetHeight-m,t));el.style.left=l+&#x27;px&#x27;;el.style.top=t+&#x27;px&#x27;;el.style.right=&#x27;auto&#x27;;el.style.bottom=&#x27;auto&#x27;;el.style.transform=&#x27;none&#x27;});
+    el.addEventListener(&#x27;pointerup&#x27;,function(){if(!drag)return;pos[id]={left:parseFloat(el.style.left),top:parseFloat(el.style.top)};save(pos);drag=null;el.classList.remove(&#x27;is-dragging&#x27;)});
+  }
+  function scan(){document.querySelectorAll(SELECTOR).forEach(make)}
+  window.resetMovablePanels=function(){localStorage.removeItem(KEY);location.reload()};
+  scan();new MutationObserver(scan).observe(document.body,{childList:true,subtree:true});
+})();
+&lt;/script&gt;
+&lt;/body&gt;&lt;/html&gt;"></iframe></div>
+<div class="col depois"><h2>✅ DEPOIS — v2.34 (só cabeçalho + 7px)</h2><iframe sandbox="allow-scripts" srcdoc="&lt;!DOCTYPE html&gt;&lt;html lang=&quot;pt-BR&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;style&gt;
+body{margin:0;background:#0b1120;font-family:monospace;color:#e8eefc;padding:12px}
+#room-menu{position:absolute;top:52px;left:16px;width:290px;background:#141b12;border:2px solid #7ec850;border-radius:10px;padding:10px;z-index:5}
+.room-panel-header{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #3a4a2f;padding-bottom:6px;margin-bottom:8px;font-weight:800;color:#7ec850;font-size:12px}
+.room-panel-header button{background:#3a1020;color:#ffb3c0;border:1px solid #7a2540;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer}
+.region-card{background:#222b1c;border:1px solid #3a4a2f;border-radius:6px;padding:7px;margin-bottom:6px;cursor:pointer;font-size:11px}
+.region-card:hover{border-color:#7ec850;background:#2a3520}
+.region-card h5{margin:0 0 2px;font-size:11px;color:#d4cfa8}
+.region-card div{font-size:10px;color:#8a9a70}
+#log{background:#000;border:1px solid #33415c;border-radius:6px;padding:6px;font-size:10px;min-height:64px;margin-top:250px;white-space:pre-wrap;color:#9fe870}
+.tag{display:inline-block;background:#7ec850;color:#0b1120;font-weight:800;border-radius:4px;padding:2px 8px;font-size:11px}
+.hint{font-size:10px;color:#93a4c7;margin-top:4px}
+&lt;/style&gt;
+&lt;style id=&quot;movable-panels-style&quot;&gt;
+.movable-panel{user-select:none;-webkit-user-select:none}.movable-panel input,.movable-panel textarea{user-select:text;-webkit-user-select:text}.movable-panel::before{content:&#x27;⠿&#x27;;position:absolute;top:8px;left:10px;color:#8ef3ff;opacity:.65;font-size:14px;z-index:20;pointer-events:none}.movable-panel.is-dragging{cursor:grabbing!important;z-index:9999!important;box-shadow:0 12px 40px rgba(0,0,0,.55),0 0 24px rgba(0,230,255,.25)!important}.movable-panel .panel-drag-handle{cursor:grab;touch-action:none}
+&lt;/style&gt;
+&lt;/head&gt;&lt;body&gt;
+&lt;div class=&quot;tag&quot;&gt;DEPOIS — v2.34 (corrigido)&lt;/div&gt;
+&lt;div class=&quot;hint&quot;&gt;1) Clique num mapa &amp;nbsp;•&amp;nbsp; 2) Arraste o painel pelo cabeçalho verde&lt;/div&gt;
+&lt;div id=&quot;room-menu&quot; class=&quot;panel&quot;&gt;
+  &lt;div class=&quot;room-panel-header&quot;&gt;&lt;span class=&quot;room-panel-title&quot;&gt;🌀 Portal de Viagem&lt;/span&gt;&lt;button onclick=&quot;fechar()&quot;&gt;✕ Fechar&lt;/button&gt;&lt;/div&gt;
+  &lt;div id=&quot;room-content&quot;&gt;
+    &lt;div class=&quot;region-card&quot; onclick=&quot;travelTo(&#x27;ow_grove&#x27;)&quot;&gt;&lt;h5&gt;Bosque Verdejante 🛡&lt;/h5&gt;&lt;div&gt;Mapa 1 · Acesso livre · 🐾 5 espécies&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;region-card&quot; onclick=&quot;travelTo(&#x27;meadow&#x27;)&quot;&gt;&lt;h5&gt;Prado Verde&lt;/h5&gt;&lt;div&gt;Mapa 2 · Requer Lv.10 · 🐾 10 espécies&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;region-card&quot; onclick=&quot;travelTo(&#x27;forest&#x27;)&quot;&gt;&lt;h5&gt;Floresta Sombria&lt;/h5&gt;&lt;div&gt;Mapa 3 · Requer Lv.20 · 🐾 15 espécies&lt;/div&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&quot;log&quot;&gt;aguardando clique…&lt;/div&gt;
+&lt;script&gt;
+function travelTo(id){document.getElementById(&#x27;log&#x27;).textContent=&#x27;🧭 travelTo(\&#x27;&#x27;+id+&#x27;\&#x27;) — VIAJOU! ✅&#x27;;}
+function fechar(){document.getElementById(&#x27;log&#x27;).textContent=&#x27;✕ fechar (botão ok)&#x27;;}
+&lt;/script&gt;
+&lt;script&gt;
+/* v2.34 (v171) — painéis móveis CORRIGIDO: arrastar SÓ pela alça do cabeçalho + clique vs. arrasto.
+ * Corrige o bug da v2.31 onde painéis sem h1-h4/.panel-title (#room-menu, missões,
+ * scanner, clerk antes do render) caíam no fallback `handle = el` (painel INTEIRO virava
+ * alça): o pointerdown dava preventDefault + setPointerCapture em qualquer clique,
+ * então clicar num mapa do Portal de Viagem só &quot;puxava&quot; o painel e o travelTo() nunca
+ * disparava. Agora: (1) alças reais de cada painel; (2) sem alça = sem arrasto (nunca
+ * quebra clique); (3) arrasto só após mover 7px (clique simples passa limpo);
+ * (4) touch-action:none só na alça (conteúdo rola no celular); (5) elementos
+ * interativos ([onclick], .region-card etc.) nunca iniciam arrasto. */
+(function(){
+  var SELECTOR=&#x27;#clerk-panel, #mission-board-panel, #scanner-real, #options-panel, #room-menu, #codex-panel, .panel.large-panel, .modal-panel&#x27;;
+  var HANDLE_SEL=&#x27;h1,h2,h3,h4,.panel-title,.panel-header,.modal-title,.modal-header,.room-panel-header,.mbp-header,.scanner-real-header,.ck169-top,.ck170-top,.ck169-title,.ck170-title&#x27;;
+  var NO_DRAG=&#x27;button,input,select,textarea,a,[data-no-drag],[onclick],.region-card,.inv-slot,.gadget-card,.mission-card,.lm-tag&#x27;;
+  var KEY=&#x27;chaotic_panel_positions_v231&#x27;; // mesma chave: mantém posições que o jogador salvou
+  var LIMIAR=7; // px — abaixo disso é CLIQUE, não arrasto
+  function load(){try{return JSON.parse(localStorage.getItem(KEY)||&#x27;{}&#x27;)}catch(e){return {}}}
+  function save(p){try{localStorage.setItem(KEY,JSON.stringify(p))}catch(e){}}
+  var pos=load();
+  function findHandle(el){try{return el.querySelector(HANDLE_SEL)}catch(e){return null}}
+  function tagHandle(el){var h=findHandle(el);if(h&amp;&amp;!h.classList.contains(&#x27;panel-drag-handle&#x27;)){try{h.classList.add(&#x27;panel-drag-handle&#x27;)}catch(e){}}}
+  function make(el){
+    if(!el||el.dataset.movable===&#x27;1&#x27;)return;
+    el.dataset.movable=&#x27;1&#x27;;el.classList.add(&#x27;movable-panel&#x27;);
+    var id=el.id||(&#x27;panel_&#x27;+Math.random().toString(36).slice(2));el.dataset.moveId=id;
+    if(pos[id]){el.style.left=pos[id].left+&#x27;px&#x27;;el.style.top=pos[id].top+&#x27;px&#x27;;el.style.right=&#x27;auto&#x27;;el.style.bottom=&#x27;auto&#x27;;el.style.transform=&#x27;none&#x27;}
+    tagHandle(el);
+    var pend=null; // {x,y,left,top,moved,pid} — arrasto PENDENTE (só confirma após o limiar)
+    el.addEventListener(&#x27;pointerdown&#x27;,function(e){
+      if(e.pointerType===&#x27;mouse&#x27;&amp;&amp;e.button!==undefined&amp;&amp;e.button!==0)return;
+      if(e.target&amp;&amp;e.target.closest){try{if(e.target.closest(NO_DRAG))return}catch(ee){}} // coisa clicável: nunca arrasta
+      var handle=findHandle(el); // alça resolvida NA HORA (painel dinâmico como o clerk entra aqui)
+      if(!handle)return; // sem alça = painel fixo (seguro: nunca engole clique)
+      if(!handle.contains(e.target))return; // fora da alça = clique normal
+      var r=el.getBoundingClientRect();
+      pend={x:e.clientX,y:e.clientY,left:r.left,top:r.top,moved:false,pid:e.pointerId};
+      // SEM preventDefault e SEM capture aqui: o clique simples precisa passar limpo.
+    });
+    function move(e){
+      if(!pend)return;
+      if(e.pointerId!==undefined&amp;&amp;pend.pid!==undefined&amp;&amp;e.pointerId!==pend.pid)return;
+      var dx=e.clientX-pend.x,dy=e.clientY-pend.y;
+      if(!pend.moved){
+        if(Math.sqrt(dx*dx+dy*dy)&lt;LIMIAR)return; // ainda é clique
+        pend.moved=true;el.classList.add(&#x27;is-dragging&#x27;);
+        try{if(el.setPointerCapture&amp;&amp;pend.pid!==undefined)el.setPointerCapture(pend.pid)}catch(err){}
+      }
+      if(e.cancelable)e.preventDefault();
+      var l=pend.left+dx,t=pend.top+dy,m=8;
+      l=Math.max(m,Math.min(window.innerWidth-el.offsetWidth-m,l));
+      t=Math.max(m,Math.min(window.innerHeight-el.offsetHeight-m,t));
+      el.style.left=l+&#x27;px&#x27;;el.style.top=t+&#x27;px&#x27;;el.style.right=&#x27;auto&#x27;;el.style.bottom=&#x27;auto&#x27;;el.style.transform=&#x27;none&#x27;;
+    }
+    function up(e){
+      if(!pend)return;
+      if(e.pointerId!==undefined&amp;&amp;pend.pid!==undefined&amp;&amp;e.pointerId!==pend.pid)return;
+      var foiArrasto=pend.moved;
+      pend=null;el.classList.remove(&#x27;is-dragging&#x27;);
+      if(foiArrasto){
+        pos[id]={left:parseFloat(el.style.left),top:parseFloat(el.style.top)};save(pos);
+        // o pointerup após arrasto geraria um &#x27;click&#x27; fantasma: engole UM clique no painel.
+        var trava=function(ev){try{ev.stopPropagation();ev.preventDefault()}catch(ee){}try{el.removeEventListener(&#x27;click&#x27;,trava,true)}catch(eee){}};
+        try{el.addEventListener(&#x27;click&#x27;,trava,true)}catch(eeee){}
+        setTimeout(function(){try{el.removeEventListener(&#x27;click&#x27;,trava,true)}catch(e2){}},80);
+      }
+    }
+    function cancel(e){
+      if(!pend)return;
+      if(e.pointerId!==undefined&amp;&amp;pend.pid!==undefined&amp;&amp;e.pointerId!==pend.pid)return;
+      pend=null;el.classList.remove(&#x27;is-dragging&#x27;);
+    }
+    el.addEventListener(&#x27;pointermove&#x27;,move);
+    el.addEventListener(&#x27;pointerup&#x27;,up);
+    el.addEventListener(&#x27;pointercancel&#x27;,cancel);
+    if(window&amp;&amp;window.addEventListener){ // não perde o arrasto se o ponteiro sair do painel
+      window.addEventListener(&#x27;pointermove&#x27;,move,true);
+      window.addEventListener(&#x27;pointerup&#x27;,up,true);
+      window.addEventListener(&#x27;pointercancel&#x27;,cancel,true);
+    }
+  }
+  function scan(){try{document.querySelectorAll(SELECTOR).forEach(function(el){make(el);tagHandle(el)})}catch(e){}}
+  window.resetMovablePanels=function(){try{localStorage.removeItem(KEY)}catch(e){}location.reload()};
+  scan();
+  try{if(document.body) new MutationObserver(scan).observe(document.body,{childList:true,subtree:true})}catch(e){}
+})();
+&lt;/script&gt;
+&lt;/body&gt;&lt;/html&gt;"></iframe></div>
+</div>
+</body></html>

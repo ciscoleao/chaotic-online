@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo — Delay vendo gente online (v2.35)</title>
+<style>
+body{margin:0;background:#070c16;color:#eaf3ff;font-family:Segoe UI,system-ui,sans-serif;padding:18px}
+h1{font-size:18px;margin:0 0 4px;color:#ffd54f}
+p{font-size:13px;color:#9fb0cc;max-width:940px;line-height:1.5}
+.cols{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px}
+.col{flex:1 1 360px;min-width:320px}
+.col h2{font-size:13px;margin:0 0 6px}
+.col.antes h2{color:#ff8fa3}.col.depois h2{color:#7ec850}
+canvas{width:100%;border:2px solid #33415c;border-radius:10px;background:#0b1120}
+.col.antes canvas{border-color:#7a2540}.col.depois canvas{border-color:#3f9a46}
+.stat{font-size:12px;font-family:monospace;margin-top:6px;color:#8be2ff}
+code{background:#16203a;padding:1px 6px;border-radius:4px;color:#8be2ff;font-size:12px}
+button{background:#16203a;color:#eaf3ff;border:1px solid #33415c;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;margin-top:10px}
+button:hover{border-color:#7ec850}
+.leg{font-size:11px;color:#93a0bd;margin-top:8px;line-height:1.7}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 3px 0 10px;vertical-align:middle}
+</style>
+</head>
+<body>
+<h1>⚡ Delay vendo gente online — ANTES × DEPOIS (simulação fiel)</h1>
+<p>Um bot (contorno <b style="color:#fff">branco</b>) anda pelo mapa em loop. Cada lado recebe a posição dele
+como o jogo recebe do servidor e desenha o jogador remoto (bolinha colorida). <b>ANTES:</b> amostra a cada
+<code>2000ms</code> + lerp <code>0.16</code> rumo ao ponto parado. <b>DEPOIS (v2.35):</b> amostra a cada
+<code>650ms</code> andando + <b>predição</b> de movimento + perseguição <code>0.28/0.45</code>.
+Repare como o remoto da esquerda "congela e pula" enquanto o da direita gruda no bot.</p>
+<div class="cols">
+<div class="col antes"><h2>❌ ANTES — beat 2s, sem predição</h2><canvas id="c0" width="680" height="560"></canvas><div class="stat" id="s0"></div></div>
+<div class="col depois"><h2>✅ DEPOIS — beat 650ms + predição (v172)</h2><canvas id="c1" width="680" height="560"></canvas><div class="stat" id="s1"></div></div>
+</div>
+<button id="btn">⏸ Pausar</button> <button id="btn2">↺ Reiniciar</button>
+<div class="leg"><span class="dot" style="background:#fff"></span>posição real do bot
+<span class="dot" style="background:#ff8fa3"></span>remoto (ANTES)<span class="dot" style="background:#7ec850"></span>remoto (DEPOIS)
+<span class="dot" style="background:#ffd54f"></span>amostra recém-chegada</div>
+<script>
+// Cópia fiel da predição do jogo (predPos172, v2.35) — mesma lógica e constantes.
+function predPos172(samp, now) {
+  const n = (samp && samp.length) || 0;
+  if (!n) return { x: 0, y: 0, vx: 0, vy: 0, moving: false };
+  const last = samp[n - 1];
+  if (n < 2) return { x: last.x, y: last.y, vx: 0, vy: 0, moving: false };
+  const prev = samp[n - 2];
+  const dt = Math.max(0.05, (last.t - prev.t) / 1000);
+  let vx = (last.x - prev.x) / dt, vy = (last.y - prev.y) / dt;
+  const sp = Math.sqrt(vx * vx + vy * vy);
+  if (sp < 12) return { x: last.x, y: last.y, vx: 0, vy: 0, moving: false };
+  const VMAX = 420;
+  if (sp > VMAX) { vx = vx / sp * VMAX; vy = vy / sp * VMAX; }
+  let ahead = (now - last.t) / 1000;
+  if (!(ahead > 0)) ahead = 0;
+  if (ahead > 1.2) ahead = 1.2;
+  return { x: last.x + vx * ahead, y: last.y + vy * ahead, vx: vx, vy: vy, moving: true };
+}
+// Bot scriptado: quadrado com pausas de 1s, 180px/s.
+const WP = [[80, 90], [600, 130], [560, 470], [120, 430]];
+const SPD = 180;
+function botAt(ms) {
+  const segs = [];
+  for (let i = 0; i < WP.length; i++) {
+    const a = WP[i], b = WP[(i + 1) % WP.length];
+    const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    segs.push({ a, b, walk: d / SPD, pause: 1 });
+  }
+  const total = segs.reduce((s, g) => s + g.walk + g.pause, 0);
+  let t = (ms / 1000) % total, moving = true;
+  for (const g of segs) {
+    if (t < g.walk) {
+      const k = t / g.walk;
+      return { x: g.a[0] + (g.b[0] - g.a[0]) * k, y: g.a[1] + (g.b[1] - g.a[1]) * k, moving: true };
+    }
+    t -= g.walk;
+    if (t < g.pause) return { x: g.b[0], y: g.b[1], moving: false };
+    t -= g.pause;
+  }
+}
+function makeSide(novo) {
+  return {
+    novo, pos: { x: WP[0][0], y: WP[0][1] }, alvo: { x: WP[0][0], y: WP[0][1] },
+    samp: [{ x: WP[0][0], y: WP[0][1], t: 0 }], pend: [],
+    nextBeat: 0, nextTick: 0, soma: 0, n: 0, flashes: []
+  };
+}
+let sides = [makeSide(false), makeSide(true)];
+let t0 = performance.now(), paused = false, pauseAt = 0;
+function nowMs() { return paused ? pauseAt - t0 : performance.now() - t0; }
+function step(sd, now) {
+  const bot = botAt(now);
+  const beatMs = sd.novo ? (bot.moving ? 650 : 2400) : 2000; // mesma regra do jogo
+  if (now >= sd.nextBeat) {
+    sd.nextBeat = now + beatMs;
+    sd.pend.push({ x: bot.x, y: bot.y, t: now, recv: now + 100 }); // RTT 100ms
+  }
+  while (sd.pend.length && sd.pend[0].recv <= now) {
+    const e = sd.pend.shift();
+    sd.alvo = { x: e.x, y: e.y };
+    sd.samp.push({ x: e.x, y: e.y, t: e.t });
+    if (sd.samp.length > 3) sd.samp.shift();
+    sd.flashes.push({ x: e.x, y: e.y, t: now });
+  }
+  if (now >= sd.nextTick) { // tick de render do jogo: 110ms
+    sd.nextTick = now + 110;
+    if (sd.novo) {
+      const p = predPos172(sd.samp, now);
+      const dx = p.x - sd.pos.x, dy = p.y - sd.pos.y, d = Math.hypot(dx, dy);
+      if (d > 550) sd.pos = { x: p.x, y: p.y };
+      else if (d > 0.5) { const k = d > 220 ? 0.45 : 0.28; sd.pos.x += dx * k; sd.pos.y += dy * k; }
+    } else {
+      sd.pos.x += (sd.alvo.x - sd.pos.x) * 0.16;
+      sd.pos.y += (sd.alvo.y - sd.pos.y) * 0.16;
+    }
+  }
+  const err = Math.hypot(bot.x - sd.pos.x, bot.y - sd.pos.y);
+  sd.soma += err; sd.n++;
+  return { bot, err };
+}
+const cv = [document.getElementById('c0'), document.getElementById('c1')];
+const st = [document.getElementById('s0'), document.getElementById('s1')];
+const cx = cv.map(c => c.getContext('2d'));
+function draw(i, now, bot, err) {
+  const g = cx[i], sd = sides[i], cor = sd.novo ? '#7ec850' : '#ff8fa3';
+  g.clearRect(0, 0, 680, 560);
+  g.strokeStyle = 'rgba(126,200,80,.25)'; g.setLineDash([6, 6]); g.lineWidth = 2;
+  g.beginPath(); WP.forEach((w, k) => k ? g.lineTo(w[0], w[1]) : g.moveTo(w[0], w[1])); g.closePath(); g.stroke();
+  g.setLineDash([]);
+  sd.flashes = sd.flashes.filter(f => now - f.t < 600);
+  for (const f of sd.flashes) {
+    g.globalAlpha = 1 - (now - f.t) / 600;
+    g.fillStyle = '#ffd54f'; g.beginPath(); g.arc(f.x, f.y, 5, 0, 7); g.fill();
+  }
+  g.globalAlpha = 1;
+  g.strokeStyle = '#fff'; g.lineWidth = 2;
+  g.beginPath(); g.arc(bot.x, bot.y, 11, 0, 7); g.stroke(); // real
+  g.fillStyle = cor; g.beginPath(); g.arc(sd.pos.x, sd.pos.y, 9, 0, 7); g.fill(); // remoto
+  g.fillStyle = cor; g.font = '11px monospace'; g.textAlign = 'center';
+  g.fillText('BOT', sd.pos.x, sd.pos.y - 15);
+  st[i].textContent = 'atraso agora: ' + err.toFixed(0) + 'px · médio: ' + (sd.soma / sd.n).toFixed(0) + 'px';
+}
+function frame() {
+  if (!paused) {
+    const now = nowMs();
+    for (let i = 0; i < 2; i++) { const r = step(sides[i], now); draw(i, now, r.bot, r.err); }
+  }
+  requestAnimationFrame(frame);
+}
+document.getElementById('btn').onclick = function () {
+  paused = !paused;
+  if (paused) pauseAt = performance.now(); else t0 += performance.now() - pauseAt;
+  this.textContent = paused ? '▶ Continuar' : '⏸ Pausar';
+};
+document.getElementById('btn2').onclick = function () {
+  sides = [makeSide(false), makeSide(true)];
+  t0 = performance.now(); if (paused) pauseAt = t0;
+};
+frame();
+</script>
+</body>
+</html>

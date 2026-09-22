@@ -5,26 +5,36 @@
 
 ## Onde paramos (2026-09-21)
 
-1. **Integração site→login→jogar** — `server.js` patcheado (base main `8a327de`):
-   `/game` serve `lobby/Chaotic_Online_Lobby_FIX.html` quando existe, senão cai
-   para v123/v122. Injeção (sessão/nick/skin/BRIDGE) funciona sem mudanças
-   porque o lobby tem todas as âncoras. Teste E2E (`test_lobby_server.js`, 16 checks standalone
-   + 2 de fallback no repo) sobe o servidor de verdade: 302 sem login,
-   200 + 9 injeções com sessão, fallback validado. Patch: 3 linhas (`integracao/server.js.diff`).
+1. **Integração site→login→jogar** — `server.js` patcheado v2 (base main `8a327de`):
+   `/game` serve o lobby de `lobby/` **ou da raiz** (upload achatado funciona),
+   senão cai para v123/v122. Upload real do jogador foi achatado na raiz +
+   README sobrescrito → patch dual-path + README original recuperado
+   (`para-subir/`). Injeção (sessão/nick/skin/BRIDGE) funciona sem mudanças
+   porque o lobby tem todas as âncoras. Teste E2E (`test_lobby_server.js`: 18 standalone + 2 de fallback no repo)
+   sobe o servidor de verdade nos 2 layouts: 302 sem login, 200 + 9 injeções
+   com sessão, fallback validado. Patch: 3 linhas (`integracao/server.js.diff`).
 2. **Drones cartoon** — bichinho verde extraído de `uploads/image-1.png`
    (`tools/drone_extract.py`: flood-fill + median-cut 12 cores + RLE). Lobby:
    3 variantes 48x60; Pórtico em vetor canvas (`drawChaoticDrone`).
 3. **Porta da forja** — poste obstáculo fino sem oclusor, farol na porta,
    setas reposicionadas, brilho na abertura.
-4. **Suítes:** depth 130 + meta 39 + fix 19 + server 16 = **204/204**
-   (206/206 dentro do repo, com o fallback);
+4. **Suítes:** depth 130 + meta 39 + fix 38 + server 18 = **225/225**
+   (227/227 dentro do repo, com o fallback);
    editores 11+11.
+5. **Música por mapa (v181)** — 7 faixas WebAudio, troca auto c/ crossfade:
+   patio (sci-fi) | battle (épica 120bpm c/ bateria) | 5 tribos (pastoral,
+   doom, colmeia, deserto c/ vento, lagoa negra); sonda 1s via `mapaAtual154()`
+   + `#dromo-panel`/overlay `.open` → battle; fonte `tools/lobby_music_snippet.js`
+   após `pipArme152();`; lab `Testar_Musicas.html`; Opções (`chaotic_music_*`).
 
 ## Comandos
 
 ```bash
 cd lobby
 node tests/test_lobby_depth.js && node tests/test_lobby_meta.js && node tests/test_lobby_fix.js && node tests/test_lobby_server.js
+node tools/test_music_harness.js   # 49: 7 faixas + troca por mapa + bateria (stubs)
+python3 tools/build_music_lab.py     # gera Testar_Musicas.html (lab das 7 faixas)
+python3 tools/preview_musica.py    # regenera previews/musica_lobby_preview.wav (64s = 2 loops)
 python3 tools/drone_extract.py   # regenera RLE dos drones (PIL+numpy)
 ```
 
