@@ -2006,7 +2006,7 @@ LOBBY_SPRITES['room_console'] = { w: 26, h: 30, palette: ["#20232e", "#454e63", 
     sc.wasd = sc.input.keyboard.addKeys({ up: 'W', down: 'S', left: 'A', right: 'D' });
     sc.interactKey = sc.input.keyboard.addKey('E');
     sc.fullMapKey = sc.input.keyboard.addKey('F8');
-    sc.fullMapMode = sc.scale.width >= 900 && sc.scale.height >= 600;
+    sc.fullMapMode = false; // v185 — começa aproximado (segue o jogador); botão 'Ver pátio' continua disponível
 
     const controls = document.createElement('div');
     controls.id = 'lobby-controls';
@@ -8718,6 +8718,7 @@ class PerimScene extends Phaser.Scene {
           }
         }
       } });
+      lanternTex(this); // v184 — FIX: a textura 'lantern' nunca era criada (quadrados pretos nas pontes)
       let lts17 = 0; // lanternas nas pontes
       for (let y17 = 1; y17 < tilesY - 1 && lts17 < 6; y17++) for (let x17 = 1; x17 < tilesX - 1 && lts17 < 6; x17++) {
         if (this.mapData[y17][x17] !== 'bridge' || (x17 * 3 + y17 * 7) % 9 !== 0) continue;
@@ -12847,13 +12848,17 @@ function initPip152() {
 }
 initPip152();
 pipArme152(); // v153 — se abriu com ?pip=1, arma a janelinha no primeiro clique
-/* ===== v181 — MÚSICA DO PÁTIO (7 faixas por mapa) =====
+/* ===== v183 — MÚSICA (fix dip perpétuo + debounce) =====
  * Motor multi-faixa: patio (sci-fi) | battle (épica 120bpm c/ bateria) |
  * tribe_overworld (pastoral) | tribe_underworld (vulcânica doom) |
  * tribe_danian (colmeia alien) | tribe_mipedian (deserto) |
  * tribe_marrillian (lagoa negra). Troca automática por mapa (sonda 1s) com
  * crossfade; volume/mute em Opções, salvos. Peças originais geradas na hora.
- * Começa no 1º gesto, baixinho (default 40 + fade 4s). */
+ * Começa no 1º gesto, baixinho (default 40 + fade 4s). v182: indicador 🎵 no
+ * HUD (mostra a faixa; toque = mutar), watchdog de ganho e logs de debug.
+ * v183: a sonda (1s) chamava switchTrack de novo antes do dip (1.2s) terminar
+ * e o token cancelava a adoção p/ sempre = SILÊNCIO. Fix: pendingTrack (não
+ * re-dispara a mesma troca) + debounce (só troca após 2 ticks estáveis). */
 const LOBBY_MUSIC_VOL_KEY = 'chaotic_music_vol';
 const LOBBY_MUSIC_MUTE_KEY = 'chaotic_music_mute';
 const REGIAO_TRIBO = {
@@ -13054,13 +13059,15 @@ const MUSIC_TRACKS = {
     opening: null
   }
 };
+const TRACK_EMOJI = { patio: '🛸', battle: '⚔️', tribe_overworld: '🌲', tribe_underworld: '🌋', tribe_danian: '🐜', tribe_mipedian: '🏜️', tribe_marrillian: '🌊' };
 const LobbyMusic = {
   ctx: null, musicBus: null, delaySend: null, dly: null, fb: null, damp: null,
   noiseBuf: null, timer: null, watchTimer: null,
   started: false, manual: false, introPlayed: false,
   trackId: 'patio', cfg: MUSIC_TRACKS.patio,
   chordStep: 0, nextChordT: 0, nextBellT: 0, nextDrumT: 0, drumStep: 0, bellIdx: 4,
-  droneNodes: [], windNodes: null, switchToken: 0, DIP_MS: 1200,
+  droneNodes: [], windNodes: null, switchToken: 0, DIP_MS: 1200, startAt: 0, dipping: false,
+  pendingTrack: null, wantId: null, wantN: 0,
   vol: 40, muted: false, notified: false,
   ensure: function() {
     try {
@@ -13305,7 +13312,8 @@ const LobbyMusic = {
   tick: function() {
     if (!this.ctx || !this.started) return;
     try {
-      if (this.ctx.state === 'suspended') this.ctx.resume();
+      if (this.ctx.state === 'suspended') { this.ctx.resume(); this._wasSusp = true; }
+      else if (this._wasSusp) { this._wasSusp = false; try { lobbyMusicUI(); } catch (e) {} } // v185 — som liberou: atualiza o ícone 🎵→🎵🎶
       const ahead = this.ctx.currentTime + 1.2, cfg = this.cfg;
       while (this.nextChordT < ahead) {
         const first = (this.chordStep === 0 && !this.introPlayed);
@@ -13341,7 +13349,7 @@ const LobbyMusic = {
       const cfg = MUSIC_TRACKS[id];
       if (!cfg) return;
       this.stopDrone(); this.stopWind();
-      this.cfg = cfg; this.trackId = id;
+      this.cfg = cfg; this.trackId = id; this.pendingTrack = null;
       try {
         if (this.dly) {
           this.dly.delayTime.value = cfg.echo.time;
@@ -13357,19 +13365,48 @@ const LobbyMusic = {
         this.startWind(cfg.wind);
         this.tick();
       }
+      this.dipping = false;
+      lobbyMusicUI();
+    } catch (e) {}
+  },
+  gainGuard: function() {
+    try {
+      if (!this.started || this.muted || this.vol <= 0 || !this.musicBus || !this.ctx) return;
+      if (this.dipping) return;
+      if (Date.now() - (this.startAt || 0) < 5000) return;
+      const want = this.volTarget();
+      if (want > 0.01 && this.musicBus.gain.value < want * 0.25) {
+        this.musicBus.gain.setTargetAtTime(want, this.ctx.currentTime, 0.5);
+      }
     } catch (e) {}
   },
   switchTrack: function(id) {
     try {
       if (!MUSIC_TRACKS[id] || this.trackId === id) return;
       if (!this.started) { this.adoptTrack(id); return; }
+      if (this.pendingTrack === id) return; // já está a caminho: não re-dispara
+      this.pendingTrack = id;
       const self = this, token = ++this.switchToken;
+      this.dipping = true;
+      try { console.log('[musica] → ' + id); } catch (e) {}
       try { this.musicBus.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.3); } catch (e) {}
       setTimeout(function() {
         if (token !== self.switchToken) return;
         self.adoptTrack(id);
         try { self.musicBus.gain.setTargetAtTime(self.volTarget(), self.ctx.currentTime, 0.6); } catch (e) {}
       }, this.DIP_MS);
+    } catch (e) {}
+  },
+  watchTick: function() {
+    try {
+      if (!this.started || this.manual) return;
+      const want = musicWantedTrack();
+      if (want === this.trackId || want === this.pendingTrack) { this.wantId = want; this.wantN = 0; }
+      else if (want === this.wantId) {
+        this.wantN++;
+        if (this.wantN >= 1) this.switchTrack(want);
+      } else { this.wantId = want; this.wantN = 0; }
+      this.gainGuard();
     } catch (e) {}
   },
   start: function() {
@@ -13388,15 +13425,19 @@ const LobbyMusic = {
       this.nextChordT = t; this.nextBellT = t + 3; this.nextDrumT = t; this.drumStep = 0;
       this.chordStep = 0; this.bellIdx = 4;
       this.started = true;
+      this.startAt = Date.now();
+      this.dipping = false;
+      try { console.log('[musica] start: ' + this.trackId); } catch (e) {}
       const self = this;
       this.timer = setInterval(function() { self.tick(); }, 250);
       this.startDrone(this.cfg.drone);
       this.startWind(this.cfg.wind);
       this.tick();
-      if (!this.notified && !this.muted && this.vol > 0) {
+      if (!this.notified && !this.muted && this.vol > 0 && this.ctx && this.ctx.state === 'running') { // v185 — não avisa 'ligada' se o navegador suspendeu
         this.notified = true;
         try { showNotif('🎵 Música do pátio ligada — ajuste o volume em ⚙️ Opções', 'info'); } catch (e) {}
       }
+      lobbyMusicUI();
       return true;
     } catch (e) { return false; }
   }
@@ -13414,8 +13455,43 @@ function musicWantedTrack() {
     return 'patio';
   } catch (e) { return 'patio'; }
 }
+function lobbyMusicToggleMute() {
+  try {
+    LobbyMusic.muted = !LobbyMusic.muted;
+    try { localStorage.setItem(LOBBY_MUSIC_MUTE_KEY, LobbyMusic.muted ? '1' : '0'); } catch (e) {}
+    if (!LobbyMusic.muted) lobbyMusicKick();
+    LobbyMusic.applyVol();
+    lobbyMusicUI();
+  } catch (e) {}
+}
+function lobbyMusicHud() {
+  try {
+    let hud = document.getElementById('music-hud');
+    if (!hud) {
+      hud = document.createElement('button');
+      hud.id = 'music-hud';
+      hud.title = 'Música';
+      try { hud.style.cssText = 'position:fixed;top:52px;right:10px;z-index:61;background:rgba(16,24,46,.82);border:1px solid #33415c;border-radius:9px;color:#e8eefc;font-size:13px;padding:4px 8px;cursor:pointer;'; } catch (e) {}
+      if (document.body) document.body.appendChild(hud);
+      bindImmediateButton('music-hud', lobbyMusicToggleMute);
+    }
+    const cfg = MUSIC_TRACKS[LobbyMusic.trackId];
+    if (!LobbyMusic.started || (LobbyMusic.ctx && LobbyMusic.ctx.state === 'suspended')) { // v185 — 🎵 apagado até o som sair de verdade
+      hud.textContent = '🎵'; hud.title = 'Música pronta — toque em qualquer lugar para começar';
+      try { hud.style.opacity = '0.55'; } catch (e) {}
+    } else if (LobbyMusic.muted || LobbyMusic.vol === 0) {
+      hud.textContent = '🔇'; hud.title = 'Música mutada — toque para ativar';
+      try { hud.style.opacity = '1'; } catch (e) {}
+    } else {
+      hud.textContent = '🎵' + (TRACK_EMOJI[LobbyMusic.trackId] || '');
+      hud.title = (cfg ? cfg.name : 'Música') + ' — toque para mutar';
+      try { hud.style.opacity = '1'; } catch (e) {}
+    }
+  } catch (e) {}
+}
 function lobbyMusicKick() {
   try {
+    if (LobbyMusic.ctx && LobbyMusic.ctx.state === 'suspended') LobbyMusic.ctx.resume(); // v185 — resume precisa estar no gesto (iOS)
     if (LobbyMusic.started) return;
     LobbyMusic.start();
   } catch (e) {}
@@ -13427,6 +13503,7 @@ function lobbyMusicUI() {
     if (pct) pct.textContent = (LobbyMusic.muted ? 0 : LobbyMusic.vol) + '%';
     if (btn) btn.textContent = (LobbyMusic.muted || LobbyMusic.vol === 0) ? '🔇' : '🔊';
   } catch (e) {}
+  lobbyMusicHud();
 }
 function initLobbyMusic() {
   try {
@@ -13451,25 +13528,20 @@ function initLobbyMusic() {
         lobbyMusicUI();
       });
     }
-    bindImmediateButton('opt-music-mute', function() {
-      LobbyMusic.muted = !LobbyMusic.muted;
-      try { localStorage.setItem(LOBBY_MUSIC_MUTE_KEY, LobbyMusic.muted ? '1' : '0'); } catch (e) {}
-      if (!LobbyMusic.muted) lobbyMusicKick();
-      LobbyMusic.applyVol();
-      lobbyMusicUI();
-    });
+    bindImmediateButton('opt-music-mute', lobbyMusicToggleMute);
     lobbyMusicUI();
     document.addEventListener('pointerdown', lobbyMusicKick);
     document.addEventListener('keydown', lobbyMusicKick);
+    document.addEventListener('click', lobbyMusicKick);
+    lobbyMusicKick(); // v185 — música ativada de começo (quem o navegador liberar, toca na hora; resto arma no 1º toque)
+    setTimeout(function() {
+      try { if (!LobbyMusic.muted && LobbyMusic.vol > 0 && LobbyMusic.ctx && LobbyMusic.ctx.state === 'suspended') showNotif('🔊 Toque uma vez em qualquer lugar para ligar a música', 'info'); } catch (e) {}
+    }, 3500);
+    try { window.__musica = LobbyMusic; } catch (e) {}
     // sonda: troca automática de faixa conforme o mapa (1s)
     try {
       if (LobbyMusic.watchTimer) clearInterval(LobbyMusic.watchTimer);
-      LobbyMusic.watchTimer = setInterval(function() {
-        try {
-          if (!LobbyMusic.started || LobbyMusic.manual) return;
-          LobbyMusic.switchTrack(musicWantedTrack());
-        } catch (e) {}
-      }, 1000);
+      LobbyMusic.watchTimer = setInterval(function() { LobbyMusic.watchTick(); }, 1000);
     } catch (e) {}
   } catch (e) {}
 }
@@ -13564,5 +13636,5 @@ setInterval(tickMarket, 1000);
   scan();
   try{if(document.body) new MutationObserver(scan).observe(document.body,{childList:true,subtree:true})}catch(e){}
 })();
-</script></body>
+</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3f361ab5a9ca45a',t:'MTc5MDEwMTgzMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
