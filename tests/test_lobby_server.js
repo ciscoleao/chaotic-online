@@ -16,7 +16,7 @@ const ok = (cond, name, extra = '') => {
 
 const HERE = __dirname;
 const SERVER_JS = path.join(HERE, '..', 'integracao', 'server.js');
-const LOBBY_HTML = path.join(HERE, '..', 'Chaotic_Online_Lobby_FIX.html');
+const LOBBY_HTML = path.join(HERE, '..', 'Chaotic-Online-v238.html');
 const FEM = path.join(HERE, '..', 'integracao', 'fixture', 'fem.json');
 const SKINS = path.join(HERE, '..', 'integracao', 'fixture', 'skins.json');
 const V123 = path.join(HERE, '..', '..', 'chaotic_idleworld_v123.html'); // só existe dentro do repo
@@ -89,7 +89,7 @@ async function bootAny(fixture) {
   fs.copyFileSync(SERVER_JS, path.join(fixture, 'server', 'server.js'));
   fs.copyFileSync(FEM, path.join(fixture, 'server', 'fem.json'));
   fs.copyFileSync(SKINS, path.join(fixture, 'server', 'skins.json'));
-  fs.copyFileSync(LOBBY_HTML, path.join(fixture, 'lobby', 'Chaotic_Online_Lobby_FIX.html'));
+  fs.copyFileSync(LOBBY_HTML, path.join(fixture, 'lobby', 'Chaotic-Online-v238.html'));
   fs.writeFileSync(path.join(fixture, 'server', 'data', 'db.json'), JSON.stringify(SEED));
   const hasV123 = fs.existsSync(V123);
   if (hasV123) fs.copyFileSync(V123, path.join(fixture, 'chaotic_idleworld_v123.html'));
@@ -115,11 +115,15 @@ async function bootAny(fixture) {
       ['lobby NOVO (drone_side)', 'lobby_drone_side'],
       ['lobby NOVO (chaoticDrone)', 'drawChaoticDrone'],
       ['lobby NOVO (central-lobby)', 'data-embedded="central-lobby"'],
+      ['avatar enviado ao Dromo', 'hero: { kind: GameState.player.avatar || \'male\''],
     ]) ok(s.includes(m), 'injecao: ' + n);
+    const battlePayload = s.match(/window\.BATTLE_GAME_B64="([^"]+)"/);
+    const battleHtml = battlePayload ? Buffer.from(battlePayload[1], 'base64').toString('utf8') : '';
+    ok(battleHtml.includes('FORMAÇÃO TÁTICA') && battleHtml.includes('transform-aura'), 'Dromo refeito no /game');
   } finally { kill(srv.child); }
 
   console.log('== layout raiz (upload achatado, sem pasta lobby/) ==');
-  fs.copyFileSync(path.join(fixture, 'lobby', 'Chaotic_Online_Lobby_FIX.html'), path.join(fixture, 'Chaotic_Online_Lobby_FIX.html'));
+  fs.copyFileSync(path.join(fixture, 'lobby', 'Chaotic-Online-v238.html'), path.join(fixture, 'Chaotic-Online-v238.html'));
   fs.rmSync(path.join(fixture, 'lobby'), { recursive: true, force: true });
   let srvR = null, portR = 0;
   try { ({ srv: srvR, port: portR } = await bootAny(fixture)); }
@@ -134,8 +138,8 @@ async function bootAny(fixture) {
 
   console.log('== fallback (sem lobby -> v123) ==');
   if (hasV123) {
-    fs.rmSync(path.join(fixture, 'lobby', 'Chaotic_Online_Lobby_FIX.html'), { force: true });
-    fs.rmSync(path.join(fixture, 'Chaotic_Online_Lobby_FIX.html'), { force: true });
+    fs.rmSync(path.join(fixture, 'lobby', 'Chaotic-Online-v238.html'), { force: true });
+    fs.rmSync(path.join(fixture, 'Chaotic-Online-v238.html'), { force: true });
     let srv2 = null, port2 = 0;
     try { ({ srv: srv2, port: port2 } = await bootAny(fixture)); }
     catch (e) { ok(false, 'fallback: servidor subiu', e.message); }

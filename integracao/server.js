@@ -112,7 +112,12 @@ function reseedChatSeq() {
   chatSeq = db.chat.length;
 }
 const ROOT = path.join(__dirname, '..');
-const LOBBY_CANDIDATES = [path.join(ROOT, 'lobby', 'Chaotic_Online_Lobby_FIX.html'), path.join(ROOT, 'Chaotic_Online_Lobby_FIX.html')];
+const LOBBY_CANDIDATES = [
+  path.join(ROOT, 'lobby', 'Chaotic-Online-v238.html'),
+  path.join(ROOT, 'Chaotic-Online-v238.html'),
+  path.join(ROOT, 'lobby', 'Chaotic_Online_Lobby_FIX.html'),
+  path.join(ROOT, 'Chaotic_Online_Lobby_FIX.html')
+];
 const LOBBY_FILE = LOBBY_CANDIDATES.find(f => fs.existsSync(f)) || null;
 const GAME_FILE = LOBBY_FILE || (fs.existsSync(path.join(ROOT, 'chaotic_idleworld_v123.html')) ? path.join(ROOT, 'chaotic_idleworld_v123.html') : path.join(ROOT, 'chaotic_idleworld_v122.html'));
 console.log('[boot] /game serve: ' + GAME_FILE + (LOBBY_FILE ? ' (lobby novo)' : ' (fallback v123/v122)'));

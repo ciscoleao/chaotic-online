@@ -4,9 +4,10 @@
 
 O `server.js` patcheado procura o jogo nesta ordem:
 
-1. `lobby/Chaotic_Online_Lobby_FIX.html` (pasta organizada — preferido)
-2. `Chaotic_Online_Lobby_FIX.html` (**raiz** — funciona com upload achatado)
-3. `chaotic_idleworld_v123.html` / v122 (fallback = jogo antigo)
+1. `lobby/Chaotic-Online-v238.html` (pasta organizada — preferido)
+2. `Chaotic-Online-v238.html` (**raiz** — export atual)
+3. `lobby/Chaotic_Online_Lobby_FIX.html` ou `Chaotic_Online_Lobby_FIX.html` (fallback compatível)
+4. `chaotic_idleworld_v123.html` / v122 (fallback = jogo antigo)
 
 Ou seja: **funciona do jeito que já está no repo hoje** (arquivos na raiz).
 Nada precisa ser reorganizado para o jogo entrar no ar.
@@ -22,7 +23,7 @@ Sem este passo o servidor continua servindo o v123 antigo.
    (`lobby/integracao/server.js`) → **Commit**.
    - Subir um arquivo com o mesmo nome **sobrescreve** — é isso mesmo.
 3. O Render faz redeploy sozinho. Confira o log do deploy — tem que aparecer:
-   `[boot] /game serve: .../Chaotic_Online_Lobby_FIX.html (lobby novo)`
+   `[boot] /game serve: .../Chaotic-Online-v238.html (lobby novo)`
 4. Teste: abra o site → login → Jogar → o pátio novo (drones verdes) abre.
    Sem login, `/game` redireciona para o site (comportamento normal).
 
@@ -43,14 +44,14 @@ Os arquivos do pacote na raiz (`bug_*.png`, `test_*.js`, etc.) são inofensivos
 ## Rollback (se algo der errado)
 
 - Reverta `server/server.js` para a versão anterior (GitHub: History → Revert),
-  **ou** apague/renomeie o `Chaotic_Online_Lobby_FIX.html` — o servidor volta a
+  **ou** apague/renomeie os exports do lobby — o servidor volta a
   servir o v123 sozinho (log: `(fallback v123/v122)`).
 
 ## O que o patch muda
 
 ```diff
 -const GAME_FILE = ...v123 ou v122...;
-+const LOBBY_CANDIDATES = [lobby/Chaotic_Online_Lobby_FIX.html, Chaotic_Online_Lobby_FIX.html];
++const LOBBY_CANDIDATES = [lobby/Chaotic-Online-v238.html, Chaotic-Online-v238.html, lobby/Chaotic_Online_Lobby_FIX.html, Chaotic_Online_Lobby_FIX.html];
 +const LOBBY_FILE = LOBBY_CANDIDATES.find(f => fs.existsSync(f)) || null;
 +const GAME_FILE = LOBBY_FILE || (...v123 ou v122...);
 +console.log('[boot] /game serve: ' + GAME_FILE + ...);

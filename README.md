@@ -31,8 +31,9 @@ node tests/test_editor_e2e.js     # E2E do editor com DOM falso
 
 | Pasta/arquivo | O quê |
 |---|---|
-| `Chaotic_Online_Lobby_FIX.html` | Jogo (canônico — o servidor usa este) |
-| `index.html` | Prévia standalone (o servidor não precisa dele) |
+| `Chaotic-Online-v238.html` | Jogo canônico servido por `/game`, baseado no HTML mais recente enviado |
+| `Chaotic_Online_Lobby_FIX.html` | Cópia compatível do lobby (fallback/edição legada) |
+| `index.html` | Prévia standalone |
 | `integracao/server.js` | Servidor patcheado (base: main `8a327de`) — sobrescreve `server/server.js` |
 | `integracao/server.js.diff` | Diff da mudança (3 linhas) |
 | `integracao/fixture/` | `fem.json` + `skins.json` p/ o teste E2E |
@@ -51,3 +52,23 @@ node tests/test_editor_e2e.js     # E2E do editor com DOM falso
 - `tools/lobby_sprites.js` é snapshot antigo só p/ referência.
 - Ferramentas `build_*` que leem o clone `chaotic-online/` avisam e saem
   graciosamente se ele não estiver ao lado da pasta.
+
+## Dromo de batalha
+
+A batalha embutida fica versionada em `docs/dromo/Dromo_Battle_Rework.html` para
+ser editada como HTML legível. Depois de alterar essa fonte, rode
+`python3 docs/patches/build_dromo_battle.py` para atualizar as cópias embutidas
+em `Chaotic_Online_Lobby_FIX.html` e `index.html`.
+
+A regressão estática do fluxo pode ser executada com `node tests/test_dromo_rework.js`.
+
+`Chaotic-Online-v238.html` é a cópia pública do export atual usado para a revisão;
+ela e o arquivo recebido em `../upload/Chaotic-Online-v238(1).html` permanecem com o
+mesmo Dromo embutido da fonte legível.
+
+O comando de build atualiza as três cópias públicas e, quando disponível, o anexo
+recebido em `../upload`:
+
+```bash
+python3 docs/patches/build_dromo_battle.py
+```
