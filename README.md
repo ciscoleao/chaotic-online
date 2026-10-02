@@ -78,5 +78,5 @@ python3 docs/patches/build_dromo_battle.py
 
 ## Copyright
 
-© 2026 Seu Nome – Todos os direitos reservados.  
+© 2026 Francisco de Arêa Leão – Todos os direitos reservados.  
 Este repositório está licenciado sob a **Creative Commons Attribution‑NonCommercial‑NoDerivatives 4.0 International**. Veja o arquivo `LICENSE` para detalhes.
