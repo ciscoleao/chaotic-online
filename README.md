@@ -72,3 +72,11 @@ recebido em `../upload`:
 ```bash
 python3 docs/patches/build_dromo_battle.py
 ```
+# Chaotic Online
+
+*Jogo HTML multiplayer – código aberto para visualização, mas **não pode ser usado, comercializado ou modificado** sem autorização.*
+
+## Copyright
+
+© 2026 Seu Nome – Todos os direitos reservados.  
+Este repositório está licenciado sob a **Creative Commons Attribution‑NonCommercial‑NoDerivatives 4.0 International**. Veja o arquivo `LICENSE` para detalhes.
