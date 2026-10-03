@@ -113,6 +113,7 @@ function reseedChatSeq() {
 }
 const ROOT = path.join(__dirname, '..');
 const LOBBY_CANDIDATES = [
+  path.join(ROOT, 'Chaotic-Online-v247-WebP90.html'),
   path.join(ROOT, 'lobby', 'Chaotic-Online-v238.html'),
   path.join(ROOT, 'Chaotic-Online-v238.html'),
   path.join(ROOT, 'lobby', 'Chaotic_Online_Lobby_FIX.html'),
@@ -284,7 +285,7 @@ const ANCHOR_MONSTROS = '\n// ==================================================
 const ANCHOR_NICK = 'if (!loadGame()) { checkDailyReset(); }';
 const BRIDGE = `(function(){
 "use strict";
-var KEY='chaotic_idleworld_v098_rpg', META='chaos_sync_meta_v1';
+var KEY=(typeof CONFIG!=='undefined'&&CONFIG.SAVE_KEY)||'chaotic_idleworld_v098_rpg', META='chaos_sync_meta_v1';
 function hash(x){var h=5381,i;for(i=0;i<x.length;i++)h=((h<<5)+h+x.charCodeAt(i))>>>0;return h.toString(36);}
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
@@ -867,3 +868,4 @@ process.on('SIGINT', () => flushAndExit('SIGINT'));
     console.log('Persistência: ' + (CLOUD ? 'SUPABASE (sobrevive a redeploys) ✓' : 'disco local (redeploys apagam)'));
   });
 })();
+
