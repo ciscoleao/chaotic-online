@@ -113,6 +113,8 @@ function reseedChatSeq() {
 }
 const ROOT = path.join(__dirname, '..');
 const LOBBY_CANDIDATES = [
+  // Versão nova com Sarah, enviada ao GitHub com o sufixo (2).
+  path.join(ROOT, 'Chaotic-Online-v247-WebP90 (2).html'),
   path.join(ROOT, 'Chaotic-Online-v247-WebP90.html'),
   path.join(ROOT, 'lobby', 'Chaotic-Online-v238.html'),
   path.join(ROOT, 'Chaotic-Online-v238.html'),
