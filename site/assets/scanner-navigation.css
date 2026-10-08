@@ -1,0 +1,96 @@
+/* Scanner targeting overlays stay inside the existing button bounds. */
+.nav .site-tab,
+.nav #nav-cta {
+  --scanner-color: #79ffe3;
+  position: relative;
+  isolation: isolate;
+  transition: color .2s, background .2s, box-shadow .2s;
+}
+.nav .scanner-label { position: relative; z-index: 2; }
+.nav .scanner-hud {
+  position: absolute;
+  inset: 12px 4px;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(.92);
+  transition: opacity .2s, transform .25s;
+  /* Eight short lines form the four targeting brackets. */
+  background:
+    linear-gradient(var(--scanner-color),var(--scanner-color)) left top / 10px 2px,
+    linear-gradient(var(--scanner-color),var(--scanner-color)) left top / 2px 10px,
+    linear-gradient(var(--scanner-color),var(--scanner-color)) right top / 10px 2px,
+    linear-gradient(var(--scanner-color),var(--scanner-color)) right top / 2px 10px,
+    linear-gradient(var(--scanner-color),var(--scanner-color)) left bottom / 10px 2px,
+    linear-gradient(var(--scanner-color),var(--scanner-color)) left bottom / 2px 10px,
+    linear-gradient(var(--scanner-color),var(--scanner-color)) right bottom / 10px 2px,
+    linear-gradient(var(--scanner-color),var(--scanner-color)) right bottom / 2px 10px,
+    repeating-linear-gradient(0deg,transparent 0 5px,#79ffe308 5px 6px),
+    linear-gradient(100deg,#79ffe30b,transparent 60%);
+  background-repeat: no-repeat;
+}
+.nav .scanner-hud::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  width: 2px;
+  background: linear-gradient(transparent,var(--scanner-color) 22%,#eafffa 50%,var(--scanner-color) 78%,transparent);
+  box-shadow: 0 0 8px var(--scanner-color), -8px 0 16px 4px #79ffe32b;
+}
+.nav .scanner-hud::after {
+  content: attr(data-scan);
+  position: absolute;
+  bottom: 4px;
+  right: 6px;
+  color: var(--scanner-color);
+  font: 600 7px/1 ui-monospace,monospace;
+  letter-spacing: .7px;
+  opacity: .8;
+}
+.nav .site-tab[aria-selected=true]::after {
+  box-shadow: 0 0 10px #f4ce7770;
+  transition: box-shadow .2s;
+}
+.nav #nav-cta .scanner-hud { inset: 4px; border-radius: 5px; }
+.nav #nav-cta .scanner-hud::after { font-size: 6px; bottom: 3px; }
+.nav :is(.site-tab,#nav-cta):focus-visible {
+  outline: 2px solid var(--scanner-color);
+  outline-offset: -3px;
+  color: #dffff7;
+  background: #10272a;
+  box-shadow: inset 0 0 20px #79ffe30d;
+}
+.nav :is(.site-tab,#nav-cta):focus-visible .scanner-hud { opacity: 1; transform: scale(1); }
+.nav :is(.site-tab,#nav-cta):focus-visible .scanner-hud::before { animation: chaotic-nav-scan 1.7s ease-in-out infinite; }
+@media (hover:hover) and (pointer:fine) {
+  .nav :is(.site-tab,#nav-cta):hover {
+    color: #dffff7;
+    background: #10272a;
+    box-shadow: inset 0 0 24px #79ffe30d;
+    filter: none;
+  }
+  .nav :is(.site-tab,#nav-cta):hover .scanner-label { text-shadow: 0 0 12px #79ffe380; }
+  .nav :is(.site-tab,#nav-cta):hover .scanner-hud { opacity: 1; transform: scale(1); }
+  .nav :is(.site-tab,#nav-cta):hover .scanner-hud::before { animation: chaotic-nav-scan 1.7s ease-in-out infinite; }
+}
+@keyframes chaotic-nav-scan {
+  0% { left: 0; opacity: 0; }
+  12% { opacity: 1; }
+  75% { left: calc(100% - 2px); opacity: 1; }
+  88%,100% { left: calc(100% - 2px); opacity: 0; }
+}
+@media (max-width:820px) {
+  .nav .site-tab .scanner-hud { inset: 3px 2px; }
+  .nav .site-tab .scanner-hud::after { font-size: 6px; bottom: 3px; right: 4px; letter-spacing: .2px; }
+  .nav #nav-cta .scanner-hud::after { display: none; }
+}
+@media (max-width:600px) {
+  .nav .site-tab .scanner-hud::after { display: none; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .nav :is(.site-tab,#nav-cta), .nav .scanner-hud { transition: none; }
+  .nav :is(.site-tab,#nav-cta):is(:hover,:focus-visible) .scanner-hud::before { animation: none; left: 50%; opacity: .35; }
+}

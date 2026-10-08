@@ -177,6 +177,7 @@ body.in-game .nav{display:none}
 </style>
 <link rel="stylesheet" href="/site-assets/landing.css">
 <link rel="stylesheet" href="/site-assets/experience.css?v=compact-logo-20261008">
+<link rel="stylesheet" href="/site-assets/scanner-navigation.css?v=20261008">
 </head>
 <body class="on-landing">
 <canvas id="fx-bg"></canvas>
@@ -188,14 +189,14 @@ body.in-game .nav{display:none}
     <span class="brand-name">CHAOTIC<small>ONLINE · IDLEWORLD</small></span>
   </button>
   <div class="links" role="tablist" aria-label="Conheça o jogo">
-    <button class="site-tab" id="tab-inicio" role="tab" aria-selected="true" aria-controls="panel-inicio" data-site-tab="inicio">Início</button>
-    <button class="site-tab" id="tab-explorar" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-explorar" data-site-tab="explorar">Explorar</button>
-    <button class="site-tab" id="tab-personagens" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-personagens" data-site-tab="personagens">Personagens</button>
-    <button class="site-tab" id="tab-dromos" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-dromos" data-site-tab="dromos">Dromos</button>
-    <button class="site-tab" id="tab-guia" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-guia" data-site-tab="guia">Como jogar</button>
+    <button class="site-tab" id="tab-inicio" role="tab" aria-selected="true" aria-controls="panel-inicio" data-site-tab="inicio"><span class="scanner-label">Início</span><span class="scanner-hud" aria-hidden="true" data-scan="01 / PERIM"></span></button>
+    <button class="site-tab" id="tab-explorar" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-explorar" data-site-tab="explorar"><span class="scanner-label">Explorar</span><span class="scanner-hud" aria-hidden="true" data-scan="02 / SCAN"></span></button>
+    <button class="site-tab" id="tab-personagens" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-personagens" data-site-tab="personagens"><span class="scanner-label">Personagens</span><span class="scanner-hud" aria-hidden="true" data-scan="03 / DNA"></span></button>
+    <button class="site-tab" id="tab-dromos" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-dromos" data-site-tab="dromos"><span class="scanner-label">Dromos</span><span class="scanner-hud" aria-hidden="true" data-scan="04 / BATTLE"></span></button>
+    <button class="site-tab" id="tab-guia" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-guia" data-site-tab="guia"><span class="scanner-label">Como jogar</span><span class="scanner-hud" aria-hidden="true" data-scan="05 / SYNC"></span></button>
   </div>
   <span id="nav-user"></span>
-  <button class="btn btn-gold" id="nav-cta">ENTRAR</button>
+  <button class="btn btn-gold" id="nav-cta"><span class="scanner-label">ENTRAR</span><span class="scanner-hud" aria-hidden="true" data-scan="SCANNER / ON"></span></button>
 </nav>
 
 <!-- ============ LANDING ============ -->
@@ -481,7 +482,7 @@ function showScreen(id) {
 }
 function updateNav() {
   $('nav-user').innerHTML = (ME && ME.user) ? 'Olá, <b>' + esc(ME.user) + '</b>' : '';
-  $('nav-cta').textContent = ME ? 'JOGAR' : 'ENTRAR';
+  $('nav-cta').querySelector('.scanner-label').textContent = ME ? 'JOGAR' : 'ENTRAR';
 }
 
 /* ---------- fundo animado ---------- */
