@@ -3,7 +3,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 #!/usr/bin/env python3
-"""Extrai os drones do desenho (uploads/image-1.png) para pixel-art RLE do lobby."""
+"""Extrai os drones do desenho (tools/assets/drone-referencia.png) para pixel-art RLE do lobby."""
 from PIL import Image
 import numpy as np
 from collections import deque
@@ -14,7 +14,7 @@ try:
 except ImportError:
     _HAS_SCI = False
 
-SRC = str(ROOT / 'uploads' / 'image-1.png')
+SRC = str(ROOT / 'tools' / 'assets' / 'drone-referencia.png')
 TW, TH = 48, 60          # canvas do sprite no jogo
 NCOLORS = 12             # entradas da paleta
 BG_T = 24                # limiar "preto de fundo"
@@ -162,6 +162,7 @@ for name, (cx, cy) in POSES.items():
 sheet = Image.new('RGB', (TW * 4 * len(previews) + 20, TH * 4 + 30), (24, 28, 40))
 for i, (name, pv, crop) in enumerate(previews):
     sheet.paste(pv, (10 + i * TW * 4, 10))
+(ROOT / 'previews').mkdir(parents=True, exist_ok=True)
 sheet.save(ROOT / 'previews' / 'drone_preview.png')
 json.dump(results, open(ROOT / 'tools' / 'drone_rle.json', 'w'))
 for k, v in results.items():

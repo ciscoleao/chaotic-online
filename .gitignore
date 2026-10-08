@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+server/data/
+previews/
+__pycache__/
+*.pyc
+*.tmp
+.DS_Store

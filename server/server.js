@@ -10,7 +10,7 @@
    • Captcha de 5 caracteres: código gerado no servidor, validado
      no servidor; 3 erros => bloqueio de 1h por IP (persistente)
    • Personagens (nick/sexo) salvos na conta; nick único global
-   • GET /game?char=Nick -> devolve o jogo v122 com nick + skin
+   • GET /game?char=Nick -> devolve o jogo atual com nick + skin
      feminina injetados server-side (sessão obrigatória)
    • Google OAuth pronto: preencha GOOGLE_CLIENT_ID/SECRET
    Rodar:  node server/server.js   (porta 8901)
@@ -112,18 +112,9 @@ function reseedChatSeq() {
   chatSeq = db.chat.length;
 }
 const ROOT = path.join(__dirname, '..');
-const LOBBY_CANDIDATES = [
-  // Versão nova com Sarah, enviada ao GitHub com o sufixo (2).
-  path.join(ROOT, 'Chaotic-Online-v247-WebP90 (2).html'),
-  path.join(ROOT, 'Chaotic-Online-v247-WebP90.html'),
-  path.join(ROOT, 'lobby', 'Chaotic-Online-v238.html'),
-  path.join(ROOT, 'Chaotic-Online-v238.html'),
-  path.join(ROOT, 'lobby', 'Chaotic_Online_Lobby_FIX.html'),
-  path.join(ROOT, 'Chaotic_Online_Lobby_FIX.html')
-];
-const LOBBY_FILE = LOBBY_CANDIDATES.find(f => fs.existsSync(f)) || null;
-const GAME_FILE = LOBBY_FILE || (fs.existsSync(path.join(ROOT, 'chaotic_idleworld_v123.html')) ? path.join(ROOT, 'chaotic_idleworld_v123.html') : path.join(ROOT, 'chaotic_idleworld_v122.html'));
-console.log('[boot] /game serve: ' + GAME_FILE + (LOBBY_FILE ? ' (lobby novo)' : ' (fallback v123/v122)'));
+// HTML principal; imagens, sons e scripts do jogo estão embutidos neste arquivo.
+const GAME_FILE = path.join(ROOT, 'game', 'index.html');
+console.log('[boot] /game serve: ' + GAME_FILE);
 const SITE_FILE = path.join(ROOT, 'site', 'index.html');
 const FEM_FILE = path.join(__dirname, 'fem.json');
 let SKINS = [];

@@ -1,82 +1,60 @@
-# Lobby novo (Pátio Central) — pacote p/ o repo `chaotic-online`
-
-Subpasta pronta para subir ao GitHub + integração site → login → jogar.
-Status: **248/248 testes (250/250 dentro do repo), tudo verde** ✅
-
-## Subir para o GitHub
-
-Siga **`integracao/COMO-SUBIR.md`** (resumo: pasta `lobby/` inteira vai para a
-raiz do repo; `integracao/server.js` sobrescreve `server/server.js`).
-
-## Jogar
-
-- **Online (oficial):** após subir + redeploy do Render: site → login → Jogar.
-- **Local:** abra `index.html` (cópia de `Chaotic_Online_Lobby_FIX.html`).
-
-> Para editar o jogo, altere `Chaotic_Online_Lobby_FIX.html` e regenere
-> `index.html` como cópia.
-
-## Testes (Node, a partir desta pasta)
-
-```bash
-node tests/test_lobby_depth.js    # 130: conectividade, colisão, atores, chevrons
-node tests/test_lobby_meta.js     # 39: pixel-art RLE, anúncios, scans, quarto
-node tests/test_lobby_fix.js      # 61 (19 + 22 música + 3 texturas + 4 zoom/autostart + 6 sem-clique + 7 rebuild): regressões vs. uploads/Chaotic_Online_Lobby_Teste.html
-node tests/test_lobby_server.js   # 18 (20 no repo): /game nos 2 layouts + fallback
-node tests/test_editor_mapa.js    # editor de mapa (pula 1 check sem o clone)
-node tests/test_editor_e2e.js     # E2E do editor com DOM falso
-```
-
-## Estrutura
-
-| Pasta/arquivo | O quê |
-|---|---|
-| `Chaotic-Online-v238.html` | Jogo canônico servido por `/game`, baseado no HTML mais recente enviado |
-| `Chaotic_Online_Lobby_FIX.html` | Cópia compatível do lobby (fallback/edição legada) |
-| `index.html` | Prévia standalone |
-| `integracao/server.js` | Servidor patcheado (base: main `8a327de`) — sobrescreve `server/server.js` |
-| `integracao/server.js.diff` | Diff da mudança (3 linhas) |
-| `integracao/fixture/` | `fem.json` + `skins.json` p/ o teste E2E |
-| `integracao/COMO-SUBIR.md` | Passo a passo (2 arquivos) + rollback |
-| `tests/` | 6 suítes, caminhos relativos |
-| `tools/` | Geradores e editores (drones, pixel-art, mapa, demos) + música (`lobby_music_snippet.js` 7 faixas, harness 65, `build_music_lab.py`, `preview_musica.py`) |
-| `previews/` | Prévias dos sprites + `musica_lobby_preview.wav` (64s = 2 loops) |
-| `debug/` | Grids, zooms e mockups da depuração visual |
-| `uploads/` | Screenshots + baseline `Chaotic_Online_Lobby_Teste.html` |
-| `CONTINUIDADE.md` | Handoff técnico p/ continuar o desenvolvimento |
-
-## Notas
-
-- Pixel-art do pátio em RLE próprio: `/(\d+)(\.|[a-z])/g` (`.` = transparente,
-  letras = índice da paleta), decodificado em `lobbySpriteCanvas()` no HTML.
-- `tools/lobby_sprites.js` é snapshot antigo só p/ referência.
-- Ferramentas `build_*` que leem o clone `chaotic-online/` avisam e saem
-  graciosamente se ele não estiver ao lado da pasta.
-
-## Dromo de batalha
-
-A batalha embutida fica versionada em `docs/dromo/Dromo_Battle_Rework.html` para
-ser editada como HTML legível. Depois de alterar essa fonte, rode
-`python3 docs/patches/build_dromo_battle.py` para atualizar as cópias embutidas
-em `Chaotic_Online_Lobby_FIX.html` e `index.html`.
-
-A regressão estática do fluxo pode ser executada com `node tests/test_dromo_rework.js`.
-
-`Chaotic-Online-v238.html` é a cópia pública do export atual usado para a revisão;
-ela e o arquivo recebido em `../upload/Chaotic-Online-v238(1).html` permanecem com o
-mesmo Dromo embutido da fonte legível.
-
-O comando de build atualiza as três cópias públicas e, quando disponível, o anexo
-recebido em `../upload`:
-
-```bash
-python3 docs/patches/build_dromo_battle.py
-```
 # Chaotic Online
 
-*Jogo HTML multiplayer – código aberto para visualização, mas **não pode ser usado, comercializado ou modificado** sem autorização.*
+Jogo HTML com servidor Node.js para contas, personagens, chat, duelos e progresso salvo.
+
+## Organização
+
+| Caminho | Conteúdo |
+|---|---|
+| `game/index.html` | Versão atual do jogo, com imagens e scripts embutidos |
+| `site/index.html` | Página inicial, login e seleção de personagem |
+| `server/` | Servidor, dados das skins e personagem feminina |
+| `tools/` | Editores, laboratório de música e ferramentas de criação |
+| `tools/assets/` | Referências necessárias às ferramentas |
+| `creatures/` | Banco, fontes e ferramentas das criaturas |
+| `tests/` | Verificações do servidor atual e do editor |
+| `docs/` | Publicação e persistência |
+| `docs/historico/` | Anotações, patches e testes de versões anteriores |
+
+## Executar
+
+Requer Node.js 18 ou superior. O servidor não usa dependências externas.
+
+```bash
+npm start
+```
+
+Abra `http://localhost:8901`. A página inicial está em `/`; o jogo autenticado está em `/game`.
+O servidor lê `game/index.html`. Ao atualizar o jogo, substitua esse arquivo e mantenha o mesmo caminho.
+
+## Verificar
+
+```bash
+npm test
+```
+
+Os testes usam dados temporários e não acessam as contas reais nem o Supabase.
+Os arquivos em `docs/historico/` são referências antigas e não fazem parte desta suíte.
+
+## Render e Supabase
+
+O serviço existente usa `npm start` na raiz do repositório. Alterações na branch `main` acionam o deploy automático.
+As variáveis `PORT`, `SUPABASE_URL`, `SUPABASE_KEY` e `SUPABASE_TABLE` continuam sendo lidas pelo servidor.
+Consulte [PUBLICAR.md](docs/PUBLICAR.md) antes de atualizar um serviço com jogadores.
+O arquivo local `server/data/db.json` é criado durante a execução e não deve ser enviado ao GitHub.
+
+## Ferramentas
+
+- Abra `tools/editor-mapa-patio.html` para usar o editor de mapa.
+- Abra `tools/Testar_Musicas.html` para testar as faixas.
+- `python3 tools/build_music_lab.py` regenera o laboratório na pasta `tools/`.
+- As ferramentas Python de imagens precisam de Pillow; a extração de drones também usa NumPy.
+- Prévias geradas ficam em `previews/` e não são versionadas.
+- Geradores antigos que pedem um clone ou HTML de versão anterior são referências de desenvolvimento; revise os caminhos antes de executá-los.
 
 ## Copyright
 
-© 2026 Francisco de Arêa Leão – Todos os direitos reservados.  
-Este repositório está licenciado sob a **Creative Commons Attribution‑NonCommercial‑NoDerivatives 4.0 International**. Veja o arquivo `LICENSE` para detalhes.
+© 2026 Francisco de Arêa Leão — Todos os direitos reservados.
+
+Código aberto para visualização, mas não pode ser usado, comercializado ou modificado sem autorização.
+Este repositório está licenciado sob a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International.

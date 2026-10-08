@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const SNIPPET = path.join(__dirname, 'lobby_music_snippet.js');
-const LAB = path.join(__dirname, '..', 'Testar_Musicas.html');
+const LAB = path.join(__dirname, 'Testar_Musicas.html');
 let pass = 0, fail = 0;
 const ok = (cond, name, extra = '') => {
   if (cond) { pass++; console.log('  ✅ ' + name); }

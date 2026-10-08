@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Monta Testar_Musicas.html: o motor (lobby_music_snippet.js) + pagina de teste.
 
-Uso: python3 build_music_lab.py  (gera Testar_Musicas.html na raiz do pacote)
+Uso: python3 tools/build_music_lab.py  (gera tools/Testar_Musicas.html)
 Funciona no workspace (/home/user) e em lobby/tools/.
 """
 import os
@@ -15,7 +15,7 @@ ROOT = os.path.dirname(HERE) if os.path.basename(HERE) == 'tools' else HERE
 CANDIDATES = [os.path.join(ROOT, 'tools', 'lobby_music_snippet.js'),
               os.path.join(ROOT, 'lobby_music_snippet.js')]
 SNIPPET = next((p for p in CANDIDATES if os.path.exists(p)), CANDIDATES[-1])
-OUT = os.path.join(ROOT, 'Testar_Musicas.html')
+OUT = os.path.join(HERE, 'Testar_Musicas.html')
 
 TRACKS = [
     ('patio', '🛸', 'Pátio Central + Ilha dos Dromos', 'Dark sci-fi ambient em Ré menor'),
