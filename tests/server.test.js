@@ -11,7 +11,7 @@ const crypto = require('node:crypto');
 test('site, skins, personagens e progresso sobrevivem à organização e ao restart', async () => {
   const root = path.resolve(__dirname, '..');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chaotic-cleanup-test-'));
-  const files = ['package.json', 'game/index.html', 'site/index.html', 'server/server.js', 'server/auth-security.js', 'server/fem.json', 'server/skins.json'];
+  const files = ['package.json', 'game/index.html', 'site/index.html', 'server/server.js', 'server/auth-security.js', 'server/movement-sprites.js', 'server/fem.json', 'server/skins.json'];
   for (const file of files) {
     const target = path.join(dir, file);
     fs.mkdirSync(path.dirname(target), { recursive: true });

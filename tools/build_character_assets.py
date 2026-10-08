@@ -2,7 +2,7 @@
 """Importa GIFs de 8 direções sem redesenhar os personagens.
 
 O verde sólido é a chave de transparência do sprite. Os GIFs públicos
-continuam com 64x64; o atlas segue o contrato 48x48 do motor existente.
+continuam com 64x64; o atlas de movimento é criado por build_movement_assets.py em 64x64.
 Os arquivos enviados contêm poses de rotação, não quadros de caminhada.
 """
 from pathlib import Path
@@ -28,13 +28,9 @@ def main():
                        append_images=frames[1:], duration=durations, loop=0,
                        disposal=2, transparency=0, optimize=False)
         frames[0].save(ASSETS / f'hero-{kind}.webp', lossless=True)
-        atlas = Image.new('RGBA', (384, 336))
-        # S, SE, E, NE, N, NW, W, SW, na mesma ordem do motor.
-        for column, frame in enumerate(frames):
-            pose = frame.resize((48, 48), Image.Resampling.NEAREST)
-            for row in range(7):
-                atlas.paste(pose, (column * 48, row * 48))
-        atlas.save(ASSETS / f'hero-{kind}-atlas.png')
+        # Atlas atual: importar as seis poses reais, sem reduzir para 48px.
+        from build_movement_assets import build
+        build(kind).save(ASSETS / f'hero-{kind}-atlas.png')
 
 if __name__ == '__main__':
     main()

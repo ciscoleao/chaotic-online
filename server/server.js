@@ -20,6 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const security = require('./auth-security');
+const { patchMovementSprites } = require('./movement-sprites');
 const oauthStates = security.createOAuthStates();
 
 const CFG = {
@@ -355,7 +356,7 @@ if(mode==='local')queue();
 })();`
 const ANCHOR_BOOT = 'if (!loadGame()) { checkDailyReset(); }';
 function buildGame(ch, acc, sessId) {
-  let html = fs.readFileSync(GAME_FILE, 'utf8');
+  let html = patchMovementSprites(fs.readFileSync(GAME_FILE, 'utf8'));
   const useLegacyFemale = ch.sex === 'f' && ch.skin !== 'nova-rosa' && accountVip(acc);
   const atlasData = kind => 'data:image/png;base64,' + fs.readFileSync(path.join(ROOT, 'site/assets/hero-' + kind + '-atlas.png')).toString('base64');
   html = html.replace(/const MAIN_HERO_ATLAS_DATA = '[^']+';/, 'const MAIN_HERO_ATLAS_DATA = ' + JSON.stringify(atlasData('m')) + ';');
