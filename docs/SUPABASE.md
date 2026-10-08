@@ -83,3 +83,19 @@ Essa linha confirma a presença das variáveis de ambiente, não o sucesso do sa
 Enquanto o Supabase estiver OK, o servidor grava lá a cada poucos segundos
 (debounce) e também **no encerramento** (quando o Render redeploya, o
 processo recebe SIGTERM e salva antes de sair).
+
+## Salvamento ao recarregar ou fechar o jogo
+
+Compras e recompensas atualizam o save local e iniciam o envio ao servidor.
+O navegador só considera o snapshot confirmado depois de receber uma resposta
+HTTP bem-sucedida com `ok: true`; em caso de erro ou timeout, tenta novamente
+e mostra um aviso para manter o jogo aberto. F5 preserva um snapshot local
+que ainda não foi confirmado, em vez de substituí-lo por um save anterior.
+Ao ocultar ou fechar a página, o jogo tenta enviar o estado atual com
+`fetch` e `keepalive`, incluindo a autenticação da sessão.
+
+A confirmação do servidor e os logs `[save]` não comprovam, sozinhos, a gravação
+no Supabase. Antes de publicar ou fechar todas as janelas anônimas, confira
+a gravação na nuvem e depois a recuperação do progresso em uma sessão nova.
+Se uma janela anônima for encerrada sem confirmação do envio, seu cache local
+não estará disponível para uma nova tentativa.
