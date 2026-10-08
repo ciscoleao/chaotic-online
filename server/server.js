@@ -285,27 +285,78 @@ function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 var local=lsGet(KEY), meta=null;
 try{meta=JSON.parse(lsGet(META)||'null');}catch(e){meta=null;}
 var srv=window.CHAOS_SAVE||null, srvAt=window.CHAOS_SAVE_AT||0;
-var synced=!!(local&&meta&&meta.h===hash(local));
+// Metadados antigos registravam tentativas como sucesso. Só uma resposta
+// positiva do servidor pode confirmar um snapshot a partir desta versão.
+var synced=!!(local&&meta&&meta.confirmed===true&&meta.h===hash(local));
 var mode;
 if(!srv) mode=local?'local':'none';
 else if(!local) mode='server';
-else mode=synced?'server':'local';
-if(mode==='server'){ lsSet(KEY,srv); meta={h:hash(srv),at:srvAt}; lsSet(META,JSON.stringify(meta)); }
+else mode=(local===srv||(synced&&srvAt>=meta.at))?'server':'local';
+if(mode==='server'){ lsSet(KEY,srv); meta={h:hash(srv),at:srvAt,confirmed:true}; lsSet(META,JSON.stringify(meta)); }
 window.__CHAOS_SYNC=mode;
-var t=null,lastPushed=null;
-function push(){
-  var d=lsGet(KEY); if(!d||d===lastPushed) return; lastPushed=d;
-  try{fetch('/api/save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({data:d}),keepalive:true}).catch(function(){});}catch(e){}
-  meta={h:hash(d),at:Date.now()}; lsSet(META,JSON.stringify(meta));
+var t=null,inFlight=null,lastPushed=mode==='server'?srv:null;
+var retryDelay=1000,warned=false,sequence=0,confirmedSequence=0,serverAt=srvAt;
+function queue(delay){ if(t!==null)return; t=setTimeout(function(){t=null;push(false);},delay||0); }
+async function push(leaving){
+  if(window.__chaosTransferido152)return;
+  var d=lsGet(KEY); if(!d||d===lastPushed)return;
+  if(inFlight&&(!leaving||inFlight===d))return;
+  var seq=++sequence,failed=false,controller=null,timeout=null;
+  if(!leaving){
+    inFlight=d;
+    if(typeof AbortController!=='undefined'){
+      controller=new AbortController();
+      timeout=setTimeout(function(){controller.abort();},10000);
+    }
+  }
+  try{
+    var options={method:'POST',headers:{'content-type':'application/json','x-session':window.SESSION_TOKEN||''},body:JSON.stringify({data:d,baseUpdatedAt:serverAt}),keepalive:true};
+    if(controller)options.signal=controller.signal;
+    var response=await fetch('/api/save',options);
+    if(response.status===409){
+      var conflict=await response.json();
+      if(conflict&&typeof conflict.updatedAt==='number')serverAt=Math.max(serverAt,conflict.updatedAt);
+      throw new Error('Snapshot anterior; reenviando o estado atual');
+    }
+    if(!response.ok)throw new Error('HTTP '+response.status);
+    var result=await response.json();
+    if(!result||result.ok!==true)throw new Error('Progresso não confirmado');
+    if(typeof result.updatedAt==='number')serverAt=Math.max(serverAt,result.updatedAt);
+    if(seq>=confirmedSequence){
+      confirmedSequence=seq;lastPushed=d;
+      meta={h:hash(d),at:result.updatedAt||Date.now(),confirmed:true};
+      lsSet(META,JSON.stringify(meta));
+    }
+    retryDelay=1000;warned=false;
+  }catch(e){
+    failed=true;
+    if(!warned&&typeof showNotif==='function'){
+      warned=true;
+      showNotif('Não foi possível confirmar o salvamento. Vou tentar novamente; mantenha o jogo aberto.','warning');
+    }
+  }finally{
+    if(timeout!==null)clearTimeout(timeout);
+    if(!leaving&&inFlight===d)inFlight=null;
+    if(failed){queue(retryDelay);retryDelay=Math.min(retryDelay*2,10000);}
+    else if(lsGet(KEY)!==lastPushed)queue();
+  }
 }
-function queue(){ if(t)clearTimeout(t); t=setTimeout(push,2500); }
 try{
   var _sg=saveGame;
   saveGame=function(silent){ var r=_sg(silent); queue(); return r; };
 }catch(e){}
-window.addEventListener('pagehide',function(){ try{ var d=lsGet(KEY); if(d&&d!==lastPushed&&navigator.sendBeacon){ navigator.sendBeacon('/api/save/beacon',new Blob([JSON.stringify({data:d})],{type:'application/json'})); lastPushed=d; } }catch(e){} });
-document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') push(); });
-if(mode==='local') setTimeout(push,1200);
+function flush(){
+  if(window.__chaosTransferido152)return;
+  try{saveGame(true);}catch(e){}
+  if(t!==null){clearTimeout(t);t=null;}
+  // keepalive também envia o header de sessão; sendBeacon não o suporta.
+  // Iniciar este envio não transforma os dados locais em dados confirmados.
+  push(true);
+}
+window.addEventListener('pagehide',flush);
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden')flush(); });
+window.addEventListener('online',function(){ if(t!==null){clearTimeout(t);t=null;}push(false); });
+if(mode==='local')queue();
 })();`
 const ANCHOR_BOOT = 'if (!loadGame()) { checkDailyReset(); }';
 function buildGame(ch, acc, sessId) {
@@ -736,7 +787,13 @@ async function route(req, res) {
     const data = typeof body.data === 'string' ? body.data : '';
     if (!data || data.length > 250000) return json(res, 400, { err: 'save inválido' });
     try { const o = JSON.parse(data); if (!o || typeof o !== 'object') throw new Error('x'); } catch (e) { return json(res, 400, { err: 'save corrupto' }); }
-    db.saves[acc.email] = { data, updatedAt: Date.now() };
+    const previousAt = db.saves[acc.email] ? db.saves[acc.email].updatedAt : 0;
+    // Compare-and-set impede que um envio antigo, ainda em trânsito durante
+    // F5/pagehide, sobrescreva um snapshot que já foi aceito.
+    if (body.baseUpdatedAt !== undefined && body.baseUpdatedAt !== previousAt) {
+      return json(res, 409, { err: 'O progresso salvo mudou; reenvie o estado atual.', updatedAt: previousAt });
+    }
+    db.saves[acc.email] = { data, updatedAt: Math.max(Date.now(), previousAt + 1) };
     saveDB();
     console.log('[save]', acc.email, '(' + data.length + ' B)');
     return json(res, 200, { ok: true, updatedAt: db.saves[acc.email].updatedAt });

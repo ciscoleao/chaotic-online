@@ -68,6 +68,20 @@ test('site, skins, personagens e progresso sobrevivem à organização e ao rest
     const progress = JSON.stringify({ player: { name: 'Teste', lvl: 5, sarah299: { stage: 1, active: true, progress: 7200000, acceptedAt: 1 } } });
     r = await fetch(base + '/api/save', { method: 'POST', headers, body: JSON.stringify({ data: progress }) });
     assert.equal(r.status, 200);
+    const firstAt = (await r.json()).updatedAt;
+    const purchase = JSON.stringify({ player: { name: 'Teste', pilhas: 35, bits: 20, xp: 25 } });
+    r = await fetch(base + '/api/save', { method: 'POST', headers, body: JSON.stringify({ data: purchase, baseUpdatedAt: firstAt }) });
+    assert.equal(r.status, 200);
+    const purchaseAt = (await r.json()).updatedAt;
+    assert(purchaseAt > firstAt);
+    // Simula um request anterior que só chega depois da compra.
+    r = await fetch(base + '/api/save', { method: 'POST', headers, body: JSON.stringify({ data: progress, baseUpdatedAt: firstAt }) });
+    assert.equal(r.status, 409);
+    assert.equal((await r.json()).updatedAt, purchaseAt);
+    r = await fetch(base + '/api/save', { headers });
+    assert.equal((await r.json()).data, purchase);
+    r = await fetch(base + '/api/save', { method: 'POST', headers, body: JSON.stringify({ data: progress, baseUpdatedAt: purchaseAt }) });
+    assert.equal(r.status, 200);
     r = await fetch(base + '/api/save', { headers });
     assert.equal((await r.json()).data, progress);
     for (const ch of chars) {
