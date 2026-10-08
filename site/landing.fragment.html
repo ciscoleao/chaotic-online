@@ -1,0 +1,109 @@
+<!-- ============ NAV ============ -->
+<nav class="nav" aria-label="Navegação principal">
+  <button class="brand" data-open-tab="inicio" aria-label="Chaotic Online — início">
+    <img class="brand-logo" src="/site-assets/logo-chaotic.png" alt="Chaotic Idle World" width="74" height="65">
+    <span class="brand-name">CHAOTIC<small>ONLINE · IDLEWORLD</small></span>
+  </button>
+  <div class="links" role="tablist" aria-label="Conheça o jogo">
+    <button class="site-tab" id="tab-inicio" role="tab" aria-selected="true" aria-controls="panel-inicio" data-site-tab="inicio">Início</button>
+    <button class="site-tab" id="tab-explorar" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-explorar" data-site-tab="explorar">Explorar</button>
+    <button class="site-tab" id="tab-personagens" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-personagens" data-site-tab="personagens">Personagens</button>
+    <button class="site-tab" id="tab-dromos" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-dromos" data-site-tab="dromos">Dromos</button>
+    <button class="site-tab" id="tab-guia" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-guia" data-site-tab="guia">Como jogar</button>
+  </div>
+  <span id="nav-user"></span>
+  <button class="btn btn-gold" id="nav-cta">ENTRAR</button>
+</nav>
+
+<!-- ============ LANDING ============ -->
+<section class="screen active" id="screen-landing" aria-label="Conheça Chaotic Online">
+  <main class="site-main">
+    <section class="site-panel" id="panel-inicio" role="tabpanel" aria-labelledby="tab-inicio" tabindex="0">
+      <div class="home-grid">
+        <div class="home-copy">
+          <div class="eyebrow" id="server-status" role="status"><span class="status-dot" aria-hidden="true"></span><span id="server-status-text">CONECTANDO A PERIM</span></div>
+          <img class="home-logo" src="/site-assets/logo-chaotic.png" alt="Chaotic Idle World" width="180" height="158">
+          <h1>Seu Scanner.<br>Seu mundo.<br><em>Sua história.</em></h1>
+          <p>Entre no universo de <strong>Chaotic</strong>. Explore Perim, escaneie criaturas e leve sua coleção para os <strong>Dromos</strong>.</p>
+          <div class="home-actions">
+            <button class="btn btn-gold" id="btn-play-now">JOGAR AGORA <span aria-hidden="true">↗</span></button>
+            <button class="btn btn-ghost" id="btn-create-account">Criar conta</button>
+          </div>
+          <p class="home-note">Grátis para começar · Direto no navegador</p>
+          <button class="text-action" data-open-tab="explorar">Conheça Perim <span aria-hidden="true">→</span></button>
+        </div>
+        <div class="world-stage">
+          <img class="stage-image" data-site-image="patio" alt="Arte atual do Pátio Central de Chaotic Online" width="1280" height="960" fetchpriority="high">
+          <span class="stage-label">BEM-VINDO AO PÁTIO CENTRAL</span>
+          <div class="stage-caption">
+            <div><strong>Sua jornada começa aqui.</strong><small>Explore, colecione e desafie os Mestres.</small></div>
+            <div class="stage-avatars" aria-label="Personagens atuais do jogo">
+              <img class="avatar-gif" src="/site-assets/hero-m.gif" alt="Portador masculino atual" width="48" height="48">
+              <img class="avatar-gif" src="/site-assets/hero-f.gif" alt="Portadora feminina atual" width="48" height="48">
+            </div>
+            <button class="stage-go" data-open-tab="personagens" aria-label="Conhecer os personagens">→</button>
+          </div>
+        </div>
+      </div>
+      <div class="fact-strip">
+        <div class="fact"><strong data-count="creatures">120</strong><span>espécies no<br>banco de criaturas</span></div>
+        <div class="fact"><strong data-count="tribes">4</strong><span>tribos para<br>descobrir</span></div>
+        <div class="fact"><strong data-count="masters">7</strong><span>Mestres<br>do Código</span></div>
+        <div class="fact-last">Uma aventura de fãs, inspirada em Chaotic.<br>Computador e celular.</div>
+      </div>
+    </section>
+
+    <section class="site-panel" id="panel-explorar" role="tabpanel" aria-labelledby="tab-explorar" tabindex="0" hidden>
+      <div class="panel-heading"><div><div class="eyebrow">O MUNDO DE PERIM</div><h2>Escolha seu próximo destino.</h2></div><p>Veja as artes da versão atual do jogo.<br>Cada lugar traz uma nova parte da sua jornada.</p></div>
+      <div class="explore-grid">
+        <div class="location-list" role="group" aria-label="Destinos de Perim">
+          <button class="location-button" data-location="patio" aria-pressed="true"><span aria-hidden="true">⌂</span>Pátio Central</button>
+          <button class="location-button" data-location="floresta" aria-pressed="false"><span aria-hidden="true">♧</span>Floresta da Vida</button>
+          <button class="location-button" data-location="submundo" aria-pressed="false"><span aria-hidden="true">♨</span>Submundo</button>
+          <button class="location-button" data-location="caverna" aria-pressed="false"><span aria-hidden="true">◇</span>Caverna Secreta</button>
+          <button class="location-button" data-location="quarto" aria-pressed="false"><span aria-hidden="true">▧</span>Seu quarto</button>
+        </div>
+        <figure class="map-view"><img id="world-art" alt="Arte atual do Pátio Central" width="1280" height="960" loading="lazy"><figcaption class="map-caption"><span id="world-tag">SEU PONTO DE PARTIDA</span><strong id="world-name">Pátio Central</strong></figcaption></figure>
+        <div class="location-details" aria-live="polite"><h3 id="world-title">Pátio Central</h3><p id="world-description"></p><ul class="detail-list" id="world-features"></ul><button class="text-action" data-play>Começar a explorar <span aria-hidden="true">→</span></button></div>
+      </div>
+    </section>
+
+    <section class="site-panel" id="panel-personagens" role="tabpanel" aria-labelledby="tab-personagens" tabindex="0" hidden>
+      <div class="panel-heading"><div><div class="eyebrow">PORTADORES E CRIATURAS</div><h2>Um Scanner. Muitas possibilidades.</h2></div><p>Conheça os personagens com os GIFs originais.<br>A versão feminina clássica é exclusiva para VIP.</p></div>
+      <div class="character-grid">
+        <article class="avatar-card"><span class="avatar-tag">PORTADOR DE SCANNER</span><img id="hero-m" class="avatar-gif" src="/site-assets/hero-m.gif" width="64" height="64" alt="Caçador em oito direções"><h3>Caçador</h3><p>Seu personagem para explorar Perim, encontrar outros jogadores e entrar nos Dromos.</p><span class="avatar-available">VISUAL ATUAL · MASCULINO</span></article>
+        <article class="avatar-card female"><span class="avatar-tag">PORTADORA DE SCANNER</span><img id="hero-f" class="avatar-gif" src="/site-assets/hero-f.gif" width="64" height="64" alt="Caçadora de camisa rosa em oito direções"><h3>Caçadora</h3><p>Sua nova portadora de Scanner, com camisa rosa e poses em oito direções. O visual feminino clássico fica reservado para VIP.</p><span class="avatar-available">CAMISA ROSA · NOVA PERSONAGEM</span></article>
+        <aside class="tribe-collection"><h3>Sua coleção de Perim</h3><p><span data-count="creatures">120</span> espécies distribuídas entre as quatro tribos do banco atual.</p><div class="tribe-list">
+          <div class="tribe"><span class="tribe-symbol ow" aria-hidden="true">♧</span><div><b>OverWorld</b><small>Terras do mundo superior</small></div><span class="tribe-count" data-tribe-count="OverWorld">30</span></div>
+          <div class="tribe"><span class="tribe-symbol uw" aria-hidden="true">♨</span><div><b>UnderWorld</b><small>Profundezas do submundo</small></div><span class="tribe-count" data-tribe-count="UnderWorld">30</span></div>
+          <div class="tribe"><span class="tribe-symbol dn" aria-hidden="true">◇</span><div><b>Danian</b><small>A força da colmeia</small></div><span class="tribe-count" data-tribe-count="Danian">30</span></div>
+          <div class="tribe"><span class="tribe-symbol mp" aria-hidden="true">≋</span><div><b>Mipedian</b><small>Os caminhos do deserto</small></div><span class="tribe-count" data-tribe-count="Mipedian">30</span></div>
+        </div><p class="collection-note">Aproxime-se das criaturas e use o Scanner para registrar seus Scans.</p><button class="text-action" data-play>Criar minha coleção <span aria-hidden="true">→</span></button></aside>
+      </div>
+    </section>
+
+    <section class="site-panel" id="panel-dromos" role="tabpanel" aria-labelledby="tab-dromos" tabindex="0" hidden>
+      <div class="panel-heading"><div><div class="eyebrow">BATALHAS DE DROMO</div><h2>Sua coleção entra em campo.</h2></div><p>Prepare sua equipe, escolha seus mapas<br>e teste sua estratégia em tempo real.</p></div>
+      <div class="battle-grid">
+        <figure class="battle-art"><img data-site-image="dromos" alt="Arte atual da Ilha dos Dromos" width="1280" height="960" loading="lazy"><figcaption class="map-caption"><span>O DESAFIO DOS MESTRES</span><strong>Ilha dos Dromos</strong></figcaption></figure>
+        <div class="battle-details"><h3>Prepare. Transforme. Batalhe.</h3><p>Leve três criaturas para a sala de preparação, distribua seus equipamentos e selecione três campos de batalha. No Dromo, movimento e habilidades fazem parte da estratégia.</p><div class="battle-rules"><div><strong>3</strong><small>criaturas na equipe</small></div><div><strong>3</strong><small>mapas selecionados</small></div><div><strong data-count="masters">7</strong><small>Mestres do Código</small></div></div><div class="masters-label">CONHEÇA OS SEUS DESAFIOS</div><ul class="master-list" id="master-list" aria-label="Mestres do Código"></ul><p style="margin-top:15px">Enfrente os Mestres ou desafie outro jogador em um duelo PvP.</p><button class="text-action" data-play>Entrar em Chaotic <span aria-hidden="true">→</span></button></div>
+      </div>
+      <div class="dromo-gallery" aria-label="Imagens das batalhas de Dromo">
+        <button class="dromo-shot" data-dromo-image><img src="/site-assets/dromo-preparacao.png" alt="Sala de preparação: escolha das criaturas e equipamentos" loading="lazy"><span>01 · Prepare sua equipe ↗</span></button>
+        <button class="dromo-shot" data-dromo-image><img src="/site-assets/dromo-equipe.png" alt="Formação das equipes para o confronto no Dromo" loading="lazy"><span>02 · Organize o confronto ↗</span></button>
+        <button class="dromo-shot" data-dromo-image><img src="/site-assets/dromo-batalha.png" alt="Batalha em andamento dentro da arena do Dromo" loading="lazy"><span>03 · Entre na arena ↗</span></button>
+      </div>
+    </section>
+
+    <section class="site-panel" id="panel-guia" role="tabpanel" aria-labelledby="tab-guia" tabindex="0" hidden>
+      <div class="panel-heading"><div><div class="eyebrow">SEU PRIMEIRO SCAN</div><h2>Comece a sua jornada.</h2></div><p>Crie seu portador, conheça o Pátio<br>e siga para a sua primeira exploração.</p></div>
+      <div class="guide-grid"><div class="guide-steps">
+        <article class="guide-step"><span class="guide-number">01</span><h3>Crie sua conta</h3><p>Cadastre seu usuário, confirme a senha e conclua a verificação exibida na tela.</p></article>
+        <article class="guide-step"><span class="guide-number">02</span><h3>Ative seu Scanner</h3><p>Escolha um nick e o visual masculino ou feminino. Seu personagem fica vinculado à conta.</p></article>
+        <article class="guide-step"><span class="guide-number">03</span><h3>Explore e escaneie</h3><p>Conheça as missões do Pátio, atravesse os portais e use pilhas para registrar criaturas.</p></article>
+        <article class="guide-step"><span class="guide-number">04</span><h3>Prepare sua equipe</h3><p>Organize seus Scans e equipamentos. Visite a Ilha dos Dromos para começar os desafios.</p></article>
+      </div><div><aside class="controls-box"><div class="controls-title"><h3>Os controles</h3><div class="device-controls" role="group" aria-label="Tipo de dispositivo"><button class="device-button" data-device="pc" aria-pressed="true">PC</button><button class="device-button" data-device="mobile" aria-pressed="false">Celular</button></div></div><div class="controls-list" id="controls-pc"><div class="control"><kbd>W A S D</kbd><span>Movimentar</span></div><div class="control"><kbd>CLIQUE</kbd><span>Ir até um ponto</span></div><div class="control"><kbd>E</kbd><span>Interagir</span></div><div class="control"><kbd>I</kbd><span>Inventário</span></div><div class="control"><kbd>Q</kbd><span>Scanner</span></div></div><div class="controls-list" id="controls-mobile" hidden><div class="control wide"><kbd>JOYSTICK</kbd><span>Use o controle de movimento na tela.</span></div><div class="control wide"><kbd>TOQUE</kbd><span>Toque nos botões de ação e nos painéis do jogo.</span></div></div><div class="save-note"><strong>Seu progresso acompanha você.</strong>Use sua conta para voltar ao jogo. Se aparecer um aviso de salvamento, mantenha o jogo aberto até o envio ser confirmado.</div></aside><div class="guide-actions"><button class="btn btn-gold" id="btn-play-now2">COMEÇAR A JOGAR <span aria-hidden="true">↗</span></button></div></div></div>
+    </section>
+  </main>
+  <footer class="site-footer"><span><b>CHAOTIC ONLINE</b> · Fan game não oficial inspirado em Chaotic™.</span><span>Em desenvolvimento · <button class="footer-link" data-open-tab="guia">Guia para novos portadores ↗</button></span></footer>
+</section>

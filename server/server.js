@@ -4,9 +4,8 @@
    ------------------------------------------------------------
    • Contas reais (email+usuário+senha scrypt) em server/data/db.json
    • Sessões com cookie HttpOnly (sobrevivem a restart)
-   • Cloudflare Turnstile VERIFICADO no servidor (siteverify)
-       - SITEKEY/SECRET abaixo = chaves de TESTE da Cloudflare
-         (sempre passam). Troque pelas suas chaves reais em produção.
+   • Cloudflare Turnstile: chaves reais no ambiente, siteverify, ação e domínio.
+       Sem chaves válidas em produção, a verificação não libera acesso.
    • Captcha de 5 caracteres: código gerado no servidor, validado
      no servidor; 3 erros => bloqueio de 1h por IP (persistente)
    • Personagens (nick/sexo) salvos na conta; nick único global
@@ -20,12 +19,19 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const security = require('./auth-security');
+const oauthStates = security.createOAuthStates();
 
 const CFG = {
   PORT: Number(process.env.PORT || 8901),
-  // Cloudflare Turnstile — CHAVES DE TESTE (doc oficial; sempre passam no widget 1x…AA)
-  SITEKEY: '1x00000000000000000000AA',
-  SECRET: '1x0000000000000000000000000000000AA',
+  // Chaves de teste apenas no desenvolvimento; produção exige variáveis reais.
+  PRODUCTION: process.env.NODE_ENV === 'production' || process.env.RENDER === 'true',
+  LOCAL_TEST: process.env.TURNSTILE_LOCAL_TEST === 'true',
+  TRUST_PROXY: process.env.RENDER === 'true',
+  PUBLIC_URL: process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || '',
+  SITEKEY: process.env.TURNSTILE_SITE_KEY || process.env.TURNSTILE_SITEKEY || (process.env.NODE_ENV === 'production' || process.env.RENDER === 'true' ? '' : '1x00000000000000000000AA'),
+  SECRET: process.env.TURNSTILE_SECRET_KEY || process.env.TURNSTILE_SECRET || (process.env.NODE_ENV === 'production' || process.env.RENDER === 'true' ? '' : '1x0000000000000000000000000000000AA'),
+  GOOGLE_REDIRECT: process.env.GOOGLE_REDIRECT_URI || '',
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || ''
 };
@@ -237,19 +243,8 @@ function safeEq(a, b) {
 }
 
 /* ---------------- Turnstile (siteverify) ---------------- */
-async function verifyTS(token, ipaddr) {
-  if (!token || typeof token !== 'string') return false;
-  const isTest = CFG.SITEKEY.startsWith('1x0000') || CFG.SITEKEY.startsWith('2x0000') || CFG.SITEKEY.startsWith('3x0000');
-  if (token === 'SIMULATED') return isTest; // só modo teste aceita fallback do cliente
-  try {
-    const body = new URLSearchParams({ secret: CFG.SECRET, response: token, remoteip: ipaddr });
-    const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body });
-    const j = await r.json();
-    return !!j.success;
-  } catch (e) {
-    // sem internet (ex.: sandbox offline): só aceita em modo de teste
-    return isTest;
-  }
+async function verifyTS(token, ipaddr, action, origin) {
+  return security.verifyTurnstile(token, ipaddr, action, new URL(origin).hostname, CFG);
 }
 
 /* ---------------- Captcha (servidor) ---------------- */
@@ -361,6 +356,14 @@ if(mode==='local')queue();
 const ANCHOR_BOOT = 'if (!loadGame()) { checkDailyReset(); }';
 function buildGame(ch, acc, sessId) {
   let html = fs.readFileSync(GAME_FILE, 'utf8');
+  const useLegacyFemale = ch.sex === 'f' && ch.skin !== 'nova-rosa' && accountVip(acc);
+  const atlasData = kind => 'data:image/png;base64,' + fs.readFileSync(path.join(ROOT, 'site/assets/hero-' + kind + '-atlas.png')).toString('base64');
+  html = html.replace(/const MAIN_HERO_ATLAS_DATA = '[^']+';/, 'const MAIN_HERO_ATLAS_DATA = ' + JSON.stringify(atlasData('m')) + ';');
+  if (!useLegacyFemale) {
+    html = html.replace(/const FEMALE_HERO_ATLAS_DATA = '[^']+';/, 'const FEMALE_HERO_ATLAS_DATA = ' + JSON.stringify(atlasData('f')) + ';');
+    html = html.replace("if (prefix === 'femaleHero_' && (direction === 'e' || direction === 'w')) continue;", '');
+    html = html.replace('function createFemaleSideTextures(scene) {', 'function createFemaleSideTextures(scene) { return Promise.resolve();');
+  }
   const fem = JSON.parse(fs.readFileSync(FEM_FILE, 'utf8'));
   html = html.replace('<head>', '<head>' + STORAGE_SHIM);
   const sv = acc ? (db.saves[acc.email] || null) : null;
@@ -381,7 +384,7 @@ function buildGame(ch, acc, sessId) {
   html = html.slice(0, i) + skinSwitch + html.slice(i);
   const j = html.indexOf(ANCHOR_NICK);
   if (j < 0) throw new Error('âncora do nick não encontrada');
-  const nickSet = '\nif (window.CHAOS_ONLINE) { GameState.player.name = window.CHAOS_ONLINE.nick; }';
+  const nickSet = '\nif (window.CHAOS_ONLINE) { GameState.player.name = window.CHAOS_ONLINE.nick; GameState.player.avatar = window.CHAOS_ONLINE.sex === "f" ? "female" : "male"; }';
   html = html.slice(0, j + ANCHOR_NICK.length) + nickSet + html.slice(j + ANCHOR_NICK.length);
   const kB = html.indexOf(ANCHOR_BOOT);
   if (kB < 0) throw new Error('âncora do boot não encontrada');
@@ -390,27 +393,18 @@ function buildGame(ch, acc, sessId) {
 }
 
 /* ---------------- Google OAuth (opcional) ---------------- */
-function googleHowto(origin) {
-  return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Google Login — config</title>' +
-    '<body style="background:#0b1120;color:#e9eefc;font-family:Segoe UI,Arial;display:flex;align-items:center;justify-content:center;min-height:100vh">' +
-    '<div style="max-width:560px;background:#101828;border:1px solid #33415c;border-radius:18px;padding:34px;line-height:1.8">' +
-    '<h2 style="color:#ffd54f;margin:0 0 12px">Login com o Google</h2>' +
-    '<p>O botão já existe — para ativar o <b>Google OAuth real</b>, preencha no <b>server/server.js</b>:</p>' +
-    '<pre style="background:#070b14;padding:14px;border-radius:10px;font-size:13px">GOOGLE_CLIENT_ID: "xxxx.apps.googleusercontent.com"\nGOOGLE_CLIENT_SECRET: "GOCSPX-xxxx"</pre>' +
-    '<p style="color:#93a0bd;font-size:13px">Credenciais em: console.cloud.google.com → APIs e Serviços → Credenciais → OAuth. URI de redirecionamento autorizada: <b>' + origin + '/auth/google/callback</b></p>' +
-    '<a href="/" style="color:#3fe3ea">← Voltar ao site</a></div></body></html>';
-}
 async function googleExchange(code, origin) {
-  const redirect = (CFG.GOOGLE_REDIRECT || origin + '/auth/google/callback');
-  const body = new URLSearchParams({
-    code, client_id: CFG.GOOGLE_CLIENT_ID, client_secret: CFG.GOOGLE_CLIENT_SECRET,
-    redirect_uri: redirect, grant_type: 'authorization_code'
-  });
-  const r = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', body });
-  const j = await r.json();
-  if (!j.id_token) throw new Error('sem id_token');
-  const payload = JSON.parse(Buffer.from(j.id_token.split('.')[1], 'base64url').toString('utf8'));
-  return { email: payload.email, name: payload.name || (payload.email || '').split('@')[0] };
+  return security.googleExchange(code, origin, CFG);
+}
+function accountVip(acc) {
+  if (!acc) return false;
+  if (acc.vip === true || Number(acc.vipUntil) > Date.now()) return true;
+  try {
+    const saved = db.saves[acc.email];
+    const data = saved && (typeof saved.data === 'string' ? JSON.parse(saved.data) : saved.data);
+    const player = data && data.player;
+    return !!player && (player.vip === true || Number(player.vipUntil) > Date.now());
+  } catch (_) { return false; }
 }
 
 /* ---------------- Rotas ---------------- */
@@ -418,7 +412,7 @@ async function route(req, res) {
   const u = new URL(req.url, 'http://x');
   const p = u.pathname;
   const ipk = ip(req);
-  const origin = 'http://' + (req.headers.host || ('localhost:' + CFG.PORT));
+  const origin = security.publicOrigin(req, CFG);
 
   /* CORS: permite o jogo embutido em preview/iframe (sessão via header x-session) */
   if (p.startsWith('/api/') || p === '/game') {
@@ -435,17 +429,28 @@ async function route(req, res) {
     res.end(fs.readFileSync(SITE_FILE));
     return;
   }
+  /* Artes e interface públicas do site; os arquivos do jogo continuam autenticados. */
+  const siteAsset = /^\/site-assets\/([a-z0-9-]+\.(webp|png|gif|mp3|css|js|json))$/.exec(p);
+  if (siteAsset && (req.method === 'GET' || req.method === 'HEAD')) {
+    const file = path.join(ROOT, 'site', 'assets', siteAsset[1]);
+    if (!fs.existsSync(file)) return json(res, 404, { err: 'arquivo não encontrado' });
+    const types = { png: 'image/png', gif: 'image/gif', mp3: 'audio/mpeg', webp: 'image/webp', css: 'text/css; charset=utf-8', js: 'text/javascript; charset=utf-8', json: 'application/json; charset=utf-8' };
+    res.writeHead(200, { 'content-type': types[siteAsset[2]], 'x-content-type-options': 'nosniff',
+      'cache-control': ['webp', 'png', 'gif', 'mp3'].includes(siteAsset[2]) ? 'public, max-age=3600' : 'no-cache' });
+    res.end(req.method === 'HEAD' ? undefined : fs.readFileSync(file));
+    return;
+  }
   if (p === '/favicon.ico') { res.writeHead(204); res.end(); return; }
 
   /* ---- config pública ---- */
   if (p === '/api/config' && req.method === 'GET') {
-    return json(res, 200, { sitekey: CFG.SITEKEY, google: !!CFG.GOOGLE_CLIENT_ID });
+    return json(res, 200, { sitekey: CFG.SITEKEY, google: !!(CFG.GOOGLE_CLIENT_ID && CFG.GOOGLE_CLIENT_SECRET), turnstile: !!(CFG.SITEKEY && CFG.SECRET) && !(CFG.PRODUCTION && /^[123]x0000/.test(CFG.SITEKEY)) });
   }
 
   /* ---- skins disponíveis (pública) ---- */
   if (p === '/api/skins' && req.method === 'GET') {
     const pack = SKINS.map(sk => ({
-      id: sk.id, label: sk.label, sex: sk.sex,
+      id: sk.id, label: sk.label, sex: sk.sex, vip: !!sk.vip, preview: sk.id === 'nova-rosa' ? 'hero-f.gif' : sk.sex === 'f' ? 'hero-f-vip.webp' : 'hero-m.gif',
       masc: { palette: sk.masc.palette, s0: sk.masc.frames.s_0, s1: sk.masc.frames.s_1 },
       fem: { palette: sk.fem.palette, s0: sk.fem.frames.s_0, s1: sk.fem.frames.s_1 }
     }));
@@ -482,7 +487,7 @@ async function route(req, res) {
     const blk = blocked(req);
     if (blk) return json(res, 403, { err: 'IP bloqueado por tentativas. Volte em ' + Math.ceil((blk - Date.now()) / 60000) + ' min.' });
     const body = await readBody(req);
-    if (!(await verifyTS(body.tsToken, ipk))) return json(res, 403, { err: 'Verificação anti-bot falhou. Recarregue a página e tente de novo.' });
+    if (!(await verifyTS(body.tsToken, ipk, 'create', origin))) return json(res, 403, { err: 'Verificação anti-bot falhou. Recarregue a página e tente de novo.' });
     if (!capConsume(body.captchaId, body.captchaText)) return json(res, 403, { err: 'Captcha inválido — resolva o captcha de novo.' });
     const email = String(body.email || '').trim().toLowerCase();
     const user = String(body.user || '').trim();
@@ -499,7 +504,7 @@ async function route(req, res) {
     const sid = crypto.randomBytes(24).toString('hex');
     db.sessions[sid] = { email, createdAt: Date.now() };
     saveDB();
-    res.setHeader('Set-Cookie', cookieSet(sid));
+    res.setHeader('Set-Cookie', cookieSet(sid) + (origin.startsWith('https:') ? '; Secure' : ''));
     console.log('[register]', email);
     return json(res, 200, { ok: true, user, token: sid });
   }
@@ -509,18 +514,19 @@ async function route(req, res) {
     const blk = blocked(req);
     if (blk) return json(res, 403, { err: 'IP bloqueado por tentativas. Volte em ' + Math.ceil((blk - Date.now()) / 60000) + ' min.' });
     const body = await readBody(req);
-    if (!(await verifyTS(body.tsToken, ipk))) return json(res, 403, { err: 'Verificação anti-bot falhou. Recarregue a página e tente de novo.' });
+    if (!(await verifyTS(body.tsToken, ipk, 'login', origin))) return json(res, 403, { err: 'Verificação anti-bot falhou. Recarregue a página e tente de novo.' });
     if (!capConsume(body.captchaId, body.captchaText)) return json(res, 403, { err: 'Captcha inválido — resolva o captcha de novo.' });
     const who = String(body.user || '').trim().toLowerCase();
     const pass = String(body.pass || '');
     let acc = db.accounts[who];
     if (!acc) { for (const k in db.accounts) { if (db.accounts[k].user.toLowerCase() === who) { acc = db.accounts[k]; break; } } }
     if (!acc) return json(res, 401, { err: 'Usuário não encontrado — crie uma conta primeiro.' });
+    if (acc.provider === 'google' && !acc.hash) return json(res, 401, { err: 'Esta conta usa o Google. Escolha Continuar com o Google.' });
     if (!safeEq(acc.hash, hashPass(pass, acc.salt))) return json(res, 401, { err: 'Senha incorreta.' });
     const sid = crypto.randomBytes(24).toString('hex');
     db.sessions[sid] = { email: acc.email, createdAt: Date.now() };
     saveDB();
-    res.setHeader('Set-Cookie', cookieSet(sid));
+    res.setHeader('Set-Cookie', cookieSet(sid) + (origin.startsWith('https:') ? '; Secure' : ''));
     console.log('[login]', acc.email);
     return json(res, 200, { ok: true, user: acc.user, token: sid });
   }
@@ -529,7 +535,7 @@ async function route(req, res) {
   if (p === '/api/me' && req.method === 'GET') {
     const acc = auth(req);
     if (!acc) return json(res, 200, { ok: false });
-    return json(res, 200, { ok: true, user: acc.user, email: acc.email, chars: acc.chars || [], provider: acc.provider, token: sessToken(req) });
+    return json(res, 200, { ok: true, user: acc.user, email: acc.email, chars: acc.chars || [], provider: acc.provider, vip: accountVip(acc), token: sessToken(req) });
   }
   if (p === '/api/logout' && req.method === 'POST') {
     const sid = getSid(req);
@@ -547,7 +553,8 @@ async function route(req, res) {
     const sex = body.sex === 'f' ? 'f' : 'm';
     const skinWanted = String(body.skin || '');
     const skinOk = SKINS.find(x => x.id === skinWanted && x.sex === sex);
-    const skin = skinOk ? skinOk.id : (SKINS.find(x => x.sex === sex) || { id: 'classico' }).id;
+    if (skinOk && skinOk.vip && !accountVip(acc)) return json(res, 403, { err: 'O visual feminino clássico é exclusivo para VIP.' });
+    const skin = skinOk ? skinOk.id : (sex === 'f' ? 'nova-rosa' : 'classico');
     if (!/^[A-Za-z0-9_]{3,14}$/.test(nick)) return json(res, 400, { err: 'Nick: 3–14 letras, números ou _ (sem espaços).' });
     if ((acc.chars || []).length >= 3) return json(res, 400, { err: 'Limite de 3 personagens por conta.' });
     const k = nick.toLowerCase();
@@ -823,22 +830,26 @@ async function route(req, res) {
 
   /* ---- Google OAuth ---- */
   if (p === '/auth/google' && req.method === 'GET') {
-    if (!CFG.GOOGLE_CLIENT_ID) {
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      res.end(googleHowto(origin));
+    if (!CFG.GOOGLE_CLIENT_ID || !CFG.GOOGLE_CLIENT_SECRET) {
+      res.writeHead(302, { Location: '/?google=indisponivel' });
+      res.end();
       return;
     }
     const redirect = CFG.GOOGLE_REDIRECT || (origin + '/auth/google/callback');
     const gs = new URLSearchParams({
       client_id: CFG.GOOGLE_CLIENT_ID, redirect_uri: redirect,
-      response_type: 'code', scope: 'openid email profile', prompt: 'select_account'
+      response_type: 'code', scope: 'openid email profile', prompt: 'select_account', state: oauthStates.issue()
     });
+    res.setHeader('Set-Cookie', 'chaos_oauth=' + gs.get('state') + '; Path=/auth/google; HttpOnly; SameSite=Lax; Max-Age=600' + (origin.startsWith('https:') ? '; Secure' : ''));
     res.writeHead(302, { Location: 'https://accounts.google.com/o/oauth2/v2/auth?' + gs.toString() });
     res.end();
     return;
   }
   if (p === '/auth/google/callback' && req.method === 'GET') {
     try {
+      const match = /(?:^|;\s*)chaos_oauth=([a-f0-9]+)/.exec(req.headers.cookie || '');
+      if (!oauthStates.consume(u.searchParams.get('state') || '', match ? match[1] : '')) throw new Error('Retorno OAuth inválido');
+      res.setHeader('Set-Cookie', 'chaos_oauth=; Path=/auth/google; HttpOnly; SameSite=Lax; Max-Age=0' + (origin.startsWith('https:') ? '; Secure' : ''));
       const code = u.searchParams.get('code') || '';
       const info = await googleExchange(code, origin);
       const email = String(info.email).toLowerCase();
@@ -851,8 +862,8 @@ async function route(req, res) {
       const sid = crypto.randomBytes(24).toString('hex');
       db.sessions[sid] = { email: acc.email, createdAt: Date.now() };
       saveDB();
-      res.setHeader('Set-Cookie', cookieSet(sid));
-      res.writeHead(302, { Location: '/' });
+      res.setHeader('Set-Cookie', [cookieSet(sid) + (origin.startsWith('https:') ? '; Secure' : ''), 'chaos_oauth=; Path=/auth/google; HttpOnly; SameSite=Lax; Max-Age=0' + (origin.startsWith('https:') ? '; Secure' : '')]);
+      res.writeHead(302, { Location: '/?google=ok' });
       res.end();
     } catch (e) {
       res.writeHead(302, { Location: '/?google=erro' });
@@ -914,7 +925,7 @@ process.on('SIGINT', () => flushAndExit('SIGINT'));
   server.listen(CFG.PORT, '0.0.0.0', () => {
     console.log('CHAOTIC.IDLEWORLD servidor FASE 2 na porta ' + CFG.PORT);
     console.log('Turnstile: ' + (CFG.SITEKEY.startsWith('1x0000') ? 'CHAVES DE TESTE (sempre passam)' : 'chaves reais'));
-    console.log('Google OAuth: ' + (CFG.GOOGLE_CLIENT_ID ? 'configurado' : 'não configurado (botão mostra instruções)'));
+    console.log('Google OAuth: ' + (CFG.GOOGLE_CLIENT_ID && CFG.GOOGLE_CLIENT_SECRET ? 'configurado' : 'aguardando credenciais no ambiente'));
     console.log('Persistência: ' + (CLOUD ? 'SUPABASE (sobrevive a redeploys) ✓' : 'disco local (redeploys apagam)'));
   });
 })();
