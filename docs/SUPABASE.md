@@ -1,17 +1,13 @@
 # ☁️ Supabase — contas permanentes (sobrevivem às atualizações)
 
 Com este passo (único, ~10 minutos), as **contas, saves, chat e códigos
-resgatados ficam guardados no Supabase**. A partir daí, atualizar o jogo
-(subir arquivos novos no GitHub → Render redeploya) **NÃO apaga mais nada**.
+resgatados ficam guardados no Supabase**. A persistência após atualizar o jogo depende de a conexão estar funcionando e de os dados terem sido gravados no Supabase antes do redeploy.
 
 O servidor já está pronto: se as variáveis `SUPABASE_URL` e `SUPABASE_KEY`
 estiverem definidas, ele carrega e salva o estado lá automaticamente.
 Sem elas, funciona como antes (só disco local).
 
-O servidor também é **resistente a queda da nuvem**: se o Supabase estiver
-fora do ar em algum momento (ou a URL estiver errada), o jogo continua
-funcionando e, quando a nuvem voltar, ele **mescla tudo sozinho** — contas
-criadas nesse período não se perdem.
+Se o Supabase estiver fora do ar, o servidor continua usando dados locais e tenta recuperar e salvar novamente. O disco local do Render não garante recuperação após redeploy; resolva as falhas de conexão antes de reiniciar.
 
 ---
 
@@ -58,17 +54,16 @@ create table if not exists game_state (
 Persistência: SUPABASE (sobrevive a redeploys) ✓
 ```
 
-Pronto! ✅ A partir desse momento **toda conta criada, save, mensagem e
-resgate de código vão para o Supabase** e sobrevivem a redeploys e sleeps.
+Essa linha confirma a presença das variáveis de ambiente, não o sucesso do salvamento. Confira também os logs de carregamento e gravação e investigue qualquer `Supabase inacessível` ou `falha ao salvar`. A recuperação após redeploy depende de os dados estarem realmente gravados no banco.
 
 ---
 
 ## 🔄 Como atualizar o jogo DEPOIS disso (sem perder contas)
 
-1. Baixe o `chaotic-online.zip` novo (quando eu publicar atualização);
+1. Obtenha o HTML atualizado e teste-o;
 2. GitHub → seu repositório → **Add file → Upload files** → arraste o
-   conteúdo e **substitua** os arquivos → Commit;
-3. Render redeploya sozinho. Contas, saves e chat **continam lá**.
+   HTML como `game/index.html` e **substitua** esse arquivo → Commit;
+3. O Render redeploya sozinho. Antes do commit, confira que contas, saves e chat foram gravados no Supabase.
 
 > 💡 Dica: o **sleep de 15 min** do plano grátis do Render continua (a 1ª
 > visita após um tempo demora ~1 minuto pra acordar). Isso é do Render, não

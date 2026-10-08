@@ -386,6 +386,7 @@ for key, t in tiles:
     dr.text((10, y), key, fill=(120, 220, 255), font=font)
     sheet.paste(t, (10, y + 20))
     y += t.height + 22
+os.makedirs(os.path.join(ROOT, 'previews'), exist_ok=True)
 sheet.save(os.path.join(ROOT, 'previews', 'sprites_preview.png'))
 print('sheet:', sheet.size)
 

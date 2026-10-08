@@ -4,7 +4,8 @@
   "private": true,
   "description": "Chaotic.IdleWorld — MMO idle de Perim (servidor Node puro: contas, chat, PVP, save na nuvem)",
   "scripts": {
-    "start": "node server/server.js"
+    "start": "node server/server.js",
+    "test": "node --test tests/server.test.js && node tests/test_editor_mapa.js && node tests/test_editor_e2e.js && node creatures/test/test_banco.js && node tools/test_music_harness.js"
   },
   "engines": {
     "node": ">=18"
