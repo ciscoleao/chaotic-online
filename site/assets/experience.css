@@ -1,0 +1,29 @@
+.brand-logo{display:block;width:74px;height:65px;object-fit:contain;border-radius:8px}
+.home-logo{width:180px;height:158px;object-fit:contain;display:block;margin-bottom:24px;border-radius:12px}
+.avatar-gif{display:block;image-rendering:pixelated;object-fit:contain}
+.avatar-card .avatar-gif{width:192px;height:192px;margin:20px auto}
+.skin-card .avatar-gif{width:64px;height:64px;margin:auto}
+.skin-card:disabled{opacity:.45;cursor:not-allowed}
+.stage-avatars .avatar-gif{width:64px;height:64px}
+.char-card>.avatar-gif{width:110px;height:110px;margin:auto}
+.scan-wrap .avatar-gif{width:144px;height:144px;margin:auto}
+.music-control{position:fixed;bottom:18px;right:18px;z-index:55;padding:11px 16px;border-radius:24px;border:1px solid #425575;background:#081627e8;color:#deedf9;font:600 12px system-ui;box-shadow:0 5px 20px #0006}
+body:has(#screen-game.active) .music-control{display:none}
+#screen-auth{isolation:isolate;background:#06203d url('/site-assets/auth-background.png') center/cover fixed}
+#screen-auth:before{content:'';position:absolute;inset:0;background:linear-gradient(120deg,#03112b55,#08244744);z-index:-1}
+#screen-auth .auth-wrap{background:none;position:relative;z-index:1}
+#screen-auth .auth-card{background:#07162de8;border-color:#84c8ff55;box-shadow:0 24px 100px #001535bb}
+#auth-glyphs{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+#auth-glyphs span{position:absolute;top:-15%;color:#c1e6ff;opacity:.35;font-weight:800;text-shadow:0 0 12px #b4d7ff;animation:falling-glyph linear infinite}
+@keyframes falling-glyph{from{transform:translate(0,0) rotate(0)}to{transform:translate(var(--drift),115vh) rotate(var(--spin))}}
+.dromo-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:30px}
+.dromo-shot{background:#0c192b;border:1px solid #314357;border-radius:14px;overflow:hidden;color:#e8f5ff;padding:0;text-align:left}
+.dromo-shot img{display:block;width:100%;height:170px;object-fit:cover;object-position:top}
+.dromo-shot span{display:block;padding:14px;font-size:13px;font-weight:600}
+#dromo-viewer{position:fixed;inset:0;margin:auto;width:min(1200px,94vw);max-height:92vh;background:#07121e;border:1px solid #506780;border-radius:16px;padding:18px;color:#e8f5ff}
+#dromo-viewer::backdrop{background:#000c}
+#dromo-viewer img{display:block;width:100%;max-height:76vh;object-fit:contain}
+#dromo-viewer button{float:right;background:#22374b;color:white;border:0;border-radius:8px;padding:8px 15px;margin-bottom:10px}
+#dromo-viewer p{padding-top:12px;font-size:13px}
+@media(max-width:600px){.brand-logo{width:48px;height:43px}.home-logo{width:120px;height:105px;margin-bottom:18px}.avatar-card .avatar-gif{width:144px;height:144px}.dromo-gallery{grid-template-columns:1fr}.dromo-shot img{height:auto}.music-control{bottom:12px;right:12px;font-size:11px}#screen-auth{background-attachment:scroll}}
+@media(prefers-reduced-motion:reduce){#auth-glyphs{display:none}}

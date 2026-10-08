@@ -1,0 +1,41 @@
+{
+  "assetVersion": "57056bd6f181",
+  "creatures": 120,
+  "tribes": {
+    "OverWorld": 30,
+    "UnderWorld": 30,
+    "Danian": 30,
+    "Mipedian": 30
+  },
+  "masters": [
+    {
+      "id": "crellan",
+      "name": "Crellan"
+    },
+    {
+      "id": "hotekk",
+      "name": "Hotekk"
+    },
+    {
+      "id": "amzen",
+      "name": "Amzen"
+    },
+    {
+      "id": "oron",
+      "name": "Oron"
+    },
+    {
+      "id": "tirasis",
+      "name": "Tirasis"
+    },
+    {
+      "id": "imthor",
+      "name": "Imthor"
+    },
+    {
+      "id": "chirrul",
+      "name": "Chirrul"
+    }
+  ],
+  "caveSeconds": 25
+}

@@ -8,6 +8,8 @@ Jogo HTML com servidor Node.js para contas, personagens, chat, duelos e progress
 |---|---|
 | `game/index.html` | Versão atual do jogo, com imagens e scripts embutidos |
 | `site/index.html` | Página inicial, login e seleção de personagem |
+| `site/assets/` | Interface em abas e artes exportadas do jogo atual |
+| `site/landing.fragment.html` | Conteúdo da apresentação em cinco abas |
 | `server/` | Servidor, dados das skins e personagem feminina |
 | `tools/` | Editores, laboratório de música e ferramentas de criação |
 | `tools/assets/` | Referências necessárias às ferramentas |
@@ -36,6 +38,29 @@ npm test
 Os testes usam dados temporários e não acessam as contas reais nem o Supabase.
 Os arquivos em `docs/historico/` são referências antigas e não fazem parte desta suíte.
 
+## Atualizar a apresentação do site
+
+A página inicial separa Início, Explorar, Personagens, Dromos e Como jogar em abas.
+As prévias de criação e seleção usam os mesmos personagens de `game/index.html`.
+As contas e os IDs de skins existentes continuam compatíveis.
+
+Depois de atualizar as artes ou o banco de criaturas, execute:
+
+```bash
+python3 tools/build_site_assets.py
+npm test
+```
+
+O exportador requer Pillow. Ele recompõe os cenários do jogo, aplica a correção
+da ponte do Pátio e exporta os frames atuais dos personagens. Também atualiza
+os números de criaturas, tribos, Mestres e o tempo da caverna.
+Edite os textos da apresentação em `site/landing.fragment.html` e rode o
+exportador para atualizar `site/index.html`. Os estilos e a navegação estão
+em `site/assets/landing.css` e `site/assets/landing.js`.
+
+Publique a pasta `site/assets/` junto com o HTML e `server/server.js`:
+o servidor disponibiliza esses arquivos em `/site-assets/`.
+
 ## Render e Supabase
 
 O serviço existente usa `npm start` na raiz do repositório. Alterações na branch `main` acionam o deploy automático.
@@ -58,3 +83,7 @@ O arquivo local `server/data/db.json` é criado durante a execução e não deve
 
 Código aberto para visualização, mas não pode ser usado, comercializado ou modificado sem autorização.
 Este repositório está licenciado sob a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International.
+
+## Novas artes e login
+
+Consulte [ATUALIZACAO-ARTES-E-LOGIN.md](docs/ATUALIZACAO-ARTES-E-LOGIN.md) para as novas artes, o visual feminino VIP, a música e as variáveis necessárias para Google OAuth e Cloudflare Turnstile. Antes de publicar, confirme a persistência real no Supabase.
